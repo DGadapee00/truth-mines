@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex" />
+    <title>Truth Mines</title>
+    <meta name="description" content="PHY 2049 derivations as a mine: the laws at the surface, every result below, tunnels for what each result uses." />
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+
+    <header class="bar" id="bar">
+      <div class="brand">
+        <h1>Truth Mines</h1>
+        <p>PHY 2049 · Exam 4 · <span id="progress">0 / 0 mined</span></p>
+      </div>
+      <div class="actions">
+        <button type="button" class="ghost" id="btn-vr" hidden>Enter VR</button>
+        <button type="button" class="ghost" id="btn-ar" hidden>AR</button>
+        <button type="button" class="ghost" id="btn-help" aria-expanded="false" aria-controls="help">?</button>
+      </div>
+    </header>
+
+    <aside class="help" id="help" hidden>
+      <h2>How the mine works</h2>
+      <p>The laws of the course sit on the surface. Every result is a crystal below, joined by tunnels to the results it uses. The deeper a crystal, the more it is built on.</p>
+      <p>Pick a crystal to see it. A <b class="open">pulsing</b> crystal is ready to mine: walk its derivation one step at a time, choosing each next line. Finish and it turns <b class="mined">gold</b>, its tunnels light up, and the crystals below it open.</p>
+      <p><b>Mouse:</b> drag to turn, scroll to zoom, right-drag to slide. <b>Touch:</b> one finger turns, two pinch and slide.</p>
+      <p><b>Quest 3:</b> open this page in the Meta Quest Browser and press <i>Enter VR</i>. Trigger or pinch picks a crystal or a button on the panel. Grip grabs the mine, the thumbstick turns and zooms it, B or Y brings it back in front of you.</p>
+      <p class="small">Your progress is kept in this browser only.</p>
+      <button type="button" class="ghost small" id="btn-reset">Start the mine over</button>
+    </aside>
+
+    <aside class="card" id="card" hidden></aside>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
