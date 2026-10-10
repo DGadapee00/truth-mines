@@ -78,3 +78,46 @@ latex_overrides:
   "iota'": "℩'"
   "`": '\mathbin{\text{‘}}' # function application F ‘ A, as the Metamath site shows it
   ppi: '\pi' # the prime-counting function, written pi(x) as usual
+
+# The Inside view: chambers and tunnels at human scale. pipeline/scene.py turns these into scene
+# descriptors (data/scene.json); the app only renders them, so any engine draws the same mine.
+inside:
+  metres_per_depth: 0.25 # a tunnel drops exactly (depth difference) x this
+  max_grade_deg: 20 # steepest tunnel slope, for comfort
+  min_run: 16 # metres: shortest tunnel, measured horizontally
+  max_turn_deg: 20 # a tunnel bends at most this much, left or right
+  path_step: 4 # metres between points of a tunnel's polyline
+  flat_ends: 3 # metres of level floor at each end of a tunnel
+  chamber:
+    min_radius: 8
+    radius_spread: 3 # seeded extra radius, 0..this
+    base_height: 6
+    height_spread: 2
+    axiom_height_scale: 1.35
+    statement_arc: 11 # metres of wall kept for the statement
+  statement_wall: { width: 9, height: 4.5, lift: 1.2 }
+  portal: { gap: 1.6, height: 3.4 }
+  tunnel:
+    min_width: 2.4
+    max_width: 5.0
+    width_per_decade: 0.6 # wider by this per tenfold feeding lemmas
+    ornament: [1, 10, 100, 1000] # feeding lemmas at which ornament levels 1..4 begin
+    rib_spacing: [0, 8, 6, 4, 3] # metres between ribs at each ornament level (0: none)
+  pillar: { ring: 0.62, min_ring: 4.5, min_radius: 0.35, max_radius: 0.7 }
+  markers: { max: 12 }
+  light: { surface: 1.0, deepest: 0.16 } # ambient light, falling exponentially with depth
+  fog: { surface: 0.010, deepest: 0.030 }
+  rock_darkening: 0.55 # rock colour at the deepest point, as a fraction of its surface colour
+  rock:
+    logic: "#8e9ab8"
+    sets: "#7fa8a3"
+    numbers: "#97ad7c"
+    numtheory: "#b08b9c"
+    structures: "#9a8fb3"
+    algebra: "#b39a7f"
+    topology: "#7f9fb3"
+    analysis: "#b3a77b"
+    surreals: "#a58fb3"
+    geometry: "#86ad92"
+    graphs: "#b38a8a"
+    other: "#9aa0a6"

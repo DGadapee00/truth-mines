@@ -21,5 +21,5 @@ def run() -> None:
     st = read_stage("extract")["statements"]
     landmarks = [lm["label"] for lm in read_stage("curate")["landmarks"]]
     d = depths(st)
-    write_stage("depth", {"depth": {k: d[k] for k in landmarks}, "max_full": max(d.values())})
+    write_stage("depth", {"depth": {k: d[k] for k in landmarks}, "max_full": max(d.values()), "all": d})
     print(f"depth: landmarks span depth 0..{max(d[k] for k in landmarks)} (full graph max {max(d.values())})")

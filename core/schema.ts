@@ -2,7 +2,7 @@
  * The data the pipeline writes and the app reads. Mirrors pipeline/schema.py field for field.
  * Bump SCHEMA_VERSION in both files on any change, so the app refuses data it does not understand.
  */
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export type Kind = 'axiom' | 'definition' | 'theorem';
 export const KINDS: readonly Kind[] = ['axiom', 'definition', 'theorem'];
@@ -87,4 +87,126 @@ export function parseMeta(raw: unknown): Meta {
   if (!m || m.schema_version !== SCHEMA_VERSION) throw new SchemaError('meta.json has the wrong schema version');
   if (!Array.isArray(m.subjects) || !Array.isArray(m.sources)) throw new SchemaError('meta.json is missing subjects or sources');
   return m as Meta;
+}
+
+// ---------------------------------------------------------------- scene.json (the Inside view)
+//
+// Engine-neutral scene descriptors written by pipeline/scene.py. Every position, size and colour
+// of the Inside view is here; a renderer draws these and decides nothing. Conventions travel with
+// the file (`conventions`): metres, +Y up, right-handed, heading(yaw) = (sin yaw, 0, cos yaw).
+
+export type Vec3 = [number, number, number];
+
+export interface Strata {
+  /** Ambient light, 1 at the surface, falling with depth */
+  light: number;
+  /** Fog density (exponential, per metre) */
+  fog: number;
+  /** Rock colour, #rrggbb */
+  rock: string;
+}
+
+export interface Portal {
+  dir: 'up' | 'down';
+  /** The chamber at the other end */
+  target: string;
+  /** The tunnel through it */
+  tunnel: string;
+  index: number;
+  /** Out of the chamber, down the tunnel */
+  yaw: number;
+  pos: Vec3;
+  width: number;
+  height: number;
+  plaque: { pos: Vec3; yaw: number };
+}
+
+export interface Pillar {
+  /** The dependency this pillar stands for */
+  target: string;
+  pos: Vec3;
+  radius: number;
+  height: number;
+}
+
+export interface Chamber extends Strata {
+  id: string;
+  kind: Kind;
+  depth: number;
+  /** Absolute floor height: -depth * metres_per_depth */
+  floor_y: number;
+  radius: number;
+  height: number;
+  statement: { pos: Vec3; yaw: number; size: [number, number] };
+  spawn: { pos: Vec3; yaw: number };
+  portals: Portal[];
+  pillars: Pillar[];
+}
+
+export interface Marker {
+  /** set.mm label of the lemma */
+  id: string;
+  depth: number;
+  /** Distance along the path from the upper doorway */
+  s: number;
+  /** The point of the floor under it */
+  at: Vec3;
+  /** Where it stands, against the tunnel wall */
+  pos: Vec3;
+  side: 1 | -1;
+}
+
+export interface Tunnel {
+  /** `${lower}>${upper}` */
+  id: string;
+  upper: string;
+  lower: string;
+  upper_portal: number;
+  lower_portal: number;
+  drop: number;
+  length: number;
+  width: number;
+  height: number;
+  feeding_lemmas: number;
+  chain_length: number;
+  ornament: { level: number; rib_spacing: number };
+  /** The floor's centre line, in the upper chamber's frame */
+  path: Vec3[];
+  /** The lower chamber's frame, placed in the upper's */
+  lower_in_upper: { pos: Vec3; yaw: number };
+  markers: Marker[];
+  light: [number, number];
+  fog: [number, number];
+  rock: [string, string];
+}
+
+export interface SceneFile {
+  schema_version: number;
+  conventions: Record<string, string>;
+  metres_per_depth: number;
+  chambers: Chamber[];
+  tunnels: Tunnel[];
+}
+
+const isVec3 = (v: unknown) => Array.isArray(v) && v.length === 3 && v.every((x) => Number.isFinite(x));
+
+/** Check a parsed scene.json before anything draws it. Throws SchemaError with the first problem. */
+export function parseScene(raw: unknown): SceneFile {
+  const s = raw as Partial<SceneFile> | null;
+  if (!s || s.schema_version !== SCHEMA_VERSION) throw new SchemaError(`scene.json has schema version ${String(s?.schema_version)}; this app reads ${SCHEMA_VERSION}`);
+  if (!Array.isArray(s.chambers) || !Array.isArray(s.tunnels)) throw new SchemaError('scene.json has no chambers or tunnels');
+  for (const c of s.chambers) {
+    const w = `chamber ${String(c?.id)}`;
+    if (!(c.radius > 0) || !(c.height > 0) || !Number.isFinite(c.floor_y)) throw new SchemaError(`${w}: size`);
+    if (!isVec3(c.statement?.pos) || !isVec3(c.spawn?.pos)) throw new SchemaError(`${w}: statement or spawn`);
+    for (const p of c.portals) if (!isVec3(p.pos) || !isVec3(p.plaque?.pos) || !(p.width > 0)) throw new SchemaError(`${w}: portal ${p.index}`);
+    for (const p of c.pillars) if (!isVec3(p.pos) || !(p.radius > 0)) throw new SchemaError(`${w}: pillar ${p.target}`);
+  }
+  for (const t of s.tunnels) {
+    const w = `tunnel ${String(t?.id)}`;
+    if (!Array.isArray(t.path) || t.path.length < 2 || !t.path.every(isVec3)) throw new SchemaError(`${w}: path`);
+    if (!isVec3(t.lower_in_upper?.pos) || !Number.isFinite(t.lower_in_upper?.yaw)) throw new SchemaError(`${w}: lower_in_upper`);
+    for (const m of t.markers) if (!isVec3(m.pos) || !isVec3(m.at)) throw new SchemaError(`${w}: marker ${m.id}`);
+  }
+  return s as SceneFile;
 }

@@ -17,6 +17,17 @@ layout and `pipeline/README.md` for the data.
 7. Notes in `content/` may be drafted by Claude but stay `reviewed: false` until a person approves
    them; the pipeline exports only reviewed notes, so the app never shows an unreviewed one.
 8. Every feature lands with desktop support and a test.
+9. Engine independence: all procedural layout of the Inside view (chamber dimensions, statement
+   wall placement, doorways and plaques, pillar positions, tunnel paths, marker positions,
+   strata light, fog and rock colour) is computed in the pipeline (pipeline/scene.py) and
+   exported as scene descriptors in data/scene.json. The app only renders those descriptors and
+   decides no geometry of its own, so a second engine (Unreal) can render the identical mine.
+   Every descriptor is covered by pipeline tests (pipeline/tests/test_scene.py); pipeline/schema.py
+   and core/schema.ts move together.
+10. Chamber and tunnel geometry is deterministic from node id: randomness is seeded from a
+    SHA-256 of the id (never Python's hash), and output does not depend on input order.
+11. The Inside view renders only the local subgraph: the current chamber, its tunnels and the
+    chambers one hop away (inside a tunnel, only that tunnel's far chamber). Never the whole graph.
 
 ## Display forms
 
@@ -46,7 +57,20 @@ name, or export fails (DejaVu Sans has no 𝒫, for example).
 | Data payload | under 2 MB (graph.json is about 150 KB) |
 | Selection | highlight within one frame |
 
-The e2e test checks draw calls and triangles on load; data.test.ts checks the payload size.
+The e2e tests check draw calls and triangles on the map and inside a chamber (a chamber with 17
+neighbours draws in about 10 calls); data.test.ts checks the payload size. Frame rate on a real
+Quest 3 must be measured on the device (chrome://inspect over USB); the emulator cannot.
+
+## The Inside view
+
+- Descriptors: data/scene.json, conventions written into it (metres, +Y up, yaw about +Y with
+  heading(yaw) = (sin yaw, 0, cos yaw)). Tunnels drop exactly (depth difference) x 0.25 m; markers
+  come from `chain` and stand where the floor is at the lemma's depth; width, ornament and the
+  plaque above each doorway come from `feeding_lemmas`.
+- app/inside/: geometry.ts turns descriptors into triangles, star.ts builds the local scene,
+  walk.ts is movement, inside.ts the controller (desktop walk, Journey, headset).
+- Headset comfort: teleport, 30-degree snap turn, guided tunnel moves with ease in and out and a
+  vignette. A guided move never turns the view.
 
 ## Checks before a commit
 

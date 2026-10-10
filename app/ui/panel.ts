@@ -15,7 +15,7 @@ const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 const KIND: Record<MineNode['kind'], string> = { axiom: 'Axiom', definition: 'Definition', theorem: 'Theorem' };
 const fmt = (n: number) => n.toLocaleString('en-US');
 
-export function createPanel(el: HTMLElement, graph: MineGraph, meta: Meta, store: Store, loadNote: (path: string) => Promise<string>) {
+export function createPanel(el: HTMLElement, graph: MineGraph, meta: Meta, store: Store, loadNote: (path: string) => Promise<string>, actions: { enter(id: string): void; journey(id: string): void }) {
   const subjectName = new Map(meta.subjects.map((s) => [s.id, s.name]));
   /** Readable (the display form) or formal (set.mm's statement); kept as the student moves on. */
   let formal = false;
@@ -73,8 +73,9 @@ export function createPanel(el: HTMLElement, graph: MineGraph, meta: Meta, store
       <p class="lit">${mode === 'up' ? `Bright: the critical path. Faint: the rest of what it rests on (${fmt(lit.size)}).` : `Lit: everything that rests on it (${fmt(lit.size)}).`}</p>
       <div class="moves">
         ${nextUp ? `<button type="button" class="step" data-go="${esc(nextUp)}">Step up the critical path ↑</button>` : ''}
-        <button type="button" class="enter" disabled title="The Inside view is being built">Enter <small>soon</small></button>
+        <button type="button" class="enter" data-act="enter" title="Stand inside this theorem's chamber">Enter</button>
       </div>
+      ${route.length > 1 ? `<button type="button" class="journey" data-act="journey" title="Start at the axiom end of the critical path and walk down to here">Journey here from ${esc(graph.must(route.at(-1) as string).kind === 'axiom' ? 'the axioms' : 'the surface')} ↓</button>` : ''}
       <div class="note" hidden></div>
       ${n.deps.length ? `<h3>Tunnels up <small>what it depends on directly</small></h3><div class="links">${deps}</div>` : ''}
       ${users ? `<h3>Tunnels down <small>what depends on it directly</small></h3><div class="links">${users}</div>` : ''}
@@ -103,6 +104,8 @@ export function createPanel(el: HTMLElement, graph: MineGraph, meta: Meta, store
     } else if (b.dataset.go) store.select(b.dataset.go);
     else if (b.dataset.mode) store.setMode(b.dataset.mode as 'up' | 'down');
     else if (b.dataset.act === 'close') store.select(null);
+    else if (b.dataset.act === 'enter' && store.view.selected) actions.enter(store.view.selected);
+    else if (b.dataset.act === 'journey' && store.view.selected) actions.journey(store.view.selected);
   });
 
   store.onChange(render);

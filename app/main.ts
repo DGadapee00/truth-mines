@@ -7,6 +7,7 @@ import { createStore } from './state';
 import { createCameraRig } from './ui/camera';
 import { createPanel, fitStatement } from './ui/panel';
 import { createSearch } from './ui/search';
+import { createInside } from './inside/inside';
 import 'katex/dist/katex.min.css';
 import './style.css';
 
@@ -38,7 +39,24 @@ async function main() {
   scene.add(mine.group);
 
   // ---- panel, search, credits
-  createPanel($('panel'), graph, meta, store, (p) => fetch(`${BASE}${p}`).then((r) => r.text()));
+  // ---- the Inside view: entered from a landmark's panel, left by its Map button
+  const inside = createInside({
+    renderer,
+    graph,
+    base: BASE,
+    fontUrl: `${BASE}fonts/labels.woff`,
+    onExit(id) {
+      store.select(id);
+    },
+  });
+  const goInside = (start: () => Promise<void>) => {
+    $('intro').hidden = true;
+    start().catch((err: unknown) => console.error('Inside view:', err));
+  };
+  createPanel($('panel'), graph, meta, store, (p) => fetch(`${BASE}${p}`).then((r) => r.text()), {
+    enter: (id) => goInside(() => inside.enter(id)),
+    journey: (id) => goInside(() => inside.journey(id)),
+  });
   createSearch($<HTMLInputElement>('search'), $('results'), graph, meta, store);
   const src = meta.sources.find((s) => s.name === 'set.mm');
   if (src) {
@@ -66,6 +84,7 @@ async function main() {
   };
   canvas.addEventListener('pointerdown', (e) => (down = { x: e.clientX, y: e.clientY }));
   canvas.addEventListener('pointerup', (e) => {
+    if (inside.active) return;
     if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) return;
     down = null;
     const p = at(e);
@@ -74,7 +93,7 @@ async function main() {
   });
   const tip = $('tip');
   canvas.addEventListener('pointermove', (e) => {
-    if (e.buttons) return;
+    if (e.buttons || inside.active) return;
     const p = at(e);
     const id = mine.pickScreen(p.x, p.y, camera, p.w, p.h, 12);
     mine.setHover(id);
@@ -89,7 +108,7 @@ async function main() {
 
   // ---- keys
   window.addEventListener('keydown', (e) => {
-    if ((e.target as HTMLElement).tagName === 'INPUT') return;
+    if ((e.target as HTMLElement).tagName === 'INPUT' || inside.active) return;
     if (e.key === '/') {
       e.preventDefault();
       $('search').focus();
@@ -164,6 +183,11 @@ async function main() {
   renderer.setAnimationLoop(() => {
     const dt = Math.min(0.05, clock.getDelta());
     time += dt;
+    if (inside.active) {
+      inside.update(dt);
+      renderer.render(inside.scene, inside.camera);
+      return;
+    }
     rig.update(dt);
     frameBesidePanel();
     mine.update(camera, time);
@@ -172,7 +196,7 @@ async function main() {
 
   document.body.classList.add('ready');
   // For the end-to-end tests.
-  Object.assign(window, { __mines: { graph, store, mine, camera, renderer, rig } });
+  Object.assign(window, { __mines: { graph, store, mine, camera, renderer, rig, inside } });
 }
 
 main().catch((err: unknown) => {

@@ -14,7 +14,8 @@ from fontTools.ttLib import TTFont
 
 from .fetch import source_path
 
-ALWAYS = "".join(chr(c) for c in range(0x20, 0x7F))  # ASCII, for labels and the search box
+# ASCII (labels, lemma names, the search box) and the arrows and dot the Inside view's plaques use.
+ALWAYS = "".join(chr(c) for c in range(0x20, 0x7F)) + "↑↓·–"
 
 
 def build_label_font(names: list[str], out: Path) -> int:

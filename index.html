@@ -41,6 +41,22 @@
     </section>
 
     <aside class="panel" id="panel" hidden></aside>
+
+    <div class="inside-hud" id="inside-hud" hidden>
+      <div class="ih-bar">
+        <div class="ih-where"><b id="ih-name"></b><span id="ih-depth"></span></div>
+        <div class="ih-actions">
+          <button type="button" class="ghost" id="ih-vr" title="Walk the mine in a VR headset" hidden>Enter VR</button>
+          <button type="button" class="ghost" id="ih-map" title="Back to the map (M)">Map</button>
+        </div>
+      </div>
+      <div class="ih-journey" id="ih-journey" hidden>
+        <span id="ih-jtext"></span>
+        <button type="button" class="primary" id="ih-next" title="Walk through the next tunnel (N)">Go ↓</button>
+      </div>
+      <p class="ih-hint">Click to look around · W A S D to walk · Shift to run · Esc frees the mouse · M map</p>
+      <div class="ih-cross"></div>
+    </div>
     <div class="tip" id="tip" hidden></div>
 
     <footer class="credit">

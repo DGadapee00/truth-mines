@@ -9,7 +9,14 @@ where every theorem is proved step by step from the axioms of logic and ZFC set 
 statements and 909,530 citations. The mine shows 345 landmarks (named theorems, key definitions
 and every axiom) and folds the lemmas between them into tunnels that record how much they hide.
 
-Runs in a desktop browser. Headset (WebXR) mode is the next milestone.
+Two ways to look:
+
+- **The map**: the whole mine from outside. Select a theorem and its critical path to the axioms
+  lights up.
+- **Inside**: stand in a theorem's chamber at human scale. Its statement is on the wall, a pillar
+  for each result it rests on, tunnels up to those results and down to what rests on it, with the
+  lemmas of each tunnel marked at their own depth. "Journey here" walks you down from the axioms.
+  Desktop (W A S D and the mouse) or a VR headset (teleport, snap turn, guided tunnels).
 
 ## Run it
 
@@ -31,7 +38,7 @@ they pass:
 | `npm run test:pipeline` | Each pipeline stage on a small .mm fixture |
 | `npm test` | core/ queries, and every landmark's ancestors against the full set.mm graph; every statement typesets |
 | `npm run typecheck`, `npm run lint` | TypeScript strict; core/ imports no rendering code |
-| `npm run e2e` | Playwright, laptop and phone: load within the draw-call budget, search, trace, follow, links |
+| `npm run e2e` | Playwright: the map on laptop and phone; the Inside view (locality, budget, walking a tunnel, Journey); the headset on an emulated Quest 3 |
 
 ## Layout of the code
 
@@ -40,7 +47,9 @@ they pass:
 | `pipeline/` | Python: fetch, extract, validate, curate, collapse, depth, layout, export ([README](pipeline/README.md)) |
 | `pipeline/landmarks.yaml` | The curated landmarks and their names: the only place curation happens |
 | `pipeline/sources.lock` | Pinned sources (set.mm commit, the label font) with hashes |
-| `core/` | TypeScript graph model and queries (ancestors, descendants, critical path, search). No rendering |
+| `core/` | TypeScript graph model and queries (ancestors, descendants, critical path, search), and the schema of every data file. No rendering |
+| `pipeline/scene.py` | The Inside view's chambers and tunnels, as engine-neutral scene descriptors (data/scene.json) |
+| `app/inside/` | The Inside view: renders the descriptors for the local subgraph; desktop walking, Journey, headset |
 | `app/render/` | The mine in three.js: instanced nodes and tunnels, batched labels, MathJax |
 | `app/ui/` | Panel, search, desktop camera |
 | `content/` | Plain-language notes, shown only once reviewed ([README](content/README.md)) |

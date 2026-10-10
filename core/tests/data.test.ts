@@ -8,7 +8,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { MineGraph } from '../graph';
-import { parseGraph, parseMeta } from '../schema';
+import { parseGraph, parseMeta, parseScene } from '../schema';
 
 const root = new URL('../../', import.meta.url);
 const read = (p: string) => {
@@ -71,6 +71,13 @@ describe('built data', () => {
       // A route through real citations can never be longer than the node is deep.
       expect(g.criticalLength(n.id)).toBeLessThanOrEqual(n.depth);
     }
+  });
+
+  it('has a scene with a chamber for every landmark and a tunnel for every edge', () => {
+    const scene = parseScene(read('data/scene.json'));
+    expect(scene.chambers.map((c) => c.id).sort()).toEqual(graph.nodes.map((n) => n.id).sort());
+    const edges = graph.nodes.flatMap((n) => n.deps.map((d) => `${n.id}>${d}`)).sort();
+    expect(scene.tunnels.map((t) => t.id).sort()).toEqual(edges);
   });
 
   it('stays inside the payload budget', () => {

@@ -3,7 +3,7 @@
 With no stage, runs every stage in order. Each stage reads the previous stage's file in
 pipeline/build/, so any one can be rerun alone:
 
-  python -m pipeline              fetch, extract, validate, curate, collapse, depth, layout, export
+  python -m pipeline              fetch, extract, validate, curate, collapse, depth, layout, export, scene
   python -m pipeline layout export
   python -m pipeline show LABEL   a statement's set.mm description, for naming a landmark
 """
@@ -14,7 +14,7 @@ import re
 import sys
 import time
 
-from . import collapse, curate, depth, export, extract, fetch, layout, validate
+from . import collapse, curate, depth, export, extract, fetch, layout, scene, validate
 
 STAGES = {
     "fetch": fetch.run,
@@ -25,6 +25,7 @@ STAGES = {
     "depth": depth.run,
     "layout": layout.run,
     "export": export.run,
+    "scene": scene.run,
 }
 
 

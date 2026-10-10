@@ -15,7 +15,8 @@ export default defineConfig({
   },
   projects: [
     { name: 'laptop', use: { ...devices['Desktop Chrome'], viewport: { width: 1400, height: 860 } } },
-    { name: 'phone', use: { ...devices['Pixel 7'] } },
+    // The phone covers the map; the Inside view and the headset are desktop and XR modes.
+    { name: 'phone', use: { ...devices['Pixel 7'] }, testMatch: /mine\.spec\.ts/ },
   ],
   webServer: {
     command: 'npx vite --port 5176 --strictPort',
