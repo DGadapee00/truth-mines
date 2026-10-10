@@ -30,5 +30,11 @@ Tests: `python -m pytest -q pipeline/tests` (a small hand-written .mm file cover
   B down to A.
 - **Transitive reduction.** A tunnel is dropped when its far end is reached through other tunnels.
   Ancestor sets are unchanged; core/'s tests check this against the full graph.
-- **LaTeX.** set.mm's own `latexdef`s, with a few overrides in config.yaml where they rely on
-  LaTeX packages a web renderer lacks.
+- **LaTeX.** pipeline/latex.py parses each statement (set.mm brackets every operation and
+  application) and builds LaTeX on set.mm's own `latexdef`s: F(A) for application, (A, B) and
+  friends for intervals, fractions, powers, √, |·|, !, and hypotheses above a rule. A few
+  latexdefs are overridden in config.yaml where they rely on LaTeX packages a web renderer lacks.
+- **Display forms.** Hand-written readable statements in landmarks.yaml, exported alongside the
+  formal one with their `reviewed` flag.
+- **Tunnels are checked twice.** tests/test_tunnels.py recomputes every tunnel and its
+  hidden_steps from both ends of the full graph, independently of collapse.py.

@@ -1,12 +1,13 @@
 import * as THREE from 'three';
-import { MineGraph, displayName } from '../core/graph';
+import { MineGraph, plainName } from '../core/graph';
 import { parseGraph, parseMeta } from '../core/schema';
 import { createMine } from './render/mine';
 import { BG } from './render/palette';
 import { createStore } from './state';
 import { createCameraRig } from './ui/camera';
-import { createPanel } from './ui/panel';
+import { createPanel, fitStatement } from './ui/panel';
 import { createSearch } from './ui/search';
+import 'katex/dist/katex.min.css';
 import './style.css';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -80,7 +81,7 @@ async function main() {
     canvas.style.cursor = id ? 'pointer' : '';
     tip.hidden = !id;
     if (id) {
-      tip.textContent = displayName(graph.must(id));
+      tip.textContent = plainName(graph.must(id));
       tip.style.transform = `translate(${e.clientX + 14}px, ${e.clientY + 12}px)`;
     }
   });
@@ -141,6 +142,7 @@ async function main() {
     } else camera.setViewOffset(w, h, dx, dy, w, h);
   }
   window.addEventListener('resize', () => {
+    fitStatement(panel.querySelector('.statement'));
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);

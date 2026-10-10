@@ -8,358 +8,1114 @@
 # that description first (python -m pipeline show LABEL) and name what it actually states.
 #
 #   - label: set.mm label
-#     name: human name, plain words
+#     name: human name; inline math between $ signs is typeset (KaTeX) on the page and turned
+#           into plain text for the 3D labels
 #     subject: optional; overrides the subject that set.mm's part would give it
+#     display: optional readable form of the statement
+#       tex: LaTeX, written by hand from set.mm's statement (python -m pipeline show LABEL)
+#       reviewed: false until a person has checked it against set.mm; the app flags drafts
 
 landmarks:
-  - { label: "id", name: "Identity: φ implies φ" }
-  - { label: "syl", name: "Syllogism (chaining implications)" }
-  - { label: "mpd", name: "Modus ponens, deduction form" }
-  - { label: "con3", name: "Contraposition" }
-  - { label: "notnot", name: "Double negation introduction" }
-  - { label: "notnotr", name: "Double negation elimination" }
-  - { label: "pm2.21", name: "Ex falso: a falsehood implies anything" }
-  - { label: "exmid", name: "Law of excluded middle" }
-  - { label: "pm3.24", name: "Law of noncontradiction" }
-  - { label: "peirce", name: "Peirce's law" }
-  - { label: "pm2.18", name: "Clavius's law" }
-  - { label: "mto", name: "Modus tollens" }
-  - { label: "impexp", name: "Import–export" }
-  - { label: "ioran", name: "De Morgan's law (negated or)" }
-  - { label: "anor", name: "De Morgan's law (and as or)" }
-  - { label: "pm4.71", name: "Implication as conjunction" }
-  - { label: "orcom", name: "Disjunction is commutative" }
-  - { label: "ancom", name: "Conjunction is commutative" }
-  - { label: "df-bi", name: "Definition of the biconditional ↔" }
-  - { label: "df-an", name: "Definition of conjunction ∧" }
-  - { label: "df-or", name: "Definition of disjunction ∨" }
-  - { label: "df-ex", name: "Definition of the existential quantifier ∃" }
-  - { label: "df-sb", name: "Definition of proper substitution" }
-  - { label: "df-eu", name: "Definition of unique existence ∃!" }
-  - { label: "df-mo", name: "Definition of \"at most one\"" }
-  - { label: "df-nf", name: "Definition of \"not free\"" }
-  - { label: "sp", name: "Specialization: ∀x φ implies φ" }
-  - { label: "19.8a", name: "Existential introduction: φ implies ∃x φ" }
-  - { label: "alcom", name: "Universal quantifiers commute" }
-  - { label: "excom", name: "Existential quantifiers commute" }
-  - { label: "19.12", name: "∃∀ implies ∀∃" }
-  - { label: "equid", name: "Every set equals itself" }
-  - { label: "equcom", name: "Equality is symmetric" }
-  - { label: "equtr", name: "Equality is transitive" }
-  - { label: "df-clab", name: "Definition of class abstraction {x | φ}" }
-  - { label: "df-cleq", name: "Definition of class equality" }
-  - { label: "df-clel", name: "Definition of class membership" }
-  - { label: "df-ne", name: "Definition of ≠" }
-  - { label: "df-ral", name: "Definition of the restricted ∀" }
-  - { label: "df-rex", name: "Definition of the restricted ∃" }
-  - { label: "df-v", name: "Definition of the universal class V" }
-  - { label: "df-ss", name: "Definition of subset ⊆" }
-  - { label: "df-un", name: "Definition of union ∪" }
-  - { label: "df-in", name: "Definition of intersection ∩" }
-  - { label: "df-dif", name: "Definition of set difference" }
-  - { label: "df-nul", name: "Definition of the empty set ∅" }
-  - { label: "df-if", name: "Definition of the conditional operator" }
-  - { label: "df-pw", name: "Definition of the power class" }
-  - { label: "df-sn", name: "Definition of a singleton {A}" }
-  - { label: "df-pr", name: "Definition of an unordered pair {A, B}" }
-  - { label: "df-op", name: "Definition of an ordered pair ⟨A, B⟩" }
-  - { label: "df-uni", name: "Definition of the union of a class ∪A" }
-  - { label: "df-int", name: "Definition of the intersection of a class ∩A" }
-  - { label: "df-iun", name: "Definition of an indexed union" }
-  - { label: "df-br", name: "Definition of a binary relation A R B" }
-  - { label: "df-opab", name: "Definition of a class of ordered pairs" }
-  - { label: "df-xp", name: "Definition of the Cartesian product ×" }
-  - { label: "df-rel", name: "Definition of a relation" }
-  - { label: "df-cnv", name: "Definition of the converse of a relation" }
-  - { label: "df-co", name: "Definition of composition ∘" }
-  - { label: "df-dm", name: "Definition of domain" }
-  - { label: "df-rn", name: "Definition of range" }
-  - { label: "df-res", name: "Definition of restriction" }
-  - { label: "df-ima", name: "Definition of image" }
-  - { label: "df-fun", name: "Definition of a function" }
-  - { label: "df-fn", name: "Definition of a function on a domain" }
-  - { label: "df-f", name: "Definition of a mapping F : A ⟶ B" }
-  - { label: "df-f1", name: "Definition of a one-to-one mapping" }
-  - { label: "df-fo", name: "Definition of an onto mapping" }
-  - { label: "df-f1o", name: "Definition of a bijection" }
-  - { label: "df-fv", name: "Definition of function value F(A)" }
-  - { label: "df-ov", name: "Definition of an operation value A F B" }
-  - { label: "df-ord", name: "Definition of an ordinal class" }
-  - { label: "df-on", name: "Definition of the class of ordinals On" }
-  - { label: "df-suc", name: "Definition of the successor of a class" }
-  - { label: "df-lim", name: "Definition of a limit ordinal" }
-  - { label: "df-om", name: "Definition of ω, the finite ordinals" }
-  - { label: "df-recs", name: "Definition of transfinite recursion" }
-  - { label: "df-rdg", name: "Definition of recursive definition generator" }
-  - { label: "df-1o", name: "Definition of ordinal one" }
-  - { label: "df-oadd", name: "Definition of ordinal addition" }
-  - { label: "df-omul", name: "Definition of ordinal multiplication" }
-  - { label: "df-oexp", name: "Definition of ordinal exponentiation" }
-  - { label: "df-er", name: "Definition of an equivalence relation" }
-  - { label: "df-ec", name: "Definition of an equivalence class" }
-  - { label: "df-map", name: "Definition of set exponentiation (functions from A to B)" }
-  - { label: "df-en", name: "Definition of equinumerosity ≈" }
-  - { label: "df-dom", name: "Definition of dominance ≼" }
-  - { label: "df-sdom", name: "Definition of strict dominance ≺" }
-  - { label: "df-fin", name: "Definition of a finite set" }
-  - { label: "df-card", name: "Definition of cardinality" }
-  - { label: "df-aleph", name: "Definition of the aleph function" }
-  - { label: "df-r1", name: "Definition of the cumulative hierarchy" }
-  - { label: "df-rank", name: "Definition of rank" }
-  - { label: "ru", name: "Russell's paradox" }
-  - { label: "vex", name: "Every set variable is a set" }
-  - { label: "0ex", name: "The empty set exists" }
-  - { label: "prex", name: "An unordered pair of sets exists" }
-  - { label: "opth", name: "The ordered pair theorem" }
-  - { label: "pwex", name: "The power set of a set exists" }
-  - { label: "uniex", name: "The union of a set exists" }
-  - { label: "zfrep6", name: "Replacement, a classical form" }
-  - { label: "ordon", name: "The ordinals form an ordinal" }
-  - { label: "onprc", name: "Burali-Forti paradox: the ordinals are a proper class" }
-  - { label: "omex", name: "ω exists (axiom of infinity)" }
-  - { label: "peano1", name: "Peano postulate: zero is a natural number" }
-  - { label: "peano2", name: "Peano postulate: successors are natural numbers" }
-  - { label: "peano3", name: "Peano postulate: zero is not a successor" }
-  - { label: "peano4", name: "Peano postulate: the successor is one-to-one" }
-  - { label: "peano5", name: "Peano postulate: induction" }
-  - { label: "findes", name: "Finite induction" }
-  - { label: "tfis", name: "Transfinite induction" }
-  - { label: "tfr1", name: "Transfinite recursion" }
-  - { label: "canth", name: "Cantor's theorem: no set maps onto its power set" }
-  - { label: "sbth", name: "Schröder–Bernstein theorem" }
-  - { label: "php", name: "Pigeonhole principle" }
-  - { label: "weth", name: "Well-ordering theorem" }
-  - { label: "zorn", name: "Zorn's lemma" }
-  - { label: "ttukey", name: "Teichmüller–Tukey lemma" }
-  - { label: "ac2", name: "Axiom of choice, equivalent form" }
-  - { label: "cardon", name: "Every cardinal is an ordinal" }
-  - { label: "alephon", name: "Every aleph is an ordinal" }
-  - { label: "hashpw", name: "A set with n elements has 2ⁿ subsets" }
-  - { label: "hashbc", name: "Number of combinations" }
-  - { label: "df-c", name: "Definition of the complex numbers ℂ" }
-  - { label: "df-r", name: "Definition of the real numbers ℝ" }
-  - { label: "df-pnf", name: "Definition of +∞" }
-  - { label: "df-xr", name: "Definition of the extended reals" }
-  - { label: "df-lt", name: "Definition of < on the reals" }
-  - { label: "df-le", name: "Definition of ≤" }
-  - { label: "df-sub", name: "Definition of subtraction" }
-  - { label: "df-neg", name: "Definition of negation" }
-  - { label: "df-div", name: "Definition of division" }
-  - { label: "df-nn", name: "Definition of the positive integers ℕ" }
-  - { label: "df-n0", name: "Definition of the nonnegative integers ℕ₀" }
-  - { label: "df-z", name: "Definition of the integers ℤ" }
-  - { label: "df-q", name: "Definition of the rationals ℚ" }
-  - { label: "df-rp", name: "Definition of the positive reals ℝ⁺" }
-  - { label: "df-ioo", name: "Definition of an open interval" }
-  - { label: "df-icc", name: "Definition of a closed interval" }
-  - { label: "df-fz", name: "Definition of a finite set of sequential integers" }
-  - { label: "df-fl", name: "Definition of the floor function" }
-  - { label: "df-mod", name: "Definition of the modulo operation" }
-  - { label: "df-seq", name: "Definition of a recursively defined sequence" }
-  - { label: "df-exp", name: "Definition of exponentiation to integer powers" }
-  - { label: "df-fac", name: "Definition of the factorial" }
-  - { label: "df-bc", name: "Definition of the binomial coefficient" }
-  - { label: "df-hash", name: "Definition of the size of a finite set" }
-  - { label: "df-cj", name: "Definition of the complex conjugate" }
-  - { label: "df-sqrt", name: "Definition of the square root" }
-  - { label: "df-abs", name: "Definition of absolute value" }
-  - { label: "df-clim", name: "Definition of a limit of a sequence" }
-  - { label: "df-sum", name: "Definition of a sum Σ" }
-  - { label: "df-prod", name: "Definition of a product Π" }
-  - { label: "df-ef", name: "Definition of the exponential function" }
-  - { label: "df-e", name: "Definition of Euler's number e" }
-  - { label: "df-sin", name: "Definition of sine" }
-  - { label: "df-cos", name: "Definition of cosine" }
-  - { label: "df-pi", name: "Definition of π" }
-  - { label: "df-dvds", name: "Definition of divisibility" }
-  - { label: "df-gcd", name: "Definition of the greatest common divisor" }
-  - { label: "df-prm", name: "Definition of a prime number" }
-  - { label: "df-phi", name: "Definition of Euler's totient function" }
-  - { label: "df-log", name: "Definition of the natural logarithm" }
-  - { label: "df-cxp", name: "Definition of complex exponentiation" }
-  - { label: "df-dv", name: "Definition of the derivative" }
-  - { label: "df-itg", name: "Definition of the Lebesgue integral" }
-  - { label: "sup3", name: "Completeness: a bounded set of reals has a supremum" }
-  - { label: "arch", name: "Archimedean property of the reals" }
-  - { label: "nnind", name: "Principle of mathematical induction" }
-  - { label: "qbtwnre", name: "Between any two reals lies a rational" }
-  - { label: "sqrt2irr", name: "The square root of 2 is irrational" }
-  - { label: "ruc", name: "The reals are uncountable" }
-  - { label: "qnnen", name: "The rationals are countable" }
-  - { label: "rpnnen", name: "The reals are equinumerous with the power set of ω" }
-  - { label: "binom", name: "The binomial theorem" }
-  - { label: "geoser", name: "Sum of a finite geometric series" }
-  - { label: "arisum", name: "Sum of an arithmetic series" }
-  - { label: "efipi", name: "Euler's identity: e^{iπ} = −1" }
-  - { label: "eirr", name: "e is irrational" }
-  - { label: "pigt2lt4", name: "π lies between 2 and 4" }
-  - { label: "abstri", name: "The triangle inequality" }
-  - { label: "amgm", name: "Inequality of arithmetic and geometric means" }
-  - { label: "csbren", name: "Cauchy–Schwarz inequality in ℝⁿ" }
-  - { label: "demoivre", name: "De Moivre's formula" }
-  - { label: "infpn", name: "There are infinitely many primes" }
-  - { label: "1arith", name: "Fundamental theorem of arithmetic" }
-  - { label: "euclemma", name: "Euclid's lemma" }
-  - { label: "bezout", name: "Bézout's identity" }
-  - { label: "eucalg", name: "The Euclidean algorithm" }
-  - { label: "eulerth", name: "Euler's theorem" }
-  - { label: "fermltl", name: "Fermat's little theorem" }
-  - { label: "wilth", name: "Wilson's theorem" }
-  - { label: "crth", name: "Chinese remainder theorem" }
-  - { label: "pythagtrip", name: "Pythagorean triples" }
-  - { label: "lgsquad", name: "Law of quadratic reciprocity" }
-  - { label: "2sq", name: "Primes of the form 4k+1 are sums of two squares" }
-  - { label: "4sq", name: "Lagrange's four-square theorem" }
-  - { label: "perfect", name: "Euclid–Euler theorem on perfect numbers" }
-  - { label: "bpos", name: "Bertrand's postulate" }
-  - { label: "dirith", name: "Dirichlet's theorem on primes in progressions" }
-  - { label: "pnt", name: "Prime number theorem" }
-  - { label: "prmrec", name: "The sum of prime reciprocals diverges" }
-  - { label: "basel", name: "The Basel problem: Σ 1/n² = π²/6" }
-  - { label: "3dvds", name: "Divisibility by 3" }
-  - { label: "ramsey", name: "Ramsey's theorem" }
-  - { label: "vdw", name: "Van der Waerden's theorem" }
-  - { label: "df-mnd", name: "Definition of a monoid" }
-  - { label: "df-grp", name: "Definition of a group" }
-  - { label: "df-abl", name: "Definition of an abelian group" }
-  - { label: "df-ring", name: "Definition of a ring" }
-  - { label: "df-cring", name: "Definition of a commutative ring" }
-  - { label: "df-field", name: "Definition of a field" }
-  - { label: "df-lmod", name: "Definition of a module" }
-  - { label: "df-lvec", name: "Definition of a vector space" }
-  - { label: "lagsubg", name: "Lagrange's theorem on subgroups" }
-  - { label: "sylow1", name: "First Sylow theorem" }
-  - { label: "sylow2", name: "Second Sylow theorem" }
-  - { label: "sylow3", name: "Third Sylow theorem" }
-  - { label: "cayley", name: "Cayley's theorem" }
-  - { label: "ablfac", name: "Fundamental theorem of finite abelian groups" }
-  - { label: "lbsex", name: "Every vector space has a basis" }
-  - { label: "df-mat", name: "Definition of matrices" }
-  - { label: "df-mdet", name: "Definition of the determinant" }
-  - { label: "mdetmul", name: "The determinant of a product" }
-  - { label: "cramer", name: "Cramer's rule" }
-  - { label: "cayleyhamilton", name: "Cayley–Hamilton theorem" }
-  - { label: "df-top", name: "Definition of a topology" }
-  - { label: "df-cld", name: "Definition of closed sets" }
-  - { label: "df-cn", name: "Definition of a continuous function" }
-  - { label: "df-cmp", name: "Definition of a compact space" }
-  - { label: "df-haus", name: "Definition of a Hausdorff space" }
-  - { label: "df-conn", name: "Definition of a connected space" }
-  - { label: "df-met", name: "Definition of a metric" }
-  - { label: "icccmp", name: "A closed interval is compact (Heine–Borel)" }
-  - { label: "bwth", name: "Bolzano–Weierstrass theorem" }
-  - { label: "ptcmp", name: "Tychonoff's theorem" }
-  - { label: "bcth", name: "Baire category theorem" }
-  - { label: "ivth", name: "Intermediate value theorem (increasing case)" }
-  - { label: "evth", name: "Extreme value theorem" }
-  - { label: "rolle", name: "Rolle's theorem" }
-  - { label: "mvth", name: "Mean value theorem" }
-  - { label: "dvmul", name: "The product rule" }
-  - { label: "dvco", name: "The chain rule" }
-  - { label: "lhop", name: "L'Hôpital's rule" }
-  - { label: "ftc1", name: "Fundamental theorem of calculus, part 1" }
-  - { label: "ftc2", name: "Fundamental theorem of calculus, part 2" }
-  - { label: "itgsubst", name: "Integration by substitution" }
-  - { label: "taylth", name: "Taylor's theorem" }
-  - { label: "fta", name: "Fundamental theorem of algebra" }
-  - { label: "abelth", name: "Abel's theorem on power series" }
-  - { label: "leibpi", name: "Leibniz formula for π" }
-  - { label: "trirecip", name: "Sum of reciprocals of triangular numbers" }
-  - { label: "mcubic", name: "Solution of the monic cubic" }
-  - { label: "quart", name: "Solution of the quartic" }
-  - { label: "facth", name: "The factor theorem" }
-  - { label: "lawcos", name: "Law of cosines" }
-  - { label: "heron", name: "Heron's formula" }
-  - { label: "ptolemy", name: "Ptolemy's theorem" }
-  - { label: "chordthm", name: "Intersecting chords theorem" }
-  - { label: "ang180", name: "Angle sum of a triangle is ±π" }
-  - { label: "isosctr", name: "Isosceles triangle theorem" }
-  - { label: "incexc", name: "Inclusion–exclusion principle" }
-  - { label: "birthday", name: "The birthday problem" }
-  - { label: "df-cat", name: "Definition of a category" }
-  - { label: "df-func", name: "Definition of a functor" }
-  - { label: "yoneda", name: "Yoneda lemma" }
-  - { label: "df-poset", name: "Definition of a partially ordered set" }
-  - { label: "df-lat", name: "Definition of a lattice" }
-  - { label: "knatar", name: "Knaster–Tarski fixed-point theorem" }
-  - { label: "df-no", name: "Definition of the surreal numbers" }
-  - { label: "df-trkg", name: "Definition of a Tarski geometry" }
-  - { label: "df-uhgr", name: "Definition of a hypergraph" }
-  - { label: "df-eupth", name: "Definition of an Eulerian path" }
-  - { label: "konigsberg", name: "The Königsberg bridge problem" }
-  - { label: "friendship", name: "The friendship theorem" }
+  - label: 'id'
+    name: 'Identity: $\varphi$ implies $\varphi$'
+    display:
+      tex: '\varphi \to \varphi'
+      reviewed: false
+  - label: 'syl'
+    name: 'Syllogism (chaining implications)'
+    display:
+      tex: '\varphi \to \psi,\ \ \psi \to \chi \;\vdash\; \varphi \to \chi'
+      reviewed: false
+  - label: 'mpd'
+    name: 'Modus ponens, deduction form'
+    display:
+      tex: '\varphi \to \psi,\ \ \varphi \to (\psi \to \chi) \;\vdash\; \varphi \to \chi'
+      reviewed: false
+  - label: 'con3'
+    name: 'Contraposition'
+    display:
+      tex: '(\varphi \to \psi) \to (\neg\psi \to \neg\varphi)'
+      reviewed: false
+  - label: 'notnot'
+    name: 'Double negation introduction'
+    display:
+      tex: '\varphi \to \neg\neg\varphi'
+      reviewed: false
+  - label: 'notnotr'
+    name: 'Double negation elimination'
+    display:
+      tex: '\neg\neg\varphi \to \varphi'
+      reviewed: false
+  - label: 'pm2.21'
+    name: 'Ex falso: a falsehood implies anything'
+    display:
+      tex: '\neg\varphi \to (\varphi \to \psi)'
+      reviewed: false
+  - label: 'exmid'
+    name: 'Law of excluded middle'
+    display:
+      tex: '\varphi \lor \neg\varphi'
+      reviewed: false
+  - label: 'pm3.24'
+    name: 'Law of noncontradiction'
+    display:
+      tex: '\neg(\varphi \land \neg\varphi)'
+      reviewed: false
+  - label: 'peirce'
+    name: 'Peirce''s law'
+    display:
+      tex: '((\varphi \to \psi) \to \varphi) \to \varphi'
+      reviewed: false
+  - label: 'pm2.18'
+    name: 'Clavius''s law'
+    display:
+      tex: '(\neg\varphi \to \varphi) \to \varphi'
+      reviewed: false
+  - label: 'mto'
+    name: 'Modus tollens'
+    display:
+      tex: '\neg\psi,\ \ \varphi \to \psi \;\vdash\; \neg\varphi'
+      reviewed: false
+  - label: 'impexp'
+    name: 'Import–export'
+    display:
+      tex: '((\varphi \land \psi) \to \chi) \leftrightarrow (\varphi \to (\psi \to \chi))'
+      reviewed: false
+  - label: 'ioran'
+    name: 'De Morgan''s law (negated or)'
+    display:
+      tex: '\neg(\varphi \lor \psi) \leftrightarrow (\neg\varphi \land \neg\psi)'
+      reviewed: false
+  - label: 'anor'
+    name: 'De Morgan''s law (and as or)'
+    display:
+      tex: '(\varphi \land \psi) \leftrightarrow \neg(\neg\varphi \lor \neg\psi)'
+      reviewed: false
+  - label: 'pm4.71'
+    name: 'Implication as conjunction'
+    display:
+      tex: '(\varphi \to \psi) \leftrightarrow (\varphi \leftrightarrow (\varphi \land \psi))'
+      reviewed: false
+  - label: 'orcom'
+    name: 'Disjunction is commutative'
+    display:
+      tex: '(\varphi \lor \psi) \leftrightarrow (\psi \lor \varphi)'
+      reviewed: false
+  - label: 'ancom'
+    name: 'Conjunction is commutative'
+    display:
+      tex: '(\varphi \land \psi) \leftrightarrow (\psi \land \varphi)'
+      reviewed: false
+  - label: 'df-bi'
+    name: 'Definition of the biconditional ↔'
+  - label: 'df-an'
+    name: 'Definition of conjunction ∧'
+  - label: 'df-or'
+    name: 'Definition of disjunction ∨'
+  - label: 'df-ex'
+    name: 'Definition of the existential quantifier ∃'
+  - label: 'df-sb'
+    name: 'Definition of proper substitution'
+  - label: 'df-eu'
+    name: 'Definition of unique existence ∃!'
+  - label: 'df-mo'
+    name: 'Definition of "at most one"'
+  - label: 'df-nf'
+    name: 'Definition of "not free"'
+  - label: 'sp'
+    name: 'Specialization: $\forall x\,\varphi$ implies $\varphi$'
+    display:
+      tex: '\forall x\, \varphi \to \varphi'
+      reviewed: false
+  - label: '19.8a'
+    name: 'Existential introduction: $\varphi$ implies $\exists x\,\varphi$'
+    display:
+      tex: '\varphi \to \exists x\, \varphi'
+      reviewed: false
+  - label: 'alcom'
+    name: 'Universal quantifiers commute'
+    display:
+      tex: '\forall x\, \forall y\, \varphi \leftrightarrow \forall y\, \forall x\, \varphi'
+      reviewed: false
+  - label: 'excom'
+    name: 'Existential quantifiers commute'
+    display:
+      tex: '\exists x\, \exists y\, \varphi \leftrightarrow \exists y\, \exists x\, \varphi'
+      reviewed: false
+  - label: '19.12'
+    name: '$\exists\forall$ implies $\forall\exists$'
+    display:
+      tex: '\exists x\, \forall y\, \varphi \to \forall y\, \exists x\, \varphi'
+      reviewed: false
+  - label: 'equid'
+    name: 'Every set equals itself'
+    display:
+      tex: 'x = x'
+      reviewed: false
+  - label: 'equcom'
+    name: 'Equality is symmetric'
+    display:
+      tex: 'x = y \leftrightarrow y = x'
+      reviewed: false
+  - label: 'equtr'
+    name: 'Equality is transitive'
+    display:
+      tex: 'x = y \to (y = z \to x = z)'
+      reviewed: false
+  - label: 'df-clab'
+    name: 'Definition of class abstraction {x | φ}'
+  - label: 'df-cleq'
+    name: 'Definition of class equality'
+  - label: 'df-clel'
+    name: 'Definition of class membership'
+  - label: 'df-ne'
+    name: 'Definition of ≠'
+  - label: 'df-ral'
+    name: 'Definition of the restricted ∀'
+  - label: 'df-rex'
+    name: 'Definition of the restricted ∃'
+  - label: 'df-v'
+    name: 'Definition of the universal class V'
+  - label: 'df-ss'
+    name: 'Definition of subset ⊆'
+  - label: 'df-un'
+    name: 'Definition of union ∪'
+  - label: 'df-in'
+    name: 'Definition of intersection ∩'
+  - label: 'df-dif'
+    name: 'Definition of set difference'
+  - label: 'df-nul'
+    name: 'Definition of the empty set ∅'
+  - label: 'df-if'
+    name: 'Definition of the conditional operator'
+  - label: 'df-pw'
+    name: 'Definition of the power class'
+  - label: 'df-sn'
+    name: 'Definition of a singleton {A}'
+  - label: 'df-pr'
+    name: 'Definition of an unordered pair {A, B}'
+  - label: 'df-op'
+    name: 'Definition of an ordered pair ⟨A, B⟩'
+  - label: 'df-uni'
+    name: 'Definition of the union of a class ∪A'
+  - label: 'df-int'
+    name: 'Definition of the intersection of a class ∩A'
+  - label: 'df-iun'
+    name: 'Definition of an indexed union'
+  - label: 'df-br'
+    name: 'Definition of a binary relation A R B'
+  - label: 'df-opab'
+    name: 'Definition of a class of ordered pairs'
+  - label: 'df-xp'
+    name: 'Definition of the Cartesian product ×'
+  - label: 'df-rel'
+    name: 'Definition of a relation'
+  - label: 'df-cnv'
+    name: 'Definition of the converse of a relation'
+  - label: 'df-co'
+    name: 'Definition of composition ∘'
+  - label: 'df-dm'
+    name: 'Definition of domain'
+  - label: 'df-rn'
+    name: 'Definition of range'
+  - label: 'df-res'
+    name: 'Definition of restriction'
+  - label: 'df-ima'
+    name: 'Definition of image'
+  - label: 'df-fun'
+    name: 'Definition of a function'
+  - label: 'df-fn'
+    name: 'Definition of a function on a domain'
+  - label: 'df-f'
+    name: 'Definition of a mapping F : A ⟶ B'
+  - label: 'df-f1'
+    name: 'Definition of a one-to-one mapping'
+  - label: 'df-fo'
+    name: 'Definition of an onto mapping'
+  - label: 'df-f1o'
+    name: 'Definition of a bijection'
+  - label: 'df-fv'
+    name: 'Definition of function value F(A)'
+  - label: 'df-ov'
+    name: 'Definition of an operation value A F B'
+  - label: 'df-ord'
+    name: 'Definition of an ordinal class'
+  - label: 'df-on'
+    name: 'Definition of the class of ordinals On'
+  - label: 'df-suc'
+    name: 'Definition of the successor of a class'
+  - label: 'df-lim'
+    name: 'Definition of a limit ordinal'
+  - label: 'df-om'
+    name: 'Definition of ω, the finite ordinals'
+  - label: 'df-recs'
+    name: 'Definition of transfinite recursion'
+  - label: 'df-rdg'
+    name: 'Definition of recursive definition generator'
+  - label: 'df-1o'
+    name: 'Definition of ordinal one'
+  - label: 'df-oadd'
+    name: 'Definition of ordinal addition'
+  - label: 'df-omul'
+    name: 'Definition of ordinal multiplication'
+  - label: 'df-oexp'
+    name: 'Definition of ordinal exponentiation'
+  - label: 'df-er'
+    name: 'Definition of an equivalence relation'
+  - label: 'df-ec'
+    name: 'Definition of an equivalence class'
+  - label: 'df-map'
+    name: 'Definition of set exponentiation (functions from A to B)'
+  - label: 'df-en'
+    name: 'Definition of equinumerosity ≈'
+  - label: 'df-dom'
+    name: 'Definition of dominance ≼'
+  - label: 'df-sdom'
+    name: 'Definition of strict dominance ≺'
+  - label: 'df-fin'
+    name: 'Definition of a finite set'
+  - label: 'df-card'
+    name: 'Definition of cardinality'
+  - label: 'df-aleph'
+    name: 'Definition of the aleph function'
+  - label: 'df-r1'
+    name: 'Definition of the cumulative hierarchy'
+  - label: 'df-rank'
+    name: 'Definition of rank'
+  - label: 'ru'
+    name: 'Russell''s paradox'
+    display:
+      tex: '\{x \mid x \notin x\} \notin V'
+      reviewed: false
+  - label: 'vex'
+    name: 'Every set variable is a set'
+    display:
+      tex: 'x \in V'
+      reviewed: false
+  - label: '0ex'
+    name: 'The empty set exists'
+    display:
+      tex: '\emptyset \in V'
+      reviewed: false
+  - label: 'prex'
+    name: 'An unordered pair of sets exists'
+    display:
+      tex: '\{A, B\} \in V'
+      reviewed: false
+  - label: 'opth'
+    name: 'The ordered pair theorem'
+    display:
+      tex: 'A, B \in V \;\vdash\; \langle A, B \rangle = \langle C, D \rangle \leftrightarrow (A = C \land B = D)'
+      reviewed: false
+  - label: 'pwex'
+    name: 'The power set of a set exists'
+    display:
+      tex: 'A \in V \;\vdash\; \mathcal{P}(A) \in V'
+      reviewed: false
+  - label: 'uniex'
+    name: 'The union of a set exists'
+    display:
+      tex: 'A \in V \;\vdash\; \textstyle\bigcup A \in V'
+      reviewed: false
+  - label: 'zfrep6'
+    name: 'Replacement, a classical form'
+    display:
+      tex: '\forall x \in z\; \exists! y\, \varphi \to \exists w\, \forall x \in z\; \exists y \in w\; \varphi'
+      reviewed: false
+  - label: 'ordon'
+    name: 'The ordinals form an ordinal'
+    display:
+      tex: '\mathrm{On} \text{ is an ordinal}'
+      reviewed: false
+  - label: 'onprc'
+    name: 'Burali-Forti paradox: the ordinals are a proper class'
+    display:
+      tex: '\mathrm{On} \notin V'
+      reviewed: false
+  - label: 'omex'
+    name: '$\omega$ exists (axiom of infinity)'
+    display:
+      tex: '\omega \in V'
+      reviewed: false
+  - label: 'peano1'
+    name: 'Peano postulate: zero is a natural number'
+    display:
+      tex: '\emptyset \in \omega'
+      reviewed: false
+  - label: 'peano2'
+    name: 'Peano postulate: successors are natural numbers'
+    display:
+      tex: 'A \in \omega \to \operatorname{suc} A \in \omega'
+      reviewed: false
+  - label: 'peano3'
+    name: 'Peano postulate: zero is not a successor'
+    display:
+      tex: 'A \in \omega \to \operatorname{suc} A \neq \emptyset'
+      reviewed: false
+  - label: 'peano4'
+    name: 'Peano postulate: the successor is one-to-one'
+    display:
+      tex: 'A, B \in \omega \to (\operatorname{suc} A = \operatorname{suc} B \leftrightarrow A = B)'
+      reviewed: false
+  - label: 'peano5'
+    name: 'Peano postulate: induction'
+    display:
+      tex: '\bigl(\emptyset \in A \land \forall x \in \omega\,(x \in A \to \operatorname{suc} x \in A)\bigr) \to \omega \subseteq A'
+      reviewed: false
+  - label: 'findes'
+    name: 'Finite induction'
+    display:
+      tex: '\varphi(\emptyset),\ \ x \in \omega \to (\varphi(x) \to \varphi(\operatorname{suc} x)) \;\vdash\; x \in \omega \to \varphi(x)'
+      reviewed: false
+  - label: 'tfis'
+    name: 'Transfinite induction'
+    display:
+      tex: 'x \in \mathrm{On} \to \bigl(\forall y \in x\; \varphi(y) \to \varphi(x)\bigr) \;\vdash\; x \in \mathrm{On} \to \varphi(x)'
+      reviewed: false
+  - label: 'tfr1'
+    name: 'Transfinite recursion'
+    display:
+      tex: 'F = \operatorname{recs}(G) \;\vdash\; F \text{ is a function with domain } \mathrm{On}'
+      reviewed: false
+  - label: 'canth'
+    name: 'Cantor''s theorem: no set maps onto its power set'
+    display:
+      tex: 'A \in V \;\vdash\; \text{no } F \text{ maps } A \text{ onto } \mathcal{P}(A)'
+      reviewed: false
+  - label: 'sbth'
+    name: 'Schröder–Bernstein theorem'
+    display:
+      tex: '(A \preccurlyeq B \land B \preccurlyeq A) \to A \approx B'
+      reviewed: false
+  - label: 'php'
+    name: 'Pigeonhole principle'
+    display:
+      tex: '(A \in \omega \land B \subsetneq A) \to A \not\approx B'
+      reviewed: false
+  - label: 'weth'
+    name: 'Well-ordering theorem'
+    display:
+      tex: 'A \in V \to \exists x\; (x \text{ well-orders } A)'
+      reviewed: false
+  - label: 'zorn'
+    name: 'Zorn''s lemma'
+    display:
+      tex: 'A \in V \;\vdash\; \forall z \bigl((z \subseteq A \land \subsetneq \text{ totally orders } z) \to \textstyle\bigcup z \in A\bigr) \to \exists x \in A\; \forall y \in A\; \neg(x \subsetneq y)'
+      reviewed: false
+  - label: 'ttukey'
+    name: 'Teichmüller–Tukey lemma'
+    display:
+      tex: 'A \in V \;\vdash\; \bigl(A \neq \emptyset \land \forall x\,(x \in A \leftrightarrow \mathcal{P}(x) \cap \mathrm{Fin} \subseteq A)\bigr) \to \exists x \in A\; \forall y \in A\; \neg(x \subsetneq y)'
+      reviewed: false
+  - label: 'ac2'
+    name: 'Axiom of choice, equivalent form'
+    display:
+      tex: '\exists y\; \forall z \in x\; \forall w \in z\; \exists! v \in z\; \exists u \in y\; (z \in u \land v \in u)'
+      reviewed: false
+  - label: 'cardon'
+    name: 'Every cardinal is an ordinal'
+    display:
+      tex: '\operatorname{card}(A) \in \mathrm{On}'
+      reviewed: false
+  - label: 'alephon'
+    name: 'Every aleph is an ordinal'
+    display:
+      tex: '\aleph(A) \in \mathrm{On}'
+      reviewed: false
+  - label: 'hashpw'
+    name: 'A set with $n$ elements has $2^n$ subsets'
+    display:
+      tex: 'A \text{ finite} \to |\mathcal{P}(A)| = 2^{|A|}'
+      reviewed: false
+  - label: 'hashbc'
+    name: 'Number of combinations'
+    display:
+      tex: '(A \text{ finite} \land K \in \mathbb{Z}) \to \binom{|A|}{K} = \bigl|\{x \subseteq A : |x| = K\}\bigr|'
+      reviewed: false
+  - label: 'df-c'
+    name: 'Definition of the complex numbers ℂ'
+  - label: 'df-r'
+    name: 'Definition of the real numbers ℝ'
+  - label: 'df-pnf'
+    name: 'Definition of +∞'
+  - label: 'df-xr'
+    name: 'Definition of the extended reals'
+  - label: 'df-lt'
+    name: 'Definition of < on the reals'
+  - label: 'df-le'
+    name: 'Definition of ≤'
+  - label: 'df-sub'
+    name: 'Definition of subtraction'
+  - label: 'df-neg'
+    name: 'Definition of negation'
+  - label: 'df-div'
+    name: 'Definition of division'
+  - label: 'df-nn'
+    name: 'Definition of the positive integers ℕ'
+  - label: 'df-n0'
+    name: 'Definition of the nonnegative integers ℕ₀'
+  - label: 'df-z'
+    name: 'Definition of the integers ℤ'
+  - label: 'df-q'
+    name: 'Definition of the rationals ℚ'
+  - label: 'df-rp'
+    name: 'Definition of the positive reals ℝ⁺'
+  - label: 'df-ioo'
+    name: 'Definition of an open interval'
+  - label: 'df-icc'
+    name: 'Definition of a closed interval'
+  - label: 'df-fz'
+    name: 'Definition of a finite set of sequential integers'
+  - label: 'df-fl'
+    name: 'Definition of the floor function'
+  - label: 'df-mod'
+    name: 'Definition of the modulo operation'
+  - label: 'df-seq'
+    name: 'Definition of a recursively defined sequence'
+  - label: 'df-exp'
+    name: 'Definition of exponentiation to integer powers'
+  - label: 'df-fac'
+    name: 'Definition of the factorial'
+  - label: 'df-bc'
+    name: 'Definition of the binomial coefficient'
+  - label: 'df-hash'
+    name: 'Definition of the size of a finite set'
+  - label: 'df-cj'
+    name: 'Definition of the complex conjugate'
+  - label: 'df-sqrt'
+    name: 'Definition of the square root'
+  - label: 'df-abs'
+    name: 'Definition of absolute value'
+  - label: 'df-clim'
+    name: 'Definition of a limit of a sequence'
+  - label: 'df-sum'
+    name: 'Definition of a sum Σ'
+  - label: 'df-prod'
+    name: 'Definition of a product Π'
+  - label: 'df-ef'
+    name: 'Definition of the exponential function'
+  - label: 'df-e'
+    name: 'Definition of Euler''s number e'
+  - label: 'df-sin'
+    name: 'Definition of sine'
+  - label: 'df-cos'
+    name: 'Definition of cosine'
+  - label: 'df-pi'
+    name: 'Definition of π'
+  - label: 'df-dvds'
+    name: 'Definition of divisibility'
+  - label: 'df-gcd'
+    name: 'Definition of the greatest common divisor'
+  - label: 'df-prm'
+    name: 'Definition of a prime number'
+  - label: 'df-phi'
+    name: 'Definition of Euler''s totient function'
+  - label: 'df-log'
+    name: 'Definition of the natural logarithm'
+  - label: 'df-cxp'
+    name: 'Definition of complex exponentiation'
+  - label: 'df-dv'
+    name: 'Definition of the derivative'
+  - label: 'df-itg'
+    name: 'Definition of the Lebesgue integral'
+  - label: 'sup3'
+    name: 'Completeness: a bounded set of reals has a supremum'
+    display:
+      tex: '\bigl(A \subseteq \mathbb{R},\ A \neq \emptyset,\ A \text{ bounded above}\bigr) \to \exists x \in \mathbb{R}\,\bigl(\forall y \in A\; y \le x \;\land\; \forall y \in \mathbb{R}\,(y < x \to \exists z \in A\; y < z)\bigr)'
+      reviewed: false
+  - label: 'arch'
+    name: 'Archimedean property of the reals'
+    display:
+      tex: 'A \in \mathbb{R} \to \exists n \in \mathbb{N}\; A < n'
+      reviewed: false
+  - label: 'nnind'
+    name: 'Principle of mathematical induction'
+    display:
+      tex: '\varphi(1),\ \ \forall y \in \mathbb{N}\,(\varphi(y) \to \varphi(y+1)) \;\vdash\; A \in \mathbb{N} \to \varphi(A)'
+      reviewed: false
+  - label: 'qbtwnre'
+    name: 'Between any two reals lies a rational'
+    display:
+      tex: '(A, B \in \mathbb{R} \land A < B) \to \exists x \in \mathbb{Q}\; A < x < B'
+      reviewed: false
+  - label: 'sqrt2irr'
+    name: 'The square root of 2 is irrational'
+    display:
+      tex: '\sqrt{2} \notin \mathbb{Q}'
+      reviewed: false
+  - label: 'ruc'
+    name: 'The reals are uncountable'
+    display:
+      tex: '\mathbb{N} \prec \mathbb{R}'
+      reviewed: false
+  - label: 'qnnen'
+    name: 'The rationals are countable'
+    display:
+      tex: '\mathbb{Q} \approx \mathbb{N}'
+      reviewed: false
+  - label: 'rpnnen'
+    name: 'The reals have the cardinality of the power set of $\mathbb{N}$'
+    display:
+      tex: '\mathbb{R} \approx \mathcal{P}(\mathbb{N})'
+      reviewed: false
+  - label: 'binom'
+    name: 'The binomial theorem'
+    display:
+      tex: '(A + B)^N = \sum_{k=0}^{N} \binom{N}{k} A^{N-k} B^{k}'
+      reviewed: false
+  - label: 'geoser'
+    name: 'Sum of a finite geometric series'
+    display:
+      tex: 'A \neq 1 \to \sum_{k=0}^{N-1} A^k = \frac{1 - A^N}{1 - A}'
+      reviewed: false
+  - label: 'arisum'
+    name: 'Sum of an arithmetic series'
+    display:
+      tex: '\sum_{k=1}^{N} k = \frac{N^2 + N}{2}'
+      reviewed: false
+  - label: 'efipi'
+    name: 'Euler''s identity: $e^{i\pi} = -1$'
+    display:
+      tex: 'e^{i\pi} = -1'
+      reviewed: false
+  - label: 'eirr'
+    name: '$e$ is irrational'
+    display:
+      tex: 'e \notin \mathbb{Q}'
+      reviewed: false
+  - label: 'pigt2lt4'
+    name: '$\pi$ lies between 2 and 4'
+    display:
+      tex: '2 < \pi < 4'
+      reviewed: false
+  - label: 'abstri'
+    name: 'The triangle inequality'
+    display:
+      tex: '|A + B| \le |A| + |B|'
+      reviewed: false
+  - label: 'amgm'
+    name: 'Inequality of arithmetic and geometric means'
+    display:
+      tex: '\Bigl(\prod_{a \in A} F(a)\Bigr)^{1/|A|} \le \frac{1}{|A|} \sum_{a \in A} F(a) \qquad (A \text{ finite, nonempty},\ F \ge 0)'
+      reviewed: false
+  - label: 'csbren'
+    name: 'Cauchy–Schwarz inequality in $\mathbb{R}^n$'
+    display:
+      tex: '\Bigl(\sum_{k \in A} B_k C_k\Bigr)^2 \le \sum_{k \in A} B_k^2 \cdot \sum_{k \in A} C_k^2'
+      reviewed: false
+  - label: 'demoivre'
+    name: 'De Moivre''s formula'
+    display:
+      tex: '(\cos A + i \sin A)^N = \cos(NA) + i \sin(NA) \qquad (N \in \mathbb{Z})'
+      reviewed: false
+  - label: 'infpn'
+    name: 'There are infinitely many primes'
+    display:
+      tex: 'N \in \mathbb{N} \to \exists j\; (j > N \land j \text{ is prime})'
+      reviewed: false
+  - label: '1arith'
+    name: 'Fundamental theorem of arithmetic'
+    display:
+      tex: 'n \mapsto \bigl(p \mapsto v_p(n)\bigr) \text{ is a bijection from } \mathbb{N} \text{ to the finitely supported } e : \text{Primes} \to \mathbb{N}_0'
+      reviewed: false
+  - label: 'euclemma'
+    name: 'Euclid''s lemma'
+    display:
+      tex: 'p \text{ prime} \to \bigl(p \mid MN \leftrightarrow (p \mid M \lor p \mid N)\bigr)'
+      reviewed: false
+  - label: 'bezout'
+    name: 'Bézout''s identity'
+    display:
+      tex: 'A, B \in \mathbb{Z} \to \exists x, y \in \mathbb{Z}\; \gcd(A, B) = Ax + By'
+      reviewed: false
+  - label: 'eucalg'
+    name: 'The Euclidean algorithm'
+    display:
+      tex: '\text{iterating } (x, y) \mapsto (y,\ x \bmod y) \text{ from } (M, N),\ N \text{ times, ends at } \gcd(M, N)'
+      reviewed: false
+  - label: 'eulerth'
+    name: 'Euler''s theorem'
+    display:
+      tex: '\gcd(A, N) = 1 \to A^{\varphi(N)} \equiv 1 \pmod{N}'
+      reviewed: false
+  - label: 'fermltl'
+    name: 'Fermat''s little theorem'
+    display:
+      tex: 'p \text{ prime} \to A^p \equiv A \pmod{p}'
+      reviewed: false
+  - label: 'wilth'
+    name: 'Wilson''s theorem'
+    display:
+      tex: 'N \text{ prime} \leftrightarrow \bigl(N \ge 2 \land N \mid (N-1)! + 1\bigr)'
+      reviewed: false
+  - label: 'crth'
+    name: 'Chinese remainder theorem'
+    display:
+      tex: '\gcd(M, N) = 1 \to x \mapsto (x \bmod M,\ x \bmod N) \text{ is a bijection } \{0, \ldots, MN-1\} \to \{0, \ldots, M-1\} \times \{0, \ldots, N-1\}'
+      reviewed: false
+  - label: 'pythagtrip'
+    name: 'Pythagorean triples'
+    display:
+      tex: 'A^2 + B^2 = C^2 \leftrightarrow \exists n, m, k \in \mathbb{N}\; \bigl(\{A, B\} = \{k(m^2 - n^2),\ 2kmn\} \land C = k(m^2 + n^2)\bigr)'
+      reviewed: false
+  - label: 'lgsquad'
+    name: 'Law of quadratic reciprocity'
+    display:
+      tex: '\Bigl(\frac{P}{Q}\Bigr)\Bigl(\frac{Q}{P}\Bigr) = (-1)^{\frac{P-1}{2} \cdot \frac{Q-1}{2}} \qquad (P \neq Q \text{ odd primes})'
+      reviewed: false
+  - label: '2sq'
+    name: 'Primes of the form $4k+1$ are sums of two squares'
+    display:
+      tex: '(p \text{ prime} \land p \equiv 1 \pmod 4) \to \exists x, y \in \mathbb{Z}\; p = x^2 + y^2'
+      reviewed: false
+  - label: '4sq'
+    name: 'Lagrange''s four-square theorem'
+    display:
+      tex: 'A \in \mathbb{N}_0 \leftrightarrow \exists a, b, c, d \in \mathbb{Z}\; A = a^2 + b^2 + c^2 + d^2'
+      reviewed: false
+  - label: 'perfect'
+    name: 'Euclid–Euler theorem on perfect numbers'
+    display:
+      tex: 'N \text{ even} \to \bigl(\sigma(N) = 2N \leftrightarrow \exists p\,(2^p - 1 \text{ prime} \land N = 2^{p-1}(2^p - 1))\bigr)'
+      reviewed: false
+  - label: 'bpos'
+    name: 'Bertrand''s postulate'
+    display:
+      tex: 'N \in \mathbb{N} \to \exists p \text{ prime}\; N < p \le 2N'
+      reviewed: false
+  - label: 'dirith'
+    name: 'Dirichlet''s theorem on primes in progressions'
+    display:
+      tex: '\gcd(A, N) = 1 \to \{p \text{ prime} : p \equiv A \pmod{N}\} \approx \mathbb{N}'
+      reviewed: false
+  - label: 'pnt'
+    name: 'Prime number theorem'
+    display:
+      tex: '\lim_{x \to \infty} \frac{\pi(x)}{x / \ln x} = 1'
+      reviewed: false
+  - label: 'prmrec'
+    name: 'The sum of prime reciprocals diverges'
+    display:
+      tex: '\sum_{p \text{ prime}} \frac{1}{p} \text{ diverges}'
+      reviewed: false
+  - label: 'basel'
+    name: 'The Basel problem: $\sum 1/n^2 = \pi^2/6$'
+    display:
+      tex: '\sum_{k=1}^{\infty} \frac{1}{k^2} = \frac{\pi^2}{6}'
+      reviewed: false
+  - label: '3dvds'
+    name: 'Divisibility by 3'
+    display:
+      tex: '3 \;\Big|\; \sum_{k=0}^{N} F(k)\, 10^k \;\leftrightarrow\; 3 \;\Big|\; \sum_{k=0}^{N} F(k)'
+      reviewed: false
+  - label: 'ramsey'
+    name: 'Ramsey''s theorem'
+    display:
+      tex: '\exists n\; \forall s\; \Bigl(|s| \ge n \to \forall f : \tbinom{s}{M} \to R\;\; \exists c \in R\; \exists x \subseteq s\; \bigl(|x| \ge F(c) \land \tbinom{x}{M} \subseteq f^{-1}(c)\bigr)\Bigr)'
+      reviewed: false
+  - label: 'vdw'
+    name: 'Van der Waerden''s theorem'
+    display:
+      tex: 'R \text{ finite} \to \exists n\; \forall f : \{1, \ldots, n\} \to R\;\; \exists c, a, d\;\; \{a, a + d, \ldots, a + (K-1)d\} \subseteq f^{-1}(c)'
+      reviewed: false
+  - label: 'df-mnd'
+    name: 'Definition of a monoid'
+  - label: 'df-grp'
+    name: 'Definition of a group'
+  - label: 'df-abl'
+    name: 'Definition of an abelian group'
+  - label: 'df-ring'
+    name: 'Definition of a ring'
+  - label: 'df-cring'
+    name: 'Definition of a commutative ring'
+  - label: 'df-field'
+    name: 'Definition of a field'
+  - label: 'df-lmod'
+    name: 'Definition of a module'
+  - label: 'df-lvec'
+    name: 'Definition of a vector space'
+  - label: 'lagsubg'
+    name: 'Lagrange''s theorem on subgroups'
+    display:
+      tex: '(Y \le G,\ G \text{ finite}) \to |Y| \text{ divides } |G|'
+      reviewed: false
+  - label: 'sylow1'
+    name: 'First Sylow theorem'
+    display:
+      tex: 'p^N \mid |G| \to \exists H \le G\; |H| = p^N'
+      reviewed: false
+  - label: 'sylow2'
+    name: 'Second Sylow theorem'
+    display:
+      tex: 'H, K \text{ Sylow } p\text{-subgroups} \to \exists g \in G\; H = gKg^{-1}'
+      reviewed: false
+  - label: 'sylow3'
+    name: 'Third Sylow theorem'
+    display:
+      tex: 'n_p \;\Big|\; \frac{|G|}{p^{v_p(|G|)}} \;\land\; n_p \equiv 1 \pmod{p}'
+      reviewed: false
+  - label: 'cayley'
+    name: 'Cayley''s theorem'
+    display:
+      tex: 'g \mapsto (a \mapsto g a) \text{ is an isomorphism from } G \text{ onto a subgroup of } \mathrm{Sym}(G)'
+      reviewed: false
+  - label: 'ablfac'
+    name: 'Fundamental theorem of finite abelian groups'
+    display:
+      tex: '\text{a finite abelian group is the direct product of cyclic } p\text{-groups}'
+      reviewed: false
+  - label: 'lbsex'
+    name: 'Every vector space has a basis'
+    display:
+      tex: 'W \text{ a vector space} \to W \text{ has a basis}'
+      reviewed: false
+  - label: 'df-mat'
+    name: 'Definition of matrices'
+  - label: 'df-mdet'
+    name: 'Definition of the determinant'
+  - label: 'mdetmul'
+    name: 'The determinant of a product'
+    display:
+      tex: '\det(FG) = \det F \cdot \det G'
+      reviewed: false
+  - label: 'cramer'
+    name: 'Cramer''s rule'
+    display:
+      tex: '\det X \text{ a unit} \to \Bigl(XZ = Y \leftrightarrow Z_i = \frac{\det X_i(Y)}{\det X} \text{ for each } i\Bigr), \quad X_i(Y) = X \text{ with column } i \text{ replaced by } Y'
+      reviewed: false
+  - label: 'cayleyhamilton'
+    name: 'Cayley–Hamilton theorem'
+    display:
+      tex: '\chi_M(M) = 0'
+      reviewed: false
+  - label: 'df-top'
+    name: 'Definition of a topology'
+  - label: 'df-cld'
+    name: 'Definition of closed sets'
+  - label: 'df-cn'
+    name: 'Definition of a continuous function'
+  - label: 'df-cmp'
+    name: 'Definition of a compact space'
+  - label: 'df-haus'
+    name: 'Definition of a Hausdorff space'
+  - label: 'df-conn'
+    name: 'Definition of a connected space'
+  - label: 'df-met'
+    name: 'Definition of a metric'
+  - label: 'icccmp'
+    name: 'A closed interval is compact (Heine–Borel)'
+    display:
+      tex: '[A, B] \text{ is compact}'
+      reviewed: false
+  - label: 'bwth'
+    name: 'Bolzano–Weierstrass theorem'
+    display:
+      tex: '(X \text{ compact} \land A \subseteq X \text{ infinite}) \to A \text{ has a limit point in } X'
+      reviewed: false
+  - label: 'ptcmp'
+    name: 'Tychonoff''s theorem'
+    display:
+      tex: '\text{a product of compact spaces is compact}'
+      reviewed: false
+  - label: 'bcth'
+    name: 'Baire category theorem'
+    display:
+      tex: 'X \text{ complete},\ M_k \text{ closed},\ \textstyle\bigcup_k M_k \text{ has interior} \to \text{some } M_k \text{ has interior}'
+      reviewed: false
+  - label: 'ivth'
+    name: 'Intermediate value theorem (increasing case)'
+    display:
+      tex: 'F \text{ continuous on } [A, B],\ F(A) < U < F(B) \to \exists c \in (A, B)\; F(c) = U'
+      reviewed: false
+  - label: 'evth'
+    name: 'Extreme value theorem'
+    display:
+      tex: 'X \text{ compact, nonempty},\ F : X \to \mathbb{R} \text{ continuous} \to \exists x\; \forall y\; F(y) \le F(x)'
+      reviewed: false
+  - label: 'rolle'
+    name: 'Rolle''s theorem'
+    display:
+      tex: 'F(A) = F(B) \to \exists x \in (A, B)\; F^{\prime}(x) = 0'
+      reviewed: false
+  - label: 'mvth'
+    name: 'Mean value theorem'
+    display:
+      tex: '\exists x \in (A, B)\; F^{\prime}(x) = \frac{F(B) - F(A)}{B - A}'
+      reviewed: false
+  - label: 'dvmul'
+    name: 'The product rule'
+    display:
+      tex: '(FG)^{\prime}(C) = F^{\prime}(C)\, G(C) + G^{\prime}(C)\, F(C)'
+      reviewed: false
+  - label: 'dvco'
+    name: 'The chain rule'
+    display:
+      tex: '(F \circ G)^{\prime}(C) = F^{\prime}(G(C))\, G^{\prime}(C)'
+      reviewed: false
+  - label: 'lhop'
+    name: 'L''Hôpital''s rule'
+    display:
+      tex: 'F, G \to 0 \text{ at } B,\ \ \frac{F^{\prime}(z)}{G^{\prime}(z)} \to C \;\vdash\; \frac{F(z)}{G(z)} \to C \text{ as } z \to B'
+      reviewed: false
+  - label: 'ftc1'
+    name: 'Fundamental theorem of calculus, part 1'
+    display:
+      tex: 'G(x) = \int_A^x F(t)\, dt,\ F \text{ continuous at } C \to G^{\prime}(C) = F(C)'
+      reviewed: false
+  - label: 'ftc2'
+    name: 'Fundamental theorem of calculus, part 2'
+    display:
+      tex: '\int_A^B F^{\prime}(t)\, dt = F(B) - F(A)'
+      reviewed: false
+  - label: 'itgsubst'
+    name: 'Integration by substitution'
+    display:
+      tex: '\int_{A(X)}^{A(Y)} C(u)\, du = \int_X^Y C(A(x))\, A^{\prime}(x)\, dx'
+      reviewed: false
+  - label: 'taylth'
+    name: 'Taylor''s theorem'
+    display:
+      tex: '\lim_{x \to B} \frac{F(x) - T_N(x)}{(x - B)^N} = 0 \qquad (T_N \text{ the degree-}N \text{ Taylor polynomial at } B)'
+      reviewed: false
+  - label: 'fta'
+    name: 'Fundamental theorem of algebra'
+    display:
+      tex: '\deg F \ge 1 \to \exists z \in \mathbb{C}\; F(z) = 0'
+      reviewed: false
+  - label: 'abelth'
+    name: 'Abel''s theorem on power series'
+    display:
+      tex: '\sum_n a_n \text{ converges} \to x \mapsto \sum_{n} a_n x^n \text{ is continuous on } \{z : |1 - z| \le M(1 - |z|)\}'
+      reviewed: false
+  - label: 'leibpi'
+    name: 'Leibniz formula for $\pi$'
+    display:
+      tex: '\sum_{n=0}^{\infty} \frac{(-1)^n}{2n + 1} = \frac{\pi}{4}'
+      reviewed: false
+  - label: 'trirecip'
+    name: 'Sum of reciprocals of triangular numbers'
+    display:
+      tex: '\sum_{k=1}^{\infty} \frac{2}{k(k + 1)} = 2'
+      reviewed: false
+  - label: 'mcubic'
+    name: 'Solution of the monic cubic'
+    display:
+      tex: 'X^3 + BX^2 + CX + D = 0 \leftrightarrow \exists r\,\Bigl(r^3 = 1 \land X = -\frac{B + rT + M/(rT)}{3}\Bigr) \qquad (M, T \text{ from Cardano})'
+      reviewed: false
+  - label: 'quart'
+    name: 'Solution of the quartic'
+    display:
+      tex: 'X^4 + AX^3 + BX^2 + CX + D = 0 \leftrightarrow X \in \{E - S \pm I,\ E + S \pm J\} \qquad (\text{Ferrari})'
+      reviewed: false
+  - label: 'facth'
+    name: 'The factor theorem'
+    display:
+      tex: 'F(A) = 0 \to F = (x - A) \cdot \bigl(F \operatorname{quot} (x - A)\bigr)'
+      reviewed: false
+  - label: 'lawcos'
+    name: 'Law of cosines'
+    display:
+      tex: 'c^2 = a^2 + b^2 - 2ab \cos\gamma'
+      reviewed: false
+  - label: 'heron'
+    name: 'Heron''s formula'
+    display:
+      tex: '\tfrac{1}{2} ab\, |\sin\gamma| = \sqrt{s(s - a)(s - b)(s - c)}, \quad s = \tfrac{a + b + c}{2}'
+      reviewed: false
+  - label: 'ptolemy'
+    name: 'Ptolemy''s theorem'
+    display:
+      tex: 'A + B + C + D = \pi \to \sin A \sin B + \sin C \sin D = \sin(B + C) \sin(A + C)'
+      reviewed: false
+  - label: 'chordthm'
+    name: 'Intersecting chords theorem'
+    display:
+      tex: '|PA| \cdot |PB| = |PC| \cdot |PD| \qquad (\text{chords } AB,\ CD \text{ crossing at } P)'
+      reviewed: false
+  - label: 'ang180'
+    name: 'Angle sum of a triangle is $\pm\pi$'
+    display:
+      tex: '\alpha + \beta + \gamma = \pm\pi \qquad (\text{signed angles of a triangle})'
+      reviewed: false
+  - label: 'isosctr'
+    name: 'Isosceles triangle theorem'
+    display:
+      tex: '|AC| = |BC| \to \angle A = \angle B'
+      reviewed: false
+  - label: 'incexc'
+    name: 'Inclusion–exclusion principle'
+    display:
+      tex: '\Bigl|\bigcup A\Bigr| = \sum_{\emptyset \neq s \subseteq A} (-1)^{|s| - 1} \Bigl|\bigcap s\Bigr|'
+      reviewed: false
+  - label: 'birthday'
+    name: 'The birthday problem'
+    display:
+      tex: '\frac{365 \cdot 364 \cdots 343}{365^{23}} < \frac{1}{2}'
+      reviewed: false
+  - label: 'df-cat'
+    name: 'Definition of a category'
+  - label: 'df-func'
+    name: 'Definition of a functor'
+  - label: 'yoneda'
+    name: 'Yoneda lemma'
+    display:
+      tex: '\mathrm{Nat}\bigl(\mathrm{Hom}(-, X),\ F\bigr) \cong F(X), \text{ naturally in } F \text{ and } X'
+      reviewed: false
+  - label: 'df-poset'
+    name: 'Definition of a partially ordered set'
+  - label: 'df-lat'
+    name: 'Definition of a lattice'
+  - label: 'knatar'
+    name: 'Knaster–Tarski fixed-point theorem'
+    display:
+      tex: 'F \text{ monotone on } \mathcal{P}(A),\ F(A) \subseteq A \to F(X) = X, \quad X = \textstyle\bigcap \{z \subseteq A : F(z) \subseteq z\}'
+      reviewed: false
+  - label: 'df-no'
+    name: 'Definition of the surreal numbers'
+  - label: 'df-trkg'
+    name: 'Definition of a Tarski geometry'
+  - label: 'df-uhgr'
+    name: 'Definition of a hypergraph'
+  - label: 'df-eupth'
+    name: 'Definition of an Eulerian path'
+  - label: 'konigsberg'
+    name: 'The Königsberg bridge problem'
+    display:
+      tex: '\text{the K\"onigsberg graph has no Eulerian path}'
+      reviewed: false
+  - label: 'friendship'
+    name: 'The friendship theorem'
+    display:
+      tex: '\text{a finite friendship graph has a vertex adjacent to every other}'
+      reviewed: false
   # Hubs: early results that most later ones pass through. Each one gathers tunnels that would
   # otherwise all run to the surface separately.
-  - { label: "eqid", name: "Law of identity: A = A" }
-  - { label: "isset", name: "A class is a set exactly when it exists" }
-  - { label: "0re", name: "0 is a real number" }
-  - { label: "1re", name: "1 is a real number" }
-  - { label: "recn", name: "Every real number is a complex number" }
-  - { label: "addcom", name: "Addition is commutative (proved, not assumed)" }
-  - { label: "mul01", name: "Anything times 0 is 0" }
-  - { label: "ltnr", name: "No real number is less than itself" }
-  - { label: "lttri", name: "'Less than' is transitive" }
-  - { label: "1p1e2", name: "1 + 1 = 2" }
-  - { label: "2p2e4", name: "2 + 2 = 4" }
-  - { label: "nnssre", name: "The positive integers are real numbers" }
-  - { label: "zssre", name: "The integers are real numbers" }
-  - { label: "qssre", name: "The rationals are real numbers" }
+  - label: 'eqid'
+    name: 'Law of identity: $A = A$'
+    display:
+      tex: 'A = A'
+      reviewed: false
+  - label: 'isset'
+    name: 'A class is a set exactly when it exists'
+    display:
+      tex: 'A \in V \leftrightarrow \exists x\; x = A'
+      reviewed: false
+  - label: '0re'
+    name: '0 is a real number'
+    display:
+      tex: '0 \in \mathbb{R}'
+      reviewed: false
+  - label: '1re'
+    name: '1 is a real number'
+    display:
+      tex: '1 \in \mathbb{R}'
+      reviewed: false
+  - label: 'recn'
+    name: 'Every real number is a complex number'
+    display:
+      tex: 'A \in \mathbb{R} \to A \in \mathbb{C}'
+      reviewed: false
+  - label: 'addcom'
+    name: 'Addition is commutative (proved, not assumed)'
+    display:
+      tex: 'A + B = B + A \qquad (A, B \in \mathbb{C})'
+      reviewed: false
+  - label: 'mul01'
+    name: 'Anything times 0 is 0'
+    display:
+      tex: 'A \cdot 0 = 0'
+      reviewed: false
+  - label: 'ltnr'
+    name: 'No real number is less than itself'
+    display:
+      tex: '\neg(A < A)'
+      reviewed: false
+  - label: 'lttri'
+    name: '''Less than'' is transitive'
+    display:
+      tex: '(A < B \land B < C) \to A < C'
+      reviewed: false
+  - label: '1p1e2'
+    name: '$1 + 1 = 2$'
+    display:
+      tex: '1 + 1 = 2'
+      reviewed: false
+  - label: '2p2e4'
+    name: '$2 + 2 = 4$'
+    display:
+      tex: '2 + 2 = 4'
+      reviewed: false
+  - label: 'nnssre'
+    name: 'The positive integers are real numbers'
+    display:
+      tex: '\mathbb{N} \subseteq \mathbb{R}'
+      reviewed: false
+  - label: 'zssre'
+    name: 'The integers are real numbers'
+    display:
+      tex: '\mathbb{Z} \subseteq \mathbb{R}'
+      reviewed: false
+  - label: 'qssre'
+    name: 'The rationals are real numbers'
+    display:
+      tex: '\mathbb{Q} \subseteq \mathbb{R}'
+      reviewed: false
 
 # Names for the axioms, which are added automatically. Each is set.mm's own name for the axiom,
 # or a plain reading of what its description says it states.
 axiom_names:
-  ax-mp: "Modus ponens (rule of inference)"
-  ax-1: "Axiom Simp: φ → (ψ → φ)"
-  ax-2: "Axiom Frege: distributing an antecedent"
-  ax-3: "Axiom Transp: transposition"
-  ax-gen: "Rule of generalization"
-  ax-4: "Axiom of quantified implication"
-  ax-5: "Axiom of distinctness"
-  ax-6: "Axiom of existence"
-  ax-7: "Axiom of equality"
-  ax-8: "Axiom of left equality for ∈"
-  ax-9: "Axiom of right equality for ∈"
-  ax-10: "Axiom of quantified negation"
-  ax-11: "Axiom of quantifier commutation"
-  ax-12: "Axiom of substitution"
-  ax-13: "Axiom of quantified equality"
-  ax-ext: "Axiom of extensionality"
-  ax-rep: "Axiom of replacement"
-  ax-sep: "Axiom of separation"
-  ax-nul: "Null set axiom"
-  ax-pow: "Axiom of power sets"
-  ax-pr: "Axiom of pairing"
-  ax-un: "Axiom of union"
-  ax-reg: "Axiom of regularity (foundation)"
-  ax-inf: "Axiom of infinity"
-  ax-inf2: "Axiom of infinity, standard form"
-  ax-ac: "Axiom of choice"
-  ax-ac2: "Axiom of choice, textbook form"
-  ax-cc: "Axiom of countable choice"
-  ax-dc: "Axiom of dependent choice"
-  ax-groth: "Tarski–Grothendieck axiom (inaccessible cardinals)"
-  ax-cnex: "The complex numbers form a set"
-  ax-resscn: "The reals are a subset of the complex numbers"
-  ax-1cn: "1 is a complex number"
-  ax-icn: "i is a complex number"
-  ax-addcl: "Complex addition is closed"
-  ax-addrcl: "Real addition is closed"
-  ax-mulcl: "Complex multiplication is closed"
-  ax-mulrcl: "Real multiplication is closed"
-  ax-mulcom: "Multiplication is commutative"
-  ax-addass: "Addition is associative"
-  ax-mulass: "Multiplication is associative"
-  ax-distr: "Multiplication distributes over addition"
-  ax-i2m1: "i² = −1"
-  ax-1ne0: "1 ≠ 0"
-  ax-1rid: "1 is a multiplicative identity for the reals"
-  ax-rnegex: "Every real has a negative"
-  ax-rrecex: "Every nonzero real has a reciprocal"
-  ax-cnre: "Every complex number is a + bi for reals a, b"
-  ax-pre-lttri: "Trichotomy of < on the reals"
-  ax-pre-lttrn: "< on the reals is transitive"
-  ax-pre-ltadd: "Adding preserves < on the reals"
-  ax-pre-mulgt0: "The product of two positive reals is positive"
-  ax-pre-sup: "Completeness: a bounded nonempty set of reals has a supremum"
-  ax-addf: "Addition is an operation on ℂ (deprecated axiom)"
-  ax-mulf: "Multiplication is an operation on ℂ"
+  ax-mp: 'Modus ponens (rule of inference)'
+  ax-1: 'Axiom Simp: $\varphi \to (\psi \to \varphi)$'
+  ax-2: 'Axiom Frege: distributing an antecedent'
+  ax-3: 'Axiom Transp: transposition'
+  ax-gen: 'Rule of generalization'
+  ax-4: 'Axiom of quantified implication'
+  ax-5: 'Axiom of distinctness'
+  ax-6: 'Axiom of existence'
+  ax-7: 'Axiom of equality'
+  ax-8: 'Axiom of left equality for ∈'
+  ax-9: 'Axiom of right equality for ∈'
+  ax-10: 'Axiom of quantified negation'
+  ax-11: 'Axiom of quantifier commutation'
+  ax-12: 'Axiom of substitution'
+  ax-13: 'Axiom of quantified equality'
+  ax-ext: 'Axiom of extensionality'
+  ax-rep: 'Axiom of replacement'
+  ax-sep: 'Axiom of separation'
+  ax-nul: 'Null set axiom'
+  ax-pow: 'Axiom of power sets'
+  ax-pr: 'Axiom of pairing'
+  ax-un: 'Axiom of union'
+  ax-reg: 'Axiom of regularity (foundation)'
+  ax-inf: 'Axiom of infinity'
+  ax-inf2: 'Axiom of infinity, standard form'
+  ax-ac: 'Axiom of choice'
+  ax-ac2: 'Axiom of choice, textbook form'
+  ax-cc: 'Axiom of countable choice'
+  ax-dc: 'Axiom of dependent choice'
+  ax-groth: 'Tarski–Grothendieck axiom (inaccessible cardinals)'
+  ax-cnex: 'The complex numbers form a set'
+  ax-resscn: 'The reals are a subset of the complex numbers'
+  ax-1cn: '1 is a complex number'
+  ax-icn: 'i is a complex number'
+  ax-addcl: 'Complex addition is closed'
+  ax-addrcl: 'Real addition is closed'
+  ax-mulcl: 'Complex multiplication is closed'
+  ax-mulrcl: 'Real multiplication is closed'
+  ax-mulcom: 'Multiplication is commutative'
+  ax-addass: 'Addition is associative'
+  ax-mulass: 'Multiplication is associative'
+  ax-distr: 'Multiplication distributes over addition'
+  ax-i2m1: '$i^2 = -1$'
+  ax-1ne0: '$1 \neq 0$'
+  ax-1rid: '1 is a multiplicative identity for the reals'
+  ax-rnegex: 'Every real has a negative'
+  ax-rrecex: 'Every nonzero real has a reciprocal'
+  ax-cnre: 'Every complex number is a + bi for reals a, b'
+  ax-pre-lttri: 'Trichotomy of < on the reals'
+  ax-pre-lttrn: '< on the reals is transitive'
+  ax-pre-ltadd: 'Adding preserves < on the reals'
+  ax-pre-mulgt0: 'The product of two positive reals is positive'
+  ax-pre-sup: 'Completeness: a bounded nonempty set of reals has a supremum'
+  ax-addf: 'Addition is an operation on ℂ (deprecated axiom)'
+  ax-mulf: 'Multiplication is an operation on ℂ'

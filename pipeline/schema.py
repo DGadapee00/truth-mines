@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 KINDS = ("axiom", "definition", "theorem")
 
@@ -17,8 +17,12 @@ KINDS = ("axiom", "definition", "theorem")
 class Node:
     id: str  # set.mm label
     kind: str  # one of KINDS
-    name: str  # human name from landmarks.yaml; empty for an axiom without one
-    statement: str  # LaTeX: hypotheses, then ⇒, then the conclusion
+    name: str  # human name from landmarks.yaml; may hold inline math between $ signs
+    label: str  # the name as plain text, for 3D labels (no TeX)
+    statement: str  # LaTeX translated from set.mm: hypotheses above a rule, then the conclusion
+    source: str  # the statement as set.mm writes it (ASCII)
+    display: str  # hand-written readable LaTeX from landmarks.yaml, or empty
+    display_reviewed: bool  # whether a person has checked `display` against the statement
     subject: str  # subject id from config.yaml
     depth: int  # longest path from the roots in the full set.mm graph
     pos: tuple[float, float, float]  # metres; y = -depth * metres_per_depth

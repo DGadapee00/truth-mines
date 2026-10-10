@@ -77,3 +77,4 @@ latex_overrides:
   "iota_": '\underline{℩}'
   "iota'": "℩'"
   "`": '\mathbin{\text{‘}}' # function application F ‘ A, as the Metamath site shows it
+  ppi: '\pi' # the prime-counting function, written pi(x) as usual

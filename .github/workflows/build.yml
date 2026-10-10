@@ -39,10 +39,10 @@ jobs:
           path: pipeline/.cache
           key: sources-${{ hashFiles('pipeline/sources.lock') }}
 
-      - name: Pipeline tests
-        run: python -m pytest -q pipeline/tests
       - name: Build the data (fetch, extract, validate, curate, collapse, depth, layout, export)
         run: python -m pipeline
+      - name: Pipeline tests (incl. every tunnel against the full graph)
+        run: python -m pytest -q pipeline/tests
 
       - uses: actions/setup-node@v4
         with:

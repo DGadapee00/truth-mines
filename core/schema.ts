@@ -2,7 +2,7 @@
  * The data the pipeline writes and the app reads. Mirrors pipeline/schema.py field for field.
  * Bump SCHEMA_VERSION in both files on any change, so the app refuses data it does not understand.
  */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export type Kind = 'axiom' | 'definition' | 'theorem';
 export const KINDS: readonly Kind[] = ['axiom', 'definition', 'theorem'];
@@ -11,10 +11,18 @@ export interface MineNode {
   /** set.mm label */
   id: string;
   kind: Kind;
-  /** Human name from landmarks.yaml; empty for an axiom without one */
+  /** Human name from landmarks.yaml; may hold inline math between $ signs; empty if unnamed */
   name: string;
-  /** LaTeX: hypotheses, then ⇒, then the conclusion */
+  /** The name as plain text (math turned into Unicode), for 3D labels */
+  label: string;
+  /** LaTeX translated from set.mm: hypotheses above a rule, then the conclusion */
   statement: string;
+  /** The statement as set.mm writes it (ASCII) */
+  source: string;
+  /** Hand-written readable LaTeX from landmarks.yaml, or empty */
+  display: string;
+  /** Whether a person has checked `display` against the statement */
+  display_reviewed: boolean;
   /** Subject id (meta.subjects) */
   subject: string;
   /** Longest path from the roots in the full set.mm graph */
@@ -59,7 +67,10 @@ export function parseGraph(raw: unknown): GraphFile {
     const where = `node ${String(n?.id)}`;
     if (typeof n.id !== 'string' || !n.id) throw new SchemaError(`${where}: id`);
     if (!KINDS.includes(n.kind)) throw new SchemaError(`${where}: kind ${String(n.kind)}`);
-    if (typeof n.name !== 'string' || typeof n.statement !== 'string' || typeof n.subject !== 'string') throw new SchemaError(`${where}: text fields`);
+    for (const f of ['name', 'label', 'statement', 'source', 'display', 'subject'] as const) {
+      if (typeof n[f] !== 'string') throw new SchemaError(`${where}: ${f}`);
+    }
+    if (typeof n.display_reviewed !== 'boolean') throw new SchemaError(`${where}: display_reviewed`);
     if (!Number.isInteger(n.depth) || n.depth < 0) throw new SchemaError(`${where}: depth`);
     if (!Array.isArray(n.pos) || n.pos.length !== 3 || !n.pos.every(Number.isFinite)) throw new SchemaError(`${where}: pos`);
     if (!Array.isArray(n.deps) || !Array.isArray(n.hidden_steps) || n.deps.length !== n.hidden_steps.length) throw new SchemaError(`${where}: deps`);

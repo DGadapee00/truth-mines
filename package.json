@@ -17,6 +17,7 @@
     "check": "npm run typecheck && npm run lint && npm test && npm run test:pipeline"
   },
   "dependencies": {
+    "katex": "^0.16.25",
     "mathjax-full": "^3.2.2",
     "three": "^0.172.0",
     "troika-three-text": "^0.52.4"
@@ -24,6 +25,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@playwright/test": "^1.56.1",
+    "@types/katex": "^0.16.7",
     "@types/node": "^22.20.5",
     "@types/three": "^0.172.0",
     "eslint": "^9.39.1",

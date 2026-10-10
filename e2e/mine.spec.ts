@@ -109,3 +109,33 @@ test('clicking a crystal selects it', async ({ page }) => {
   await page.mouse.click(target.x, target.y);
   expect((await view(page)).selected).toBe(target.id);
 });
+
+test('statements: readable by default, formal on request, never wider than the panel', async ({ page }) => {
+  for (const id of ['pnt', 'cramer', 'ax-mp', 'ramsey']) {
+    await page.evaluate((x) => (window as unknown as { __mines: { store: { select(id: string): void } } }).__mines.store.select(x), id);
+    await expect(page.locator('#panel .statement svg')).toBeVisible();
+    const fits = await page.locator('#panel .statement').evaluate((el) => el.scrollWidth <= el.clientWidth + 1);
+    expect(fits, `${id} statement fits`).toBe(true);
+  }
+  await page.evaluate(() => (window as unknown as { __mines: { store: { select(id: string): void } } }).__mines.store.select('pnt'));
+  await expect(page.locator('#panel .draft')).toBeVisible();
+  await page.waitForTimeout(1200);
+  await shot(page, '4-pnt-readable');
+  await page.locator('#panel [data-form=formal]').click();
+  await expect(page.locator('#panel .source code')).toContainText('ppi');
+  await expect(page.locator('#panel .draft')).toHaveCount(0);
+  await shot(page, '5-pnt-formal');
+  await page.locator('#panel [data-form=readable]').click();
+});
+
+test('names with math are typeset in lists', async ({ page }) => {
+  await page.locator('#intro [data-act=close]').click();
+  await page.locator('#search').fill('euler');
+  await expect(page.locator('#results li .katex').first()).toBeVisible();
+  await shot(page, '6-search-katex');
+  await page.locator('#search').press('Escape');
+  await page.evaluate(() => (window as unknown as { __mines: { store: { select(id: string): void } } }).__mines.store.select('efipi'));
+  await expect(page.locator('#panel h2 .katex')).toBeVisible();
+  await page.waitForTimeout(1200);
+  await shot(page, '7-efipi');
+});

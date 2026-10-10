@@ -37,7 +37,13 @@ def select(ex: dict, cfg: dict, landmarks: list[dict], axiom_names: dict[str, st
         if subject not in known:
             raise SystemExit(f"curate: {label} has unknown subject {subject}")
         seen.add(label)
-        out.append({"label": label, "name": lm["name"], "subject": subject})
+        entry = {"label": label, "name": lm["name"], "subject": subject}
+        disp = lm.get("display")
+        if disp is not None:
+            if not isinstance(disp, dict) or not isinstance(disp.get("tex"), str) or not isinstance(disp.get("reviewed"), bool):
+                raise SystemExit(f"curate: {label}: display needs a `tex` string and a `reviewed` true/false")
+            entry["display"] = {"tex": disp["tex"], "reviewed": disp["reviewed"]}
+        out.append(entry)
     names = axiom_names or {}
     for label in names:
         if label not in st or st[label]["kind"] != "axiom":

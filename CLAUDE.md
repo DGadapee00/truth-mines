@@ -18,10 +18,20 @@ layout and `pipeline/README.md` for the data.
    them; the pipeline exports only reviewed notes, so the app never shows an unreviewed one.
 8. Every feature lands with desktop support and a test.
 
+## Display forms
+
+A landmark may carry a hand-written readable statement (`display` in landmarks.yaml). Write it
+from set.mm's actual statement (`python -m pipeline show LABEL`), never from memory of the
+textbook version: set.mm's form can be narrower (`ivth` is the increasing case) or differently
+quantified. Drafts by Claude are `reviewed: false`; the panel flags them and the formal form
+stays one click away. Only a person sets `reviewed: true`.
+
 ## Naming landmarks
 
 Before adding or renaming a landmark, run `python -m pipeline show LABEL` and read set.mm's own
-description. Name what the statement actually says: `lttri` is "'less than' is transitive", not
+description. Math in a name goes between $ signs (KaTeX on the page, converted to plain text for
+the 3D labels by pipeline/names.py, which fails on anything it cannot convert). Name what the
+statement actually says: `lttri` is "'less than' is transitive", not
 trichotomy; `ivth` is the increasing case only. The label font must cover every character in a
 name, or export fails (DejaVu Sans has no 𝒫, for example).
 

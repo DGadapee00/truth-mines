@@ -1,6 +1,7 @@
 import { displayName, type MineGraph } from '../../core/graph';
 import type { Meta } from '../../core/schema';
 import { subjectCss } from '../render/palette';
+import { nameHTML } from './name';
 import type { Store } from '../state';
 
 /** The search box: find a landmark by name or label and go to it. */
@@ -16,7 +17,7 @@ export function createSearch(input: HTMLInputElement, list: HTMLElement, graph: 
       .map((id, i) => {
         const n = graph.must(id);
         return `<li role="option" aria-selected="${i === active}" data-id="${esc(id)}" style="--c:${subjectCss(n.subject)}">
-          <span class="dot"></span><span class="t">${esc(displayName(n))}</span>
+          <span class="dot"></span><span class="t">${nameHTML(displayName(n))}</span>
           <span class="m">${esc(n.id)} · ${esc(subjectName.get(n.subject) ?? '')} · depth ${n.depth}</span></li>`;
       })
       .join('');

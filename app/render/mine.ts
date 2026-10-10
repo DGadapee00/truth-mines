@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { BatchedText, Text } from 'troika-three-text';
-import { displayName, type MineGraph } from '../../core/graph';
+import { plainName, type MineGraph } from '../../core/graph';
 import type { Kind, Meta, MineNode } from '../../core/schema';
 import type { View } from '../state';
 import { BG, SELECTED, TRACE, subjectColor } from './palette';
@@ -94,7 +94,7 @@ export function createMine(graph: MineGraph, meta: Meta, fontUrl: string): Mine 
   const label = new Map<string, Text>();
   for (const n of graph.nodes) {
     const t = new Text();
-    t.text = displayName(n);
+    t.text = plainName(n);
     t.font = fontUrl;
     t.fontSize = n.kind === 'definition' ? 0.42 : 0.5;
     t.anchorX = 'center';

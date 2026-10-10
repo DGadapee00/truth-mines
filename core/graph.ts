@@ -97,7 +97,7 @@ export class MineGraph {
     const words = q.split(/\s+/);
     const scored: { n: MineNode; s: number }[] = [];
     for (const n of this.nodes) {
-      const name = fold(n.name);
+      const name = fold(n.label || n.name);
       const id = n.id.toLowerCase();
       let s = 0;
       if (id === q) s += 100;
@@ -142,7 +142,12 @@ export function fold(s: string): string {
   return s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 }
 
-/** A display name: the landmark name, or the label for an unnamed axiom. */
+/** A display name: the landmark name (may hold $…$ math), or the set.mm label if unnamed. */
 export function displayName(n: MineNode): string {
   return n.name || n.id;
+}
+
+/** The name as plain text: no TeX. */
+export function plainName(n: MineNode): string {
+  return n.label || n.id;
 }

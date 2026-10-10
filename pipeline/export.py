@@ -1,7 +1,7 @@
 """Stage 7, export: write data/graph.json and data/meta.json for the app.
 
-Statements are turned into LaTeX with set.mm's own `latexdef` for each symbol. The turnstile is
-dropped; hypotheses come first, joined by &, then ⇒ and the conclusion.
+Statements are turned into LaTeX by pipeline/latex.py, on set.mm's own `latexdef`s. A landmark
+may also carry a hand-written `display` form from landmarks.yaml, flagged until reviewed.
 
 A note in content/<label>.md is exported only when its front matter says `reviewed: true`
 (CLAUDE.md rule 7). Reviewed notes are copied to data/notes/.
@@ -18,20 +18,15 @@ import shutil
 
 from .files import BUILD, CONTENT, DATA, config, read_lock, read_stage
 from .fonts import build_label_font
+from .latex import Translator
+from .names import plain_label
 from .schema import SCHEMA_VERSION, Node
 
 
-def latex(symbols: list[str], defs: dict[str, str]) -> str:
-    body = symbols[1:] if symbols and symbols[0] == "|-" else symbols
-    return " ".join(defs[s] for s in body)
-
-
-def statement_tex(st: dict, defs: dict[str, str]) -> str:
-    concl = latex(st["concl"], defs)
-    if not st["hyps"]:
-        return concl
-    hyps = r" \quad \& \quad ".join(latex(h, defs) for h in st["hyps"])
-    return rf"{hyps} \quad \Rightarrow \quad {concl}"
+def source_text(st: dict) -> str:
+    """The statement as set.mm writes it, hypotheses first: the raw form behind the toggle."""
+    parts = [" ".join(h) for h in st["hyps"]]
+    return "   &   ".join(parts) + ("   =>   " if parts else "") + " ".join(st["concl"])
 
 
 def reviewed_note(label: str) -> str | None:
@@ -54,15 +49,21 @@ def build() -> tuple[list[Node], dict]:
     dep = read_stage("depth")
     pos = read_stage("layout")
     st, defs = ex["statements"], {**ex["latexdefs"], **cfg.get("latex_overrides", {})}
+    tr = Translator(defs)
     nodes = []
     for lm in lms:
         k = lm["label"]
+        display = lm.get("display") or {}
         nodes.append(
             Node(
                 id=k,
                 kind=st[k]["kind"],
                 name=lm["name"],
-                statement=statement_tex(st[k], defs),
+                label=plain_label(lm["name"] or k),
+                statement=tr.with_hyps(st[k]["hyps"], st[k]["concl"]),
+                source=source_text(st[k]),
+                display=display.get("tex", ""),
+                display_reviewed=bool(display.get("reviewed", False)),
                 subject=lm["subject"],
                 depth=dep["depth"][k],
                 pos=tuple(pos[k]),
@@ -130,7 +131,7 @@ def run() -> None:
             n.note = f"notes/{n.id}.md"
             shown += 1
     meta["counts"]["reviewed_notes"] = shown
-    glyphs = build_label_font([n.name or n.id for n in nodes], DATA / "fonts" / "labels.woff")
+    glyphs = build_label_font([n.label for n in nodes], DATA / "fonts" / "labels.woff")
     graph = {"schema_version": SCHEMA_VERSION, "nodes": [n.to_json() for n in nodes]}
     (DATA / "graph.json").write_text(json.dumps(graph, ensure_ascii=False, separators=(",", ":")), encoding="utf8")
     (DATA / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf8")

@@ -5,8 +5,9 @@ import pytest
 from pipeline.collapse import collapse
 from pipeline.curate import select
 from pipeline.depth import depths
-from pipeline.export import statement_tex
+from pipeline.export import source_text
 from pipeline.extract import parse, to_stage
+from pipeline.latex import Translator
 from pipeline.layout import layout
 from pipeline.validate import check
 
@@ -49,7 +50,9 @@ def test_extract_hypotheses_and_latex(ex):
     assert st["th3"]["hyps"] == []  # scope closed
     assert ex["latexdefs"]["ps"] == r"\psi"  # single-quoted
     assert ex["latexdefs"]["ch"] == r"\chi"  # concatenated with +
-    assert statement_tex(st["ax-mp"], ex["latexdefs"]) == r"\varphi \quad \& \quad ( \varphi \rightarrow \psi ) \quad \Rightarrow \quad \psi"
+    tex = Translator(ex["latexdefs"]).with_hyps(st["ax-mp"]["hyps"], st["ax-mp"]["concl"])
+    assert tex == r"\begin{array}{c} \varphi \\ \left( \varphi \rightarrow \psi \right) \\ \hline \psi \end{array}"
+    assert source_text(st["ax-mp"]) == "|- ph   &   |- ( ph -> ps )   =>   |- ps"
 
 
 def test_extract_rejects_unknown_citation():
