@@ -95,7 +95,7 @@ async function main() {
       $('search').focus();
     } else if (e.key === 'Escape') store.select(null);
     else if (e.key === 'u' && store.view.selected) {
-      const next = graph.pathToAxiom(store.view.selected)[1];
+      const next = graph.criticalPath(store.view.selected)[1];
       if (next) store.select(next);
     } else if (e.key === 'h') rig.home();
   });

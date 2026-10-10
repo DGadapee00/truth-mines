@@ -6,7 +6,7 @@ import { expect, test, type Page } from '@playwright/test';
  * look by eye.
  */
 interface Hook {
-  graph: { ancestors(id: string): Set<string>; descendants(id: string): Set<string>; pathToAxiom(id: string): string[] };
+  graph: { ancestors(id: string): Set<string>; descendants(id: string): Set<string>; pathToAxiom(id: string): string[]; criticalPath(id: string): string[] };
   store: { view: { selected: string | null; mode: string; lit: Set<string> } };
   renderer: { info: { render: { calls: number; triangles: number } } };
 }
@@ -63,9 +63,9 @@ test('find a theorem and trace it to the axioms', async ({ page }) => {
   const downN = await page.evaluate(() => (window as unknown as { __mines: Hook }).__mines.graph.descendants('sqrt2irr').size);
   expect((await view(page)).lit).toBe(downN);
 
-  // Follow: one step up toward the axioms.
+  // Follow: one step up the critical path.
   await page.locator('#panel [data-mode=up]').click();
-  const route = await page.evaluate(() => (window as unknown as { __mines: Hook }).__mines.graph.pathToAxiom('sqrt2irr'));
+  const route = await page.evaluate(() => (window as unknown as { __mines: Hook }).__mines.graph.criticalPath('sqrt2irr'));
   await page.locator('#panel .step').click();
   expect((await view(page)).selected).toBe(route[1]);
   await page.keyboard.press('Escape');
@@ -138,4 +138,36 @@ test('names with math are typeset in lists', async ({ page }) => {
   await expect(page.locator('#panel h2 .katex')).toBeVisible();
   await page.waitForTimeout(1200);
   await shot(page, '7-efipi');
+});
+
+test('the map: critical path bright, labels only where they help, Enter on every landmark', async ({ page }) => {
+  await page.locator('#intro [data-act=close]').click();
+  type M = { __mines: { store: { select(id: string): void; view: { critical: string[] } }; mine: { visibleLabels(): string[] } } };
+  // Whole mine, nothing selected: only the nearest landmarks are labelled.
+  await page.waitForTimeout(500);
+  const idle = await page.evaluate(() => (window as unknown as M).__mines.mine.visibleLabels().length);
+  expect(idle).toBeGreaterThan(0);
+  expect(idle).toBeLessThanOrEqual(14);
+  await shot(page, '8-map-idle');
+
+  await page.evaluate(() => (window as unknown as M).__mines.store.select('pnt'));
+  await expect(page.locator('#panel .enter')).toBeVisible();
+  await expect(page.locator('#panel h3', { hasText: 'Critical path' })).toBeVisible();
+  await page.waitForTimeout(1500);
+  const { critical, shown } = await page.evaluate(() => {
+    const m = (window as unknown as M).__mines;
+    return { critical: m.store.view.critical, shown: m.mine.visibleLabels() };
+  });
+  expect(critical[0]).toBe('pnt');
+  for (const id of critical) expect(shown).toContain(id);
+  expect(shown.length).toBeLessThanOrEqual(critical.length + 14);
+  await shot(page, '9-pnt-critical');
+
+  // Whole mine with the trace still on: the critical path reads from the surface down.
+  // The button is laptop-only; on a phone the H key's action is the same call.
+  if (await page.locator('#btn-home').isVisible()) await page.locator('#btn-home').click();
+  else await page.evaluate(() => (window as unknown as { __mines: { rig: { home(): void } } }).__mines.rig.home());
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __mines: { rig: { travelling: boolean } } }).__mines.rig.travelling)).toBe(false);
+  await page.waitForTimeout(500);
+  await shot(page, '10-pnt-critical-whole');
 });

@@ -112,7 +112,7 @@ def run() -> None:
     dep = read_stage("depth")["depth"]
     index = {lm["label"]: i for i, lm in enumerate(lms)}
     nodes = [{"subject": lm["subject"], "depth": dep[lm["label"]]} for lm in lms]
-    edges = [(index[b], index[a]) for b, v in col.items() for a in v["deps"]]
+    edges = [(index[b], index[a]) for b, v in sorted(col.items()) for a in v["deps"]]
     pos = layout(nodes, edges, [s["id"] for s in cfg["subjects"]], cfg["layout"])
     write_stage("layout", {lm["label"]: [float(v) for v in pos[i]] for i, lm in enumerate(lms)})
     # How crowded is it? The closest pair at about the same depth.

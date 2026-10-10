@@ -68,7 +68,8 @@ def build() -> tuple[list[Node], dict]:
                 depth=dep["depth"][k],
                 pos=tuple(pos[k]),
                 deps=col[k]["deps"],
-                hidden_steps=col[k]["hidden_steps"],
+                feeding_lemmas=col[k]["feeding_lemmas"],
+                chain=col[k]["chain"],
             )
         )
     nodes.sort(key=lambda n: (n.depth, n.id))

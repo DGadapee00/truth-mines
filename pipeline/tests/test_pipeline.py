@@ -100,13 +100,15 @@ def test_collapse_hides_lemmas_and_reduces(ex):
     deps = {k: v["deps"] for k, v in ex["statements"].items()}
     lm = {"th5", "th4", "th2", "ax-one", "ax-mp"}
     out = collapse(deps, lm, reduce=False)
-    # th4 -> th3 (hidden) -> th2: one hidden lemma
-    assert dict(zip(out["th4"]["deps"], out["th4"]["hidden_steps"])) == {"ax-mp": 0, "th2": 1}
+    # th4 -> th3 (collapsed) -> th2: one feeding lemma, and it is the chain
+    assert dict(zip(out["th4"]["deps"], out["th4"]["feeding_lemmas"])) == {"ax-mp": 0, "th2": 1}
+    assert dict(zip(out["th4"]["deps"], out["th4"]["chain"])) == {"ax-mp": [], "th2": ["th3"]}
     assert out["th5"]["deps"] == ["th2", "th4"]
     red = collapse(deps, lm, reduce=True)
     assert red["th5"]["deps"] == ["th4"]  # th2 is reached through th4
-    # th2 -> th1 (hidden) -> ax-one, ax-mp
-    assert dict(zip(red["th2"]["deps"], red["th2"]["hidden_steps"])) == {"ax-mp": 1, "ax-one": 1}
+    # th2 -> th1 (collapsed) -> ax-one, ax-mp
+    assert dict(zip(red["th2"]["deps"], red["th2"]["feeding_lemmas"])) == {"ax-mp": 1, "ax-one": 1}
+    assert red["th2"]["chain"] == [["th1"], ["th1"]]
 
 
 def test_depth_is_longest_path(ex):

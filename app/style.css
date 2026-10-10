@@ -491,3 +491,28 @@ a {
 .panel h2 .katex {
   font-size: 1.05em;
 }
+
+.moves {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+.moves .step:only-child {
+  grid-column: 1 / -1;
+}
+.enter {
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 8px 14px;
+}
+.enter[disabled] {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+.enter small {
+  font-size: 11px;
+  margin-left: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}

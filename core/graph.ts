@@ -90,6 +90,68 @@ export class MineGraph {
     return this.unwind(prev, rootFallback ?? id);
   }
 
+  /**
+   * The critical path: the longest dependency chain from this node up to the axioms, as
+   * [id, …, axiom]. Each tunnel counts the citation steps it carries (its chain plus one), so the
+   * path is the longest real citation route through the tunnels, the way depth is a longest path.
+   * A node that rests on no axiom (a definition, or a result resting only on definitions) gets the
+   * longest route to any root instead. Ties go to the deeper dependency, then the smaller id.
+   */
+  criticalPath(id: string): string[] {
+    this.must(id);
+    const toAxiom = this.longestTo(id, (n) => n.kind === 'axiom');
+    if (toAxiom) return toAxiom.path;
+    return this.longestTo(id, (n) => n.deps.length === 0)?.path ?? [id];
+  }
+
+  /** Length of the critical path in citation steps (the sum of its tunnels' weights). */
+  criticalLength(id: string): number {
+    const p = this.criticalPath(id);
+    let total = 0;
+    for (let i = 0; i + 1 < p.length; i++) total += this.weight(p[i] as string, p[i + 1] as string);
+    return total;
+  }
+
+  /** Citation steps carried by the tunnel from `id` up to `dep`. */
+  weight(id: string, dep: string): number {
+    const n = this.must(id);
+    const k = n.deps.indexOf(dep);
+    if (k < 0) throw new Error(`${id} has no tunnel to ${dep}`);
+    return (n.chain[k]?.length ?? 0) + 1;
+  }
+
+  private longestTo(id: string, end: (n: MineNode) => boolean): { len: number; path: string[] } | null {
+    const memo = new Map<string, { len: number; next: string | null } | null>();
+    const solve = (x: string): { len: number; next: string | null } | null => {
+      if (memo.has(x)) return memo.get(x) ?? null;
+      const n = this.must(x);
+      let best: { len: number; next: string | null } | null = end(n) ? { len: 0, next: null } : null;
+      if (!best) {
+        for (const d of n.deps) {
+          const sub = solve(d);
+          if (!sub) continue;
+          const len = sub.len + this.weight(x, d);
+          const cur = best?.next ? this.must(best.next) : null;
+          const dn = this.must(d);
+          const better =
+            !best || len > best.len || (len === best.len && cur && (dn.depth > cur.depth || (dn.depth === cur.depth && d < cur.id)));
+          if (better) best = { len, next: d };
+        }
+      }
+      memo.set(x, best);
+      return best;
+    };
+    const top = solve(id);
+    if (!top) return null;
+    const path = [id];
+    let step = top.next;
+    while (step) {
+      path.push(step);
+      step = memo.get(step)?.next ?? null;
+    }
+    return { len: top.len, path };
+  }
+
   /** Landmarks matching a query, best first: by name and by label, words matched as prefixes. */
   search(query: string, limit = 12): MineNode[] {
     const q = fold(query).trim();

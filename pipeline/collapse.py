@@ -1,8 +1,13 @@
 """Stage 4, collapse: replace the chains of lemmas between landmarks with single tunnels.
 
 For each landmark B, walk down its citations without passing through another landmark. Every
-landmark A met on the way gets a tunnel B -> A, and the statements walked through are the lemmas
-that tunnel hides. `hidden_steps` counts the hidden lemmas that lie on some path from B down to A.
+landmark A met on the way gets a tunnel B -> A. Each tunnel records:
+
+  feeding_lemmas  how many non-landmark statements lie on some path from B down to A: every lemma
+                  that feeds the tunnel (the union of all its paths)
+  chain           the statements on the LONGEST such path, in walking order: from A (shallower)
+                  down to B (deeper), endpoints excluded. Longest, like depth itself, so a tunnel's
+                  chain is the stretch of the critical path it carries.
 
 With `transitive_reduction`, a tunnel B -> A is dropped when A can already be reached from B
 through other tunnels. Ancestors, and so every trace to the axioms, are unchanged.
@@ -21,7 +26,7 @@ def collapse(deps: dict[str, list[str]], landmarks: set[str], reduce: bool = Tru
     out: dict[str, dict] = {}
     tunnels: dict[str, list[str]] = {}
     regions: dict[str, set[str]] = {}
-    for b in landmarks:
+    for b in sorted(landmarks):
         region: set[str] = set()
         found: list[str] = []
         q = deque(deps[b])
@@ -48,28 +53,66 @@ def collapse(deps: dict[str, list[str]], landmarks: set[str], reduce: bool = Tru
         r = nx.transitive_reduction(g)
         tunnels = {b: [a for a in tunnels[b] if r.has_edge(b, a)] for b in tunnels}
 
-    for b in landmarks:
+    for b in sorted(landmarks):
         region = regions[b]
-        # Hidden lemmas between B and A: those in B's region that can reach A.
+        # Feeding lemmas between B and A: those in B's region that can reach A.
         rev: dict[str, list[str]] = {}
         for x in region | {b}:
             for d in deps[x]:
                 if d in region or d in landmarks:
                     rev.setdefault(d, []).append(x)
-        hidden = []
+        feeding, chains = [], []
         for a in tunnels[b]:
-            seen = set()
+            fed: set[str] = set()
             q = deque([a])
             while q:
                 y = q.popleft()
                 for x in rev.get(y, ()):
-                    if x in region and x not in seen:
-                        seen.add(x)
+                    if x in region and x not in fed:
+                        fed.add(x)
                         q.append(x)
-            hidden.append(len(seen))
+            feeding.append(len(fed))
+            chains.append(longest_chain(b, a, fed, deps))
         order = sorted(range(len(tunnels[b])), key=lambda i: tunnels[b][i])
-        out[b] = {"deps": [tunnels[b][i] for i in order], "hidden_steps": [hidden[i] for i in order]}
+        out[b] = {
+            "deps": [tunnels[b][i] for i in order],
+            "feeding_lemmas": [feeding[i] for i in order],
+            "chain": [chains[i] for i in order],
+        }
     return out
+
+
+def longest_chain(b: str, a: str, fed: set[str], deps: dict[str, list[str]]) -> list[str]:
+    """The longest citation path from B down to A through the feeding lemmas, as the statements
+    strictly between them, ordered from A's end to B's end. Ties go to the smaller label, so the
+    same data always gives the same chain."""
+    allowed = fed | {a}
+    length: dict[str, int] = {a: 0}
+    nxt: dict[str, str] = {}
+
+    def walk(x: str) -> int:
+        stack = [(x, False)]
+        while stack:
+            y, done = stack.pop()
+            if y in length:
+                continue
+            kids = [d for d in deps[y] if d in allowed]
+            if not done:
+                stack.append((y, True))
+                stack.extend((d, False) for d in kids if d not in length)
+                continue
+            best = max(kids, key=lambda d: (length[d], [-ord(c) for c in d]))
+            length[y] = length[best] + 1
+            nxt[y] = best
+        return length[x]
+
+    walk(b)
+    path = []
+    y = nxt[b]
+    while y != a:
+        path.append(y)
+        y = nxt[y]
+    return path[::-1]
 
 
 def run() -> None:

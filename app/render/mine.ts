@@ -32,6 +32,7 @@ export interface Mine {
   /** Draw calls the mine itself issues, for the budget check. */
   drawCalls(): number;
   setHover(id: string | null): void;
+  visibleLabels(): string[];
 }
 
 export function createMine(graph: MineGraph, meta: Meta, fontUrl: string): Mine {
@@ -67,23 +68,28 @@ export function createMine(graph: MineGraph, meta: Meta, fontUrl: string): Mine 
     group.add(mesh);
   }
 
-  // ---- tunnels: one InstancedMesh of open cylinders, thicker for more hidden lemmas
-  const edges: { from: string; to: string; hidden: number }[] = [];
-  for (const n of graph.nodes) n.deps.forEach((d, k) => edges.push({ from: n.id, to: d, hidden: n.hidden_steps[k] ?? 0 }));
+  // ---- tunnels: one InstancedMesh of open cylinders, thicker for more feeding lemmas
+  const edges: { from: string; to: string; feeding: number }[] = [];
+  for (const n of graph.nodes) n.deps.forEach((d, k) => edges.push({ from: n.id, to: d, feeding: n.feeding_lemmas[k] ?? 0 }));
   const tunnels = new THREE.InstancedMesh(new THREE.CylinderGeometry(1, 1, 1, 6, 1, true), new THREE.MeshBasicMaterial(), Math.max(1, edges.length));
   tunnels.name = 'tunnels';
   const up = new THREE.Vector3(0, 1, 0);
   const q = new THREE.Quaternion();
-  edges.forEach((e, i) => {
+  /** Place tunnel i, its width times `boost` (the critical path is drawn thicker). */
+  const placeTunnel = (i: number, boost: number) => {
+    const e = edges[i] as (typeof edges)[number];
     const a = pos.get(e.to) as THREE.Vector3;
     const b = pos.get(e.from) as THREE.Vector3;
     const d = b.clone().sub(a);
     const len = d.length();
     q.setFromUnitVectors(up, d.normalize());
-    const r = 0.03 + 0.018 * Math.log10(1 + e.hidden);
+    const r = (0.03 + 0.018 * Math.log10(1 + e.feeding)) * boost;
     m.compose(a.clone().add(b).multiplyScalar(0.5), q, new THREE.Vector3(r, len, r));
     tunnels.setMatrixAt(i, m);
-  });
+  };
+  const edgeAt = new Map(edges.map((e, i) => [`${e.from}>${e.to}`, i]));
+  edges.forEach((_, i) => placeTunnel(i, 1));
+  let boosted: number[] = [];
   tunnels.count = edges.length;
   tunnels.instanceMatrix.needsUpdate = true;
   group.add(tunnels);
@@ -174,38 +180,80 @@ export function createMine(graph: MineGraph, meta: Meta, fontUrl: string): Mine 
   let hover: string | null = null;
   const tmp = new THREE.Color();
 
+  /** Labels always shown whatever the distance: the selection, its critical path, the hovered node. */
+  let pinned = new Set<string>();
+  let critical = new Set<string>();
+  const FAINT_UP = TRACE.clone().lerp(BG_COLOR, 0.76);
+
   function apply(view: View) {
     current = view;
     const sel = view.selected;
     const tint = view.mode === 'up' ? TRACE : DOWN;
+    critical = new Set(view.critical);
     for (const n of graph.nodes) {
       const s = slot.get(n.id);
       if (!s) continue;
       const b = base.get(n.id) as THREE.Color;
       if (!sel) tmp.copy(b);
       else if (n.id === sel) tmp.copy(SELECTED);
-      else if (view.lit.has(n.id)) tmp.copy(tint);
+      else if (critical.has(n.id)) tmp.copy(TRACE);
+      else if (view.lit.has(n.id)) tmp.copy(view.mode === 'up' ? FAINT_UP : tint);
       else tmp.copy(b).lerp(BG_COLOR, 0.86);
       s.mesh.setColorAt(s.i, tmp);
-      const t = label.get(n.id) as Text;
-      const on = !sel || n.id === sel || view.lit.has(n.id) || n.id === hover;
-      t.fillOpacity = on ? (sel || n.kind !== 'definition' ? 1 : 0.6) : 0.06;
-      t.outlineOpacity = on ? 0.9 : 0;
-      t.color = sel && on && n.id !== sel ? tint.getHex() : 0xe8edf2;
     }
     for (const mesh of meshes) if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+
+    // Tunnels: the critical path bright and thick, the rest of the trace faint.
     const lit = new Set(view.litTunnels.map(([a, b]) => `${a}>${b}`));
+    const path = view.critical;
+    const crit = new Set<number>();
+    for (let i = 0; i + 1 < path.length; i++) {
+      const at = edgeAt.get(`${path[i]}>${path[i + 1]}`);
+      if (at !== undefined) crit.add(at);
+    }
     edges.forEach((e, i) => {
       const b = base.get(e.from) as THREE.Color;
       if (!sel) tmp.copy(b).lerp(BG_COLOR, 0.72);
-      else if (lit.has(`${e.from}>${e.to}`)) tmp.copy(tint);
+      else if (crit.has(i)) tmp.copy(TRACE);
+      else if (lit.has(`${e.from}>${e.to}`)) tmp.copy(view.mode === "up" ? FAINT_UP : tint).lerp(BG_COLOR, view.mode === "up" ? 0.55 : 0);
       else tmp.copy(b).lerp(BG_COLOR, 0.95);
       tunnels.setColorAt(i, tmp);
     });
+    for (const i of boosted) placeTunnel(i, 1);
+    boosted = [...crit];
+    for (const i of boosted) placeTunnel(i, 2.4);
+    tunnels.instanceMatrix.needsUpdate = true;
     if (tunnels.instanceColor) tunnels.instanceColor.needsUpdate = true;
+
     halo.visible = !!sel;
     if (sel) halo.position.copy(pos.get(sel) as THREE.Vector3);
+    pinned = new Set([...(sel ? [sel] : []), ...view.critical, ...(hover ? [hover] : [])]);
     for (const t of fixed) t.fillOpacity = sel ? 0.25 : 1;
+  }
+
+  /**
+   * Which labels show: the pinned ones, plus the landmarks nearest the camera, fading out with
+   * distance. Everything else is hidden, so the overview reads as a map, not a wall of text.
+   */
+  const NEAREST = 14;
+  const camLocal = new THREE.Vector3();
+  const near: { id: string; d: number }[] = graph.nodes.map((n) => ({ id: n.id, d: 0 }));
+  function placeLabels(camera: THREE.Camera) {
+    camera.getWorldPosition(camLocal);
+    group.worldToLocal(camLocal);
+    for (const x of near) x.d = camLocal.distanceTo(pos.get(x.id) as THREE.Vector3);
+    near.sort((a, b) => a.d - b.d);
+    const reach = Math.max(8, (near[NEAREST - 1]?.d ?? 0) * 1.05);
+    const sel = current?.selected ?? null;
+    near.forEach(({ id, d }, rank) => {
+      const t = label.get(id) as Text;
+      let o = 0;
+      if (pinned.has(id)) o = 1;
+      else if (rank < NEAREST && d < reach) o = Math.min(1, (reach - d) / (reach * 0.25) + 0.15) * (sel ? 0.75 : 0.95);
+      t.fillOpacity = o;
+      t.outlineOpacity = o > 0 ? 0.9 * o : 0;
+      t.color = id === sel ? 0xffffff : critical.has(id) ? TRACE.getHex() : 0xe8edf2;
+    });
   }
 
   const qCam = new THREE.Quaternion();
@@ -218,6 +266,7 @@ export function createMine(graph: MineGraph, meta: Meta, fontUrl: string): Mine 
       const inv = group.getWorldQuaternion(new THREE.Quaternion()).invert();
       qCam.premultiply(inv);
       for (const t of label.values()) t.quaternion.copy(qCam);
+      placeLabels(camera);
       for (const t of fixed) t.quaternion.copy(qCam);
       if (halo.visible) {
         halo.quaternion.copy(qCam);
@@ -249,8 +298,11 @@ export function createMine(graph: MineGraph, meta: Meta, fontUrl: string): Mine 
     setHover(id) {
       if (id === hover) return;
       hover = id;
-      if (current) apply(current);
+      const sel = current?.selected ?? null;
+      pinned = new Set([...(sel ? [sel] : []), ...(current?.critical ?? []), ...(hover ? [hover] : [])]);
     },
+    /** For tests: which labels are showing now. */
+    visibleLabels: () => [...label].filter(([, t]) => t.fillOpacity > 0.01).map(([id]) => id),
   };
 }
 

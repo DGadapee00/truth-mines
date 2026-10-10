@@ -26,8 +26,10 @@ Tests: `python -m pytest -q pipeline/tests` (a small hand-written .mm file cover
 - **Grounded.** set.mm has a few theorems proved from their own hypotheses alone (`idi`: from φ
   infer φ) and a few that restate a definition (`wl-df.clab`). Validation accepts those; any
   other theorem must reach an axiom or definition.
-- **Hidden steps.** For a tunnel B → A, the number of non-landmark statements on some path from
-  B down to A.
+- **Feeding lemmas and chain.** For a tunnel B → A, `feeding_lemmas` counts the non-landmark
+  statements on any path from B down to A (the union of all paths). `chain` lists the statements
+  on the longest such path, from A's end down to B's: like depth, it follows the longest route.
+  The Inside view places markers along `chain`; tunnel length follows the depth difference.
 - **Transitive reduction.** A tunnel is dropped when its far end is reached through other tunnels.
   Ancestor sets are unchanged; core/'s tests check this against the full graph.
 - **LaTeX.** pipeline/latex.py parses each statement (set.mm brackets every operation and
@@ -37,4 +39,5 @@ Tests: `python -m pytest -q pipeline/tests` (a small hand-written .mm file cover
 - **Display forms.** Hand-written readable statements in landmarks.yaml, exported alongside the
   formal one with their `reviewed` flag.
 - **Tunnels are checked twice.** tests/test_tunnels.py recomputes every tunnel and its
-  hidden_steps from both ends of the full graph, independently of collapse.py.
+  feeding_lemmas from both ends of the full graph, and checks each chain is a real citation path
+  no longer than the depth difference allows, independently of collapse.py.

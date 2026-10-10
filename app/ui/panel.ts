@@ -33,11 +33,12 @@ export function createPanel(el: HTMLElement, graph: MineGraph, meta: Meta, store
     const up = graph.ancestors(n.id);
     const axioms = [...up].filter((x) => graph.must(x).kind === 'axiom').length;
     const down = graph.descendants(n.id).size;
-    const route = graph.pathToAxiom(n.id);
+    const route = graph.criticalPath(n.id);
+    const steps = graph.criticalLength(n.id);
     const deps = n.deps
-      .map((d, i) => ({ d, h: n.hidden_steps[i] ?? 0 }))
+      .map((d, i) => ({ d, h: n.feeding_lemmas[i] ?? 0, c: n.chain[i]?.length ?? 0 }))
       .sort((a, b) => graph.must(b.d).depth - graph.must(a.d).depth)
-      .map(({ d, h }) => link(d, `<span class="hid" title="Lemmas hidden in this tunnel">${h ? `${fmt(h)} hidden` : 'direct'}</span>`))
+      .map(({ d, h, c }) => link(d, `<span class="hid" title="Longest chain of lemmas in this tunnel, and all the lemmas that feed it">${h ? `${fmt(c + 1)} steps · ${fmt(h)} lemmas` : 'direct'}</span>`))
       .join('');
     const users = [...graph.dependentsOf(n.id)]
       .sort((a, b) => graph.must(a).depth - graph.must(b).depth)
@@ -69,12 +70,15 @@ export function createPanel(el: HTMLElement, graph: MineGraph, meta: Meta, store
         <button type="button" data-mode="up" aria-pressed="${mode === 'up'}">Trace up to the axioms</button>
         <button type="button" data-mode="down" aria-pressed="${mode === 'down'}">Trace down</button>
       </div>
-      <p class="lit">${mode === 'up' ? `Lit: everything it rests on (${fmt(lit.size)}).` : `Lit: everything that rests on it (${fmt(lit.size)}).`}</p>
-      ${nextUp ? `<button type="button" class="step" data-go="${esc(nextUp)}">Step up toward the axioms ↑</button>` : ''}
+      <p class="lit">${mode === 'up' ? `Bright: the critical path. Faint: the rest of what it rests on (${fmt(lit.size)}).` : `Lit: everything that rests on it (${fmt(lit.size)}).`}</p>
+      <div class="moves">
+        ${nextUp ? `<button type="button" class="step" data-go="${esc(nextUp)}">Step up the critical path ↑</button>` : ''}
+        <button type="button" class="enter" disabled title="The Inside view is being built">Enter <small>soon</small></button>
+      </div>
       <div class="note" hidden></div>
       ${n.deps.length ? `<h3>Tunnels up <small>what it depends on directly</small></h3><div class="links">${deps}</div>` : ''}
       ${users ? `<h3>Tunnels down <small>what depends on it directly</small></h3><div class="links">${users}</div>` : ''}
-      ${route.length > 2 ? `<h3>Shortest route to an axiom <small>${route.length - 1} tunnels</small></h3><ol class="route">${route.map((r) => `<li>${link(r)}</li>`).join('')}</ol>` : ''}
+      ${route.length > 1 ? `<h3>Critical path <small>the longest chain to the ${graph.must(route.at(-1) as string).kind === 'axiom' ? 'axioms' : 'surface'}: ${route.length - 1} tunnels, ${fmt(steps)} citation steps</small></h3><ol class="route">${route.map((r) => `<li>${link(r)}</li>`).join('')}</ol>` : ''}
     `;
     fitStatement(el.querySelector('.statement'));
     if (n.note) {

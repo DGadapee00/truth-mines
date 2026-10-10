@@ -13,6 +13,8 @@ export interface View {
   lit: ReadonlySet<string>;
   /** Tunnels lit by the trace, as [from, to] pairs */
   litTunnels: readonly [string, string][];
+  /** Tracing up: the critical path, [selected, …, axiom], drawn brighter than the rest */
+  critical: readonly string[];
 }
 
 export interface Store {
@@ -26,12 +28,13 @@ const EMPTY: ReadonlySet<string> = new Set();
 
 export function createStore(graph: MineGraph): Store {
   const listeners: ((v: View) => void)[] = [];
-  let view: View = { selected: null, mode: 'up', lit: EMPTY, litTunnels: [] };
+  let view: View = { selected: null, mode: 'up', lit: EMPTY, litTunnels: [], critical: [] };
 
   function compute(selected: string | null, mode: TraceMode): View {
-    if (!selected) return { selected: null, mode, lit: EMPTY, litTunnels: [] };
+    if (!selected) return { selected: null, mode, lit: EMPTY, litTunnels: [], critical: [] };
     const lit = mode === 'up' ? graph.ancestors(selected) : graph.descendants(selected);
-    return { selected, mode, lit, litTunnels: graph.tunnelsWithin(selected, lit) };
+    const critical = mode === 'up' ? graph.criticalPath(selected) : [];
+    return { selected, mode, lit, litTunnels: graph.tunnelsWithin(selected, lit), critical };
   }
   function set(next: View) {
     view = next;

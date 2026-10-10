@@ -60,6 +60,19 @@ describe('built data', () => {
     }
   });
 
+  it('gives every landmark a critical path that is a chain of real tunnels, ending at an axiom when one lies above', () => {
+    for (const n of graph.nodes) {
+      const p = g.criticalPath(n.id);
+      expect(p[0]).toBe(n.id);
+      for (let i = 0; i + 1 < p.length; i++) expect(g.must(p[i] as string).deps).toContain(p[i + 1]);
+      const end = g.must(p.at(-1) as string);
+      const axiomAbove = [...g.ancestors(n.id)].some((x) => g.must(x).kind === 'axiom') || n.kind === 'axiom';
+      expect(axiomAbove ? end.kind === 'axiom' : end.deps.length === 0).toBe(true);
+      // A route through real citations can never be longer than the node is deep.
+      expect(g.criticalLength(n.id)).toBeLessThanOrEqual(n.depth);
+    }
+  });
+
   it('stays inside the payload budget', () => {
     expect(readFileSync(new URL('data/graph.json', root)).length).toBeLessThan(2_000_000);
   });

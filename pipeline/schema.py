@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 KINDS = ("axiom", "definition", "theorem")
 
@@ -27,7 +27,8 @@ class Node:
     depth: int  # longest path from the roots in the full set.mm graph
     pos: tuple[float, float, float]  # metres; y = -depth * metres_per_depth
     deps: list[str] = field(default_factory=list)  # direct dependencies after collapse
-    hidden_steps: list[int] = field(default_factory=list)  # parallel to deps
+    feeding_lemmas: list[int] = field(default_factory=list)  # per tunnel: lemmas on any path to the dep
+    chain: list[list[str]] = field(default_factory=list)  # per tunnel: the longest path, dep end first
     note: str = ""  # path of a reviewed note in content/, or empty
 
     def to_json(self) -> dict:

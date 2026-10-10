@@ -2,7 +2,7 @@
  * The data the pipeline writes and the app reads. Mirrors pipeline/schema.py field for field.
  * Bump SCHEMA_VERSION in both files on any change, so the app refuses data it does not understand.
  */
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export type Kind = 'axiom' | 'definition' | 'theorem';
 export const KINDS: readonly Kind[] = ['axiom', 'definition', 'theorem'];
@@ -31,8 +31,11 @@ export interface MineNode {
   pos: [number, number, number];
   /** Direct dependencies after collapse */
   deps: string[];
-  /** Lemmas hidden in each tunnel, parallel to deps */
-  hidden_steps: number[];
+  /** Per tunnel (parallel to deps): non-landmark statements on any path down to the dependency */
+  feeding_lemmas: number[];
+  /** Per tunnel (parallel to deps): the longest citation path, statements strictly between,
+   *  from the dependency's end down to this node's */
+  chain: string[][];
   /** Path of a reviewed note under data/, or empty */
   note: string;
 }
@@ -73,7 +76,7 @@ export function parseGraph(raw: unknown): GraphFile {
     if (typeof n.display_reviewed !== 'boolean') throw new SchemaError(`${where}: display_reviewed`);
     if (!Number.isInteger(n.depth) || n.depth < 0) throw new SchemaError(`${where}: depth`);
     if (!Array.isArray(n.pos) || n.pos.length !== 3 || !n.pos.every(Number.isFinite)) throw new SchemaError(`${where}: pos`);
-    if (!Array.isArray(n.deps) || !Array.isArray(n.hidden_steps) || n.deps.length !== n.hidden_steps.length) throw new SchemaError(`${where}: deps`);
+    if (!Array.isArray(n.deps) || !Array.isArray(n.feeding_lemmas) || !Array.isArray(n.chain) || n.deps.length !== n.feeding_lemmas.length || n.deps.length !== n.chain.length) throw new SchemaError(`${where}: deps`);
     if (typeof n.note !== 'string') throw new SchemaError(`${where}: note`);
   }
   return g as GraphFile;

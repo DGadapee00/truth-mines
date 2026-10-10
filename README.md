@@ -40,7 +40,7 @@ they pass:
 | `pipeline/` | Python: fetch, extract, validate, curate, collapse, depth, layout, export ([README](pipeline/README.md)) |
 | `pipeline/landmarks.yaml` | The curated landmarks and their names: the only place curation happens |
 | `pipeline/sources.lock` | Pinned sources (set.mm commit, the label font) with hashes |
-| `core/` | TypeScript graph model and queries (ancestors, descendants, route to an axiom, search). No rendering |
+| `core/` | TypeScript graph model and queries (ancestors, descendants, critical path, search). No rendering |
 | `app/render/` | The mine in three.js: instanced nodes and tunnels, batched labels, MathJax |
 | `app/ui/` | Panel, search, desktop camera |
 | `content/` | Plain-language notes, shown only once reviewed ([README](content/README.md)) |
