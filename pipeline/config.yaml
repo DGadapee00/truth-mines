@@ -130,3 +130,65 @@ inside:
     geometry: "#86ad92"
     graphs: "#b38a8a"
     other: "#9aa0a6"
+
+# The number theory plane (pipeline/plane_nt.py -> data/plane-number-theory.json). Layout and
+# colour live here; every number the plane shows is computed by pipeline/numtheory.py.
+number_theory_plane:
+  limit: 100 # the road and the plaza go up to this number
+  road:
+    spacing: 2.0 # metres between column centres, along the road
+    curve_amplitude: 0.35 # radians: the heading swings by this much either way
+    curve_period: 200.0 # metres of road per swing
+    step: 0.05 # metres: integration step for the centre line
+    lead_in: 6.0 # metres of road behind column 1
+    half_width: 4.0 # walkable half-width of the road
+    block: 0.8 # metres: a block is a cube of this size
+    monolith_width: 0.7
+    monolith_blocks: 4 # a prime's monolith is this many block heights tall
+    footprint: 0.6 # a column blocks walking within this radius
+    seed: { width: 1.2, height: 0.15 }
+    thread_points: 13
+    thread_lift: 2.0 # metres: arc rise of a thread, plus thread_lift_per_metre for its length
+    thread_lift_per_metre: 0.1
+    thread_lift_max: 14.0
+  hues:
+    step: 3 # prime i gets hue 360 * ((step * i) mod K) / K; coprime to K, so neighbours differ
+    strong_primes: 4 # 2, 3, 5, 7: the most saturated, as they appear most in stacks
+    strong_saturation: 0.85
+    strong_lightness: 0.5
+    muted_saturation: [0.7, 0.55] # the rest, falling from first to last
+    muted_lightness: [0.42, 0.55, 0.68] # cycled, so near hues also differ in lightness
+  plaza:
+    approach: 14.0 # straight road from column 100 to the plaza's near edge
+    cell: 2.4 # metres between neighbouring columns of the grid
+    margin: 3.0 # floor beyond the outer columns
+    column: { width: 0.9, height: 1.4, rubble_height: 0.2 }
+    crumble_step_s: 0.12 # seconds between one multiple crumbling and the next
+    glow: "#e8c25a"
+    stone: "#8d8f94"
+    footprint: 0.7
+  overlook:
+    gap: 10.0 # metres from the plaza's far edge to x = 100
+    x_end: 1000000
+    metres_per_decade: 60.0
+    windows_per_decade: 4
+    window_span: 100 # consecutive integers shown at each window
+    window_metres: 10.0 # the window's length along the road
+    point_height: 2.6
+    curve_offset: 10.0 # metres to the left of the road
+    curve_base: 2.0
+    curve_height: 40.0 # metres of sky for pi(x_end)
+    samples_per_decade: 60
+    marker_height: 5.0
+    tail: 10.0 # road beyond x_end
+  texts:
+    - id: arrive
+      text: "Every whole number is built from primes in exactly one way. The road runs from {first} to {limit}: one stone column for each."
+    - id: road
+      text: "A prime stands alone as a tall monolith. Every other number is a stack of prime blocks, one for each prime factor, smallest at the bottom. The tallest stacks up to {limit} have {tallest_blocks} blocks: {tallest_list}. Look at a column to see what it is made of."
+    - id: plaza
+      text: "The numbers 2 to {limit} stand in a grid, in reading order. Strike a standing number and every multiple of it after itself crumbles. What is left standing is the primes."
+    - id: sieve_note
+      text: "After {small_primes}, striking anything else knocks nothing down: every composite up to {limit} has a prime factor no larger than {bound}, the square root of {limit}. The {survivors} that survive are the primes."
+    - id: overlook
+      text: "Past {limit} the road is drawn on a logarithmic scale out to {x_max}. Each patch of lights shows which of {window_span} consecutive whole numbers are prime. The curves count the primes up to x, written π(x), and compare it with x / ln x. At x = {x_max} there are {pi_max} primes against an estimate of about {est_max}: a ratio of {ratio_max}, still slowly falling toward 1."
