@@ -58,6 +58,7 @@ export function buildStar(id: string, scene: SceneIndex, graph: MineGraph, fontU
   room.name = `chamber:${id}`;
   group.add(room);
   const slab = statementSlab(ch, graph);
+  keep(slab.geometry);
   keep(slab.material as THREE.Material);
   group.add(slab);
 
@@ -137,7 +138,7 @@ export function buildStar(id: string, scene: SceneIndex, graph: MineGraph, fontU
   for (const p of passages) {
     const pl = p.portal.plaque;
     const arrow = p.up ? '↑' : '↓';
-    text(`${arrow} ${plainName(graph.must(p.far.id))}\n${p.tunnel.feeding_lemmas.toLocaleString('en-US')} lemmas feed this tunnel · ${p.tunnel.chain_length + 1} steps`, 0.17, v3(pl.pos), 16, pl.yaw, p.up ? 0xffe2a0 : 0xbfe9ff, Math.max(3.2, p.portal.width + 1.6));
+    text(`${arrow} ${plainName(graph.must(p.far.id))}\n${p.tunnel.feeding_lemmas.toLocaleString('en-US')} lemmas feed this tunnel · ${p.tunnel.chain_length + 1} steps`, 0.17, v3(pl.pos), 16, pl.yaw, p.up ? 0xffe2a0 : 0xbfe9ff, pl.width);
   }
   for (const { m, pos } of allMarkers) text(m.id, 0.16, pos.clone().add(new THREE.Vector3(0, 1.55, 0)), 7, undefined, 0xffe9b8);
   labels.sync();

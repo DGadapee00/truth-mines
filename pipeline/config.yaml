@@ -95,6 +95,7 @@ inside:
     base_height: 6
     height_spread: 2
     axiom_height_scale: 1.35
+    dome_rise: 1.18 # the hall's ceiling at its centre, as a multiple of the wall height
     statement_arc: 11 # metres of wall kept for the statement
   # When the doorways do not fit on max_radius, each subject’s doorways move into one or more
   # wedges off the hall. A wedge is only as long as its own doors, and never longer than max_length.

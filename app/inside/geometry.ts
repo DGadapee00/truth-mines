@@ -92,6 +92,67 @@ function mouthPieces(a0: number, a1: number): [number, number][] {
 const at = (a: number, y: number, r: number) => new THREE.Vector3(r * Math.sin(a), y, r * Math.cos(a));
 
 /**
+ * Height of a doorway's opening at `u` metres across it. The opening is the tunnel's own
+ * cross-section (`profile`), so the wall closes down onto the vault and leaves no corner open.
+ */
+export function archAt(u: number, w: number, h: number): number {
+  const top = profile(w, h).slice(1, -1);
+  const first = top[0] as [number, number];
+  const last = top.at(-1) as [number, number];
+  if (u <= first[0]) return first[1];
+  if (u >= last[0]) return last[1];
+  for (let k = 0; k + 1 < top.length; k++) {
+    const [x0, y0] = top[k] as [number, number];
+    const [x1, y1] = top[k + 1] as [number, number];
+    if (u <= x1) return y0 + ((y1 - y0) * (u - x0)) / Math.max(1e-9, x1 - x0);
+  }
+  return last[1];
+}
+
+/** How many slices a doorway's arch is cut into. */
+const ARCH_STEPS = 10;
+
+/**
+ * Where a doorway from `a0` to `a1` is cut: its arch steps, plus the wall's own seam at 0 (2π)
+ * when the doorway straddles it. The wall above and the reveal use the same cuts, so they share edges.
+ */
+function archCuts(a0: number, a1: number): number[] {
+  const out = Array.from({ length: ARCH_STEPS + 1 }, (_, k) => a0 + ((a1 - a0) * k) / ARCH_STEPS);
+  for (let seam = Math.ceil(a0 / TAU) * TAU; seam < a1; seam += TAU) if (seam > a0) out.push(seam);
+  return out.sort((x, y) => x - y);
+}
+
+type Door = { yaw: number; width: number; height: number; pos: Vec3 };
+
+/** Across the doorway at angle `a` on a wall of radius `r`, measured from its centre line. */
+const across = (d: Door, a: number, r: number) => r * Math.sin(a - d.yaw);
+
+/**
+ * The doorway's reveal: the wall is curved, the tunnel's first ring is straight across it, so
+ * jambs, the arch's underside and a strip of floor join the two. Without them you see past the
+ * tunnel's sides into the void.
+ */
+function reveal(b: Builder, d: Door, r: number, a0: number, a1: number, rock: THREE.Color, floor: THREE.Color) {
+  const side = new THREE.Vector3(Math.cos(d.yaw), 0, -Math.sin(d.yaw));
+  const door = new THREE.Vector3(d.pos[0], 0, d.pos[2]);
+  const pts = archCuts(a0, a1).map((a) => {
+    const u = across(d, a, r);
+    const y = archAt(u, d.width, d.height);
+    const ring = door.clone().addScaledVector(side, u);
+    // The floor strip starts a hand's breadth inside the wall, under the chamber's own floor, so
+    // the two floors' different chords leave no crack.
+    return { wall: at(a, y, r), wallFloor: at(a, 0, r - 0.1), ring: ring.clone().setY(y), ringFloor: ring };
+  });
+  for (let k = 0; k + 1 < pts.length; k++) {
+    const p = pts[k] as (typeof pts)[number];
+    const q = pts[k + 1] as (typeof pts)[number];
+    b.quad(p.wall, q.wall, q.ring, p.ring, rock);
+    b.quad(p.wallFloor, p.ringFloor, q.ringFloor, q.wallFloor, floor);
+  }
+  for (const p of [pts[0], pts.at(-1)] as (typeof pts)[number][]) b.quad(at(a0 + (p === pts[0] ? 0 : a1 - a0), 0, r), p.wall, p.ring, p.ringFloor, rock);
+}
+
+/**
  * A chamber: the round hall, its doorways and gallery mouths left open, and each gallery wedge
  * from the descriptor. Openings and wedge radii come from the descriptor; this only tessellates.
  */
@@ -103,37 +164,48 @@ export function chamberGeometry(ch: Chamber): THREE.BufferGeometry {
   const floor = col(ch.rock, 0.62);
   const ceil = col(ch.rock, 0.78);
   const inGallery = new Set(ch.galleries.flatMap((g) => g.portal_indices));
-  type Opening = { a0: number; a1: number; h: number; mouth: boolean };
+  type Opening = { a0: number; a1: number; door: Door | null };
   const openings: Opening[] = [];
+  const cuts = new Set<number>();
   for (const [i, p] of ch.portals.entries()) {
     if (inGallery.has(i)) continue;
     const half = p.width / 2 / R;
-    openings.push({ a0: norm(p.yaw - half), a1: norm(p.yaw + half), h: p.height, mouth: false });
+    openings.push({ a0: norm(p.yaw - half), a1: norm(p.yaw + half), door: p });
+    reveal(b, p, R, p.yaw - half, p.yaw + half, rock, floor);
   }
   for (const g of ch.galleries) {
     if (Math.abs(g.inner_radius - R) > 0.05) continue;
-    for (const [a0, a1] of mouthPieces(g.a0, g.a1)) openings.push({ a0, a1, h: H, mouth: true });
+    for (const [a0, a1] of mouthPieces(g.a0, g.a1)) openings.push({ a0, a1, door: null });
   }
-  const cuts = new Set<number>();
+  const spanHolds = (a: number, a0: number, a1: number) => (a1 >= a0 ? a >= a0 && a < a1 : a >= a0 || a < a1);
+  // Inside a doorway the wall is cut only where its reveal is, so the arch and the reveal share edges.
+  const inDoor = (a: number) => openings.some((d) => d.door && spanHolds(a, d.a0, d.a1) && Math.abs(a - d.a0) > 1e-9);
   const n = Math.max(48, Math.ceil((TAU * R) / 1.2));
-  for (let i = 0; i <= n; i++) cuts.add((TAU * i) / n);
+  for (let i = 0; i <= n; i++) if (!inDoor((TAU * i) / n)) cuts.add((TAU * i) / n);
+  // The wall runs from 0 to 2π; both ends are always cut, even inside a doorway (archCuts has them too).
+  cuts.add(0);
+  cuts.add(TAU);
   for (const d of openings) {
     cuts.add(d.a0);
     cuts.add(d.a1);
+    if (!d.door) continue;
+    const half = d.door.width / 2 / R;
+    for (const a of archCuts(d.door.yaw - half, d.door.yaw + half)) cuts.add(norm(a));
   }
   const angles = [...cuts].sort((x, y) => x - y);
-  const spanHolds = (a: number, a0: number, a1: number) => (a1 >= a0 ? a >= a0 && a < a1 : a >= a0 || a < a1);
   for (let i = 0; i + 1 < angles.length; i++) {
     const a0 = angles[i] as number;
     const a1 = angles[i + 1] as number;
     const mid = (a0 + a1) / 2;
     const open = openings.find((d) => spanHolds(mid, d.a0, d.a1));
-    if (!open?.mouth) {
-      const bottom = open ? open.h : 0;
-      b.quad(at(a0, bottom, R), at(a0, H, R), at(a1, H, R), at(a1, bottom, R), rock);
+    if (!open) b.quad(at(a0, 0, R), at(a0, H, R), at(a1, H, R), at(a1, 0, R), rock);
+    else if (open.door) {
+      // Above a doorway: down to its arch.
+      const d = open.door;
+      b.quad(at(a0, archAt(across(d, a0, R), d.width, d.height), R), at(a0, H, R), at(a1, H, R), at(a1, archAt(across(d, a1, R), d.width, d.height), R), rock);
     }
     b.tri(new THREE.Vector3(0, 0, 0), at(a1, 0, R), at(a0, 0, R), floor);
-    b.tri(new THREE.Vector3(0, H * 1.18, 0), at(a0, H, R), at(a1, H, R), ceil);
+    b.tri(new THREE.Vector3(0, ch.dome, 0), at(a0, H, R), at(a1, H, R), ceil);
   }
 
   const groups = new Map<string, typeof ch.galleries>();
@@ -160,19 +232,21 @@ export function chamberGeometry(ch: Chamber): THREE.BufferGeometry {
         b.quad(at(u, H, g.outer_radius), at(v, H, g.outer_radius), at(v, H, g.inner_radius), at(u, H, g.inner_radius), ceil);
       }
     }
+    const outer = outerG.outer_radius;
     const holes = outerG.portal_indices.map((i) => {
       const p = ch.portals[i]!;
       const yaw = liftAngle(p.yaw, a0);
-      const half = p.width / 2 / outerG.outer_radius;
-      return { a0: yaw - half, a1: yaw + half, h: p.height };
+      const half = p.width / 2 / outer;
+      reveal(b, p, outer, yaw - half, yaw + half, rock, floor);
+      return { a0: yaw - half, a1: yaw + half, door: p };
     });
     const edge = new Set<number>([a0, a1]);
-    const steps = Math.max(1, Math.ceil(((a1 - a0) * outerG.outer_radius) / 1.2));
-    for (let i = 0; i <= steps; i++) edge.add(a0 + ((a1 - a0) * i) / steps);
-    for (const h of holes) {
-      edge.add(h.a0);
-      edge.add(h.a1);
+    const steps = Math.max(1, Math.ceil(((a1 - a0) * outer) / 1.2));
+    for (let i = 0; i <= steps; i++) {
+      const a = a0 + ((a1 - a0) * i) / steps;
+      if (!holes.some((h) => a > h.a0 && a < h.a1)) edge.add(a);
     }
+    for (const h of holes) for (const a of archCuts(h.a0, h.a1)) edge.add(a);
     const ring = [...edge].sort((x, y) => x - y);
     for (let i = 0; i + 1 < ring.length; i++) {
       const u = ring[i] as number;
@@ -180,8 +254,9 @@ export function chamberGeometry(ch: Chamber): THREE.BufferGeometry {
       if (u < a0 - 1e-6 || v > a1 + 1e-6) continue;
       const mid = (u + v) / 2;
       const hole = holes.find((h) => mid > h.a0 && mid < h.a1);
-      const bottom = hole ? hole.h : 0;
-      if (bottom < H - 1e-3) b.quad(at(u, bottom, outerG.outer_radius), at(u, H, outerG.outer_radius), at(v, H, outerG.outer_radius), at(v, bottom, outerG.outer_radius), rock);
+      const bu = hole ? archAt(across(hole.door, u, outer), hole.door.width, hole.door.height) : 0;
+      const bv = hole ? archAt(across(hole.door, v, outer), hole.door.width, hole.door.height) : 0;
+      b.quad(at(u, bu, outer), at(u, H, outer), at(v, H, outer), at(v, bv, outer), rock);
     }
   }
   return b.geometry();

@@ -50,7 +50,7 @@ def layout_galleries(node_id: str, radius: float, height: float, doors: list[dic
     spare = room - n * min_ang
     angs = [min_ang + spare * s / total for s in spans]
 
-    from .scene import R2, RA, rng_for, wrap
+    from .scene import R2, RA, plaque, rng_for, wrap
 
     pr = cfg["pillar"]
     ph = cfg["portal"]["height"]
@@ -95,10 +95,7 @@ def layout_galleries(node_id: str, radius: float, height: float, doors: list[dic
                             "pos": [R2(outer * px), 0.0, R2(outer * pz)],
                             "width": R2(door["width"]),
                             "height": ph,
-                            "plaque": {
-                                "pos": [R2((outer - 0.12) * px), R2(ph + 0.55), R2((outer - 0.12) * pz)],
-                                "yaw": RA(wrap(yaw + math.pi)),
-                            },
+                            "plaque": plaque(yaw, outer, slot / 2, door["width"], cfg),
                         }
                     )
                     if door["dir"] == "up":
@@ -260,6 +257,42 @@ def _seg_hits_sector(ax: float, az: float, bx: float, bz: float, vol: dict, s: d
     return False
 
 
+def _seg_seg_dist(a: tuple[float, float], b: tuple[float, float], c: tuple[float, float], d: tuple[float, float]) -> float:
+    if _segs_cross(a, b, c, d):
+        return 0.0
+    return min(
+        _dist_point_seg(a[0], a[1], c[0], c[1], d[0], d[1]),
+        _dist_point_seg(b[0], b[1], c[0], c[1], d[0], d[1]),
+        _dist_point_seg(c[0], c[1], a[0], a[1], b[0], b[1]),
+        _dist_point_seg(d[0], d[1], a[0], a[1], b[0], b[1]),
+    )
+
+
+def _seg_sector_gap(ax: float, az: float, bx: float, bz: float, vol: dict, s: dict) -> float:
+    """Shortest distance from the segment a-b to the sector `s` of `vol`, 0 if they meet.
+
+    The nearest point of the sector lies on its boundary: a radial wall or an arc. On an arc it is
+    either at the arc's end (on a radial wall), at the angle of a segment end, or at the angle of the
+    segment point nearest the centre.
+    """
+    if _seg_hits_sector(ax, az, bx, bz, vol, s):
+        return 0.0
+    la = rotate(ax - vol["cx"], az - vol["cz"], -vol["yaw"])
+    lb = rotate(bx - vol["cx"], bz - vol["cz"], -vol["yaw"])
+    best = math.inf
+    for ang in (s["a0"], s["a1"]):
+        wall = ((s["r0"] * math.sin(ang), s["r0"] * math.cos(ang)), (s["r1"] * math.sin(ang), s["r1"] * math.cos(ang)))
+        best = min(best, _seg_seg_dist(la, lb, wall[0], wall[1]))
+    dx, dz = lb[0] - la[0], lb[1] - la[1]
+    den = dx * dx + dz * dz
+    t = 0.0 if den < 1e-12 else max(0.0, min(1.0, -(la[0] * dx + la[1] * dz) / den))
+    for px, pz in (la, lb, (la[0] + t * dx, la[1] + t * dz)):
+        if _in_span(math.atan2(px, pz), s["a0"], s["a1"]):
+            rad = math.hypot(px, pz)
+            best = min(best, abs(rad - s["r0"]), abs(rad - s["r1"]))
+    return best
+
+
 def _world_corner(vol: dict, ang: float, rad: float) -> tuple[float, float]:
     lx, lz = rad * math.sin(ang), rad * math.cos(ang)
     wx, wz = rotate(lx, lz, vol["yaw"])
@@ -404,22 +437,40 @@ def _clip_y(a: list[float], b: list[float], y0: float, y1: float) -> tuple[list[
     return at(t0), at(t1)
 
 
-def _path_hits(path: list[list[float]], vol: dict) -> bool:
+def _path_hits(path: list[list[float]], vol: dict, pad: float = 0.0, rise: float = 0.0) -> bool:
+    """Whether a tunnel along `path` enters `vol`.
+
+    `pad` is the tunnel's half-width and `rise` its height, so the walls and the vault count,
+    not only the centre line of the floor. The walls must stay CLEARANCE outside the chamber.
+    """
     for a, b in zip(path, path[1:]):
-        clipped = _clip_y(a, b, vol["y0"] - 1e-3, vol["y1"])
+        clipped = _clip_y(a, b, vol["y0"] - 1e-3 - rise, vol["y1"])
         if clipped is None:
             continue
         p, q = clipped
-        reach = math.hypot(p[0] - q[0], p[2] - q[2]) + vol["bound"]
+        reach = math.hypot(p[0] - q[0], p[2] - q[2]) + vol["bound"] + pad
         if math.hypot((p[0] + q[0]) / 2 - vol["cx"], (p[2] + q[2]) / 2 - vol["cz"]) > reach:
             continue
-        if _dist_point_seg(vol["cx"], vol["cz"], p[0], p[2], q[0], q[2]) < vol["r"] - CLEARANCE:
+        # The walls keep CLEARANCE of rock between the tunnel and the chamber.
+        if _dist_point_seg(vol["cx"], vol["cz"], p[0], p[2], q[0], q[2]) < vol["r"] + pad + CLEARANCE:
             return True
         for sector in vol["sectors"]:
-            shrunk = _shrink_sector(sector, CLEARANCE)
-            if shrunk is not None and _seg_hits_sector(p[0], p[2], q[0], q[2], vol, shrunk):
+            if _seg_sector_gap(p[0], p[2], q[0], q[2], vol, sector) < pad + CLEARANCE:
                 return True
     return False
+
+
+def _tunnel_hits(portal: dict, tunnel: dict, vol: dict, home_id: str) -> bool:
+    """Whether the tunnel through `portal` of `home_id` enters `vol`, away from its own two doorways.
+
+    At its own doorways a tunnel meets its chamber by design. The trim there is the doorway
+    allowance plus the half-width, so the tunnel's walls clear the chamber's wall before the check starts.
+    """
+    pad = tunnel.get("width", 0.0) / 2
+    start = DOOR_TRIM + (pad if vol["id"] == home_id and vol["tunnel"] is None else 0.0)
+    end = DOOR_TRIM + (pad if vol["tunnel"] == tunnel["id"] else 0.0)
+    path = _trim(_outward_path(portal, tunnel), start, end=end)
+    return len(path) >= 2 and _path_hits(path, vol, pad, tunnel.get("height", 0.0))
 
 
 def _trim(path: list[list[float]], trim: float, end: float | None = None) -> list[list[float]]:
@@ -549,11 +600,8 @@ def collect_violations(scene: dict) -> list[dict]:
                 )
         for portal in home["portals"]:
             tunnel = tunnels[portal["tunnel"]]
-            path = _trim(_path_in_home(portal, tunnel), DOOR_TRIM)
-            if len(path) < 2:
-                continue
             for vol in vols:
-                if not _path_hits(path, vol):
+                if not _tunnel_hits(portal, tunnel, vol, home["id"]):
                     continue
                 found.append(
                     {
@@ -586,11 +634,8 @@ def separation_plan(scene: dict) -> dict[str, dict]:
             tunnel = tunnels[portal["tunnel"]]
             if _nearly_straight(tunnel["path"]):
                 continue
-            path = _trim(_path_in_home(portal, tunnel), DOOR_TRIM)
-            if len(path) < 2:
-                continue
             far = next(v for v in vols[1:] if v["tunnel"] == tunnel["id"])
-            hits = _path_hits(path, vols[0]) or any(_path_hits(path, v) for v in vols[1:])
+            hits = any(_tunnel_hits(portal, tunnel, v, home["id"]) for v in vols)
             crowded = any(_volumes_overlap(far, v) for v in vols if v is not far)
             if hits or crowded:
                 crooked.add(tunnel["id"])
@@ -608,17 +653,18 @@ def separation_plan(scene: dict) -> dict[str, dict]:
         def at(i: int, shift: list[float] = shift, neighbours: list[dict] = neighbours) -> dict:
             return neighbours[i] if shift[i] == 0.0 else _moved(neighbours[i], shift[i])
 
-        long = [(portal["tunnel"], _extended_path(portal, tunnels[portal["tunnel"]])) for portal in home["portals"]]
-        for tid, path in long:
+        long = [(tunnels[portal["tunnel"]], _extended_path(portal, tunnels[portal["tunnel"]])) for portal in home["portals"]]
+        for tunnel, path in long:
             if len(path) < 2:
                 continue
+            pad, rise = tunnel.get("width", 0.0) / 2, tunnel.get("height", 0.0)
             for j, vol in enumerate(neighbours):
-                if vol["tunnel"] == tid:
+                if vol["tunnel"] == tunnel["id"]:
                     continue
                 placed = at(j)
-                if not _path_hits(path, placed):
+                if not _path_hits(path, placed, pad, rise):
                     continue
-                add = _shift_until_clear(placed, lambda m, path=path: _path_hits(path, m))
+                add = _shift_until_clear(placed, lambda m, path=path, pad=pad, rise=rise: _path_hits(path, m, pad, rise))
                 if add is None:
                     print(f"scene: {vol['id']} stays on the centre line from {home['id']}", flush=True)
                 elif add:

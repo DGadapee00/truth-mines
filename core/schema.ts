@@ -2,7 +2,7 @@
  * The data the pipeline writes and the app reads. Mirrors pipeline/schema.py field for field.
  * Bump SCHEMA_VERSION in both files on any change, so the app refuses data it does not understand.
  */
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 export type Kind = 'axiom' | 'definition' | 'theorem';
 export const KINDS: readonly Kind[] = ['axiom', 'definition', 'theorem'];
@@ -118,7 +118,8 @@ export interface Portal {
   pos: Vec3;
   width: number;
   height: number;
-  plaque: { pos: Vec3; yaw: number };
+  /** The sign above the doorway, facing into the chamber; `width` is the line width of its text */
+  plaque: { pos: Vec3; yaw: number; width: number };
 }
 
 export interface Pillar {
@@ -159,7 +160,10 @@ export interface Chamber extends Strata {
   /** Absolute floor height: -depth * metres_per_depth */
   floor_y: number;
   radius: number;
+  /** Height of the wall (and of the gallery ceilings) */
   height: number;
+  /** Height of the hall's ceiling at its centre: a shallow dome from `height` at the wall */
+  dome: number;
   statement: { pos: Vec3; yaw: number; size: [number, number] };
   spawn: { pos: Vec3; yaw: number };
   portals: Portal[];
@@ -221,10 +225,10 @@ export function parseScene(raw: unknown): SceneFile {
   if (!Array.isArray(s.chambers) || !Array.isArray(s.tunnels)) throw new SchemaError('scene.json has no chambers or tunnels');
   for (const c of s.chambers) {
     const w = `chamber ${String(c?.id)}`;
-    if (!(c.radius > 0) || !(c.height > 0) || !Number.isFinite(c.floor_y)) throw new SchemaError(`${w}: size`);
+    if (!(c.radius > 0) || !(c.height > 0) || !(c.dome >= c.height) || !Number.isFinite(c.floor_y)) throw new SchemaError(`${w}: size`);
     if (!isVec3(c.statement?.pos) || !isVec3(c.spawn?.pos)) throw new SchemaError(`${w}: statement or spawn`);
     if (!Array.isArray(c.galleries)) throw new SchemaError(`${w}: galleries`);
-    for (const p of c.portals) if (!isVec3(p.pos) || !isVec3(p.plaque?.pos) || !(p.width > 0)) throw new SchemaError(`${w}: portal ${p.index}`);
+    for (const p of c.portals) if (!isVec3(p.pos) || !isVec3(p.plaque?.pos) || !(p.plaque.width > 0) || !(p.width > 0)) throw new SchemaError(`${w}: portal ${p.index}`);
     for (const p of c.pillars) if (!isVec3(p.pos) || !(p.radius > 0)) throw new SchemaError(`${w}: pillar ${p.target}`);
     for (const g of c.galleries) {
       if (typeof g.subject !== 'string' || !(g.outer_radius > g.inner_radius) || !(g.inner_radius >= c.radius - 0.02) || !(g.length > 0) || !isVec3(g.pos)) throw new SchemaError(`${w}: gallery ${g.subject}`);

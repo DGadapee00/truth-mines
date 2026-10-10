@@ -68,6 +68,21 @@ def _lift(a: float, a0: float) -> float:
     return y
 
 
+def _plaque_ends(pl: dict) -> tuple[tuple[float, float], tuple[float, float]]:
+    """(x, z) of the plaque's two ends. It faces heading(yaw), so it runs across that."""
+    hx, hz = heading(pl["yaw"])
+    half = pl["width"] / 2
+    x, z = pl["pos"][0], pl["pos"][2]
+    return (x + hz * half, z - hx * half), (x - hz * half, z + hx * half)
+
+
+def _crosses(a, b, c, d) -> bool:
+    def side(p, q, r) -> float:
+        return (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
+
+    return (side(a, b, c) > 0) != (side(a, b, d) > 0) and (side(c, d, a) > 0) != (side(c, d, b) > 0)
+
+
 def test_chambers_fit_their_doorways_statement_and_pillars(world):
     cfg, scene, col, _, lms = world
     assert collect_violations(scene) == []
@@ -78,6 +93,7 @@ def test_chambers_fit_their_doorways_statement_and_pillars(world):
         r = c["radius"]
         assert cfg["chamber"]["min_radius"] - CM <= r <= cfg["chamber"]["max_radius"] + CM
         assert c["height"] >= cfg["portal"]["height"] + 2 - CM
+        assert c["dome"] == pytest.approx(c["height"] * cfg["chamber"]["dome_rise"], abs=CM) and c["dome"] > c["height"]
         owned: dict[int, dict] = {}
         for g in c["galleries"]:
             assert cfg["gallery"]["min_length"] - CM <= g["length"] <= cfg["gallery"]["max_length"] + CM
@@ -108,10 +124,25 @@ def test_chambers_fit_their_doorways_statement_and_pillars(world):
             else:
                 assert abs(wall - r) < CM
             pl = p["plaque"]
-            assert abs(math.hypot(pl["pos"][0], pl["pos"][2]) - (wall - 0.12)) < 2 * CM
+            # A flat sign in front of a curved wall: centred on the doorway, at most a metre in from
+            # the wall, and both its ends in front of that wall, never behind it.
+            rho = math.hypot(pl["pos"][0], pl["pos"][2])
+            assert wall - 1.0 <= rho <= wall - 0.12 + CM, (c["id"], p["target"])
             assert angle_gap(math.atan2(pl["pos"][0], pl["pos"][2]), p["yaw"]) < 1e-3
             assert p["height"] < pl["pos"][1] < c["height"]
             assert angle_gap(pl["yaw"], p["yaw"] + math.pi) < 1e-4
+            assert 2.0 <= pl["width"] <= max(3.2, p["width"] + 1.6) + CM, (c["id"], p["target"])
+            for end in _plaque_ends(pl):
+                assert math.hypot(*end) <= wall - 0.1, (c["id"], p["target"])
+                if i in owned:
+                    g = owned[i]
+                    assert g["a0"] <= _lift(math.atan2(*end), g["a0"]) <= g["a1"], (c["id"], p["target"])
+        # No two signs meet.
+        signs = [_plaque_ends(p["plaque"]) for p in c["portals"]]
+        for k, (s0, s1) in enumerate(signs):
+            for t0, t1 in signs[:k]:
+                assert not _crosses(s0, s1, t0, t1), c["id"]
+                assert min(math.dist(s0, t0), math.dist(s0, t1), math.dist(s1, t0), math.dist(s1, t1)) > 0.05, c["id"]
         # Ring doorways, and the statement wall, keep clear of each other. Gallery doorways sit
         # further out; they are checked against their own wedge above.
         ring = [p for i, p in enumerate(c["portals"]) if i not in owned]
@@ -137,8 +168,8 @@ def test_chambers_fit_their_doorways_statement_and_pillars(world):
             a = math.atan2(p["pos"][0], p["pos"][2])
             opening = door[p["target"]]
             assert angle_gap(a, opening["yaw"]) < 1e-2
-            # In front of its doorway, with room between the pillar and that wall.
-            assert math.hypot(p["pos"][0], p["pos"][2]) + p["radius"] < math.hypot(opening["pos"][0], opening["pos"][2]) - 0.5
+            # In front of its doorway, a metre clear of that wall (as before galleries: r - 1).
+            assert math.hypot(p["pos"][0], p["pos"][2]) + p["radius"] < math.hypot(opening["pos"][0], opening["pos"][2]) - 1
             assert cfg["pillar"]["min_radius"] - CM <= p["radius"] <= cfg["pillar"]["max_radius"] + CM
             assert p["height"] == c["height"]
         for i, p in enumerate(c["pillars"]):
@@ -148,6 +179,85 @@ def test_chambers_fit_their_doorways_statement_and_pillars(world):
             assert _ups_first([p["dir"] for p in c["portals"]])
         assert c["floor_y"] == pytest.approx(-c["depth"] * cfg["metres_per_depth"], abs=CM)
     assert split, "a hub should need more than one wedge for one subject"
+
+
+def _place(pose: dict, p: list[float]) -> list[float]:
+    x, z = rotate(p[0], p[2], pose["yaw"])
+    return [pose["pos"][0] + x, pose["pos"][1] + p[1], pose["pos"][2] + z]
+
+
+def _unplace(pose: dict) -> dict:
+    x, z = rotate(-pose["pos"][0], -pose["pos"][2], -pose["yaw"])
+    return {"pos": [x, -pose["pos"][1], z], "yaw": -pose["yaw"]}
+
+
+def test_no_tunnel_wall_enters_a_hall_or_gallery_of_its_star(world):
+    """Independent of pipeline/scene_fit.py: the tunnel's two walls, at its full width, sampled every
+    half metre, from floor to vault, stay out of every hall and gallery drawn with it, except within
+    the doorway allowance (1.5 m plus the half-width) at the tunnel's own two ends. The pipeline
+    keeps 5 cm of rock; rounding to the centimetre can take back at most 2 cm of it."""
+    _, scene, _, _, _ = world
+    ch = {c["id"]: c for c in scene["chambers"]}
+    tu = {t["id"]: t for t in scene["tunnels"]}
+    margin = -0.02
+    ident = {"pos": [0.0, 0.0, 0.0], "yaw": 0.0}
+
+    def inside(c: dict, pose: dict, p: list[float], rise: float) -> bool:
+        x, z = rotate(p[0] - pose["pos"][0], p[2] - pose["pos"][2], -pose["yaw"])
+        y = p[1] - pose["pos"][1]
+        if y + rise < 0.01 or y > c["dome"]:
+            return False
+        r = math.hypot(x, z)
+        # The hall's ceiling rises from `height` at the wall to `dome` at the centre.
+        if r < c["radius"] - margin and y < c["height"] + (c["dome"] - c["height"]) * (1 - r / c["radius"]):
+            return True
+        if y > c["height"]:
+            return False
+        a = math.atan2(x, z)
+        for g in c["galleries"]:
+            inset = margin / max(r, 1.0)
+            if g["inner_radius"] + margin < r < g["outer_radius"] - margin and g["a0"] + inset < _lift(a, g["a0"]) < g["a1"] - inset:
+                return True
+        return False
+
+    wrong = set()
+    for home in scene["chambers"]:
+        star = [(home, ident, None)]
+        for portal in home["portals"]:
+            t = tu[portal["tunnel"]]
+            pose = t["lower_in_upper"] if portal["dir"] == "down" else _unplace(t["lower_in_upper"])
+            star.append((ch[portal["target"]], pose, t["id"]))
+        reach = [max([c["radius"], *(g["outer_radius"] for g in c["galleries"])]) for c, _, _ in star]
+        for portal in home["portals"]:
+            t = tu[portal["tunnel"]]
+            path = [list(p) for p in t["path"]]
+            if portal["dir"] == "up":
+                path = [_place(_unplace(t["lower_in_upper"]), p) for p in reversed(path)]
+            half = t["width"] / 2
+            walked = [0.0]
+            for a, b in zip(path, path[1:]):
+                walked.append(walked[-1] + math.dist(a, b))
+            total = walked[-1]
+            for i, (a, b) in enumerate(zip(path, path[1:])):
+                run = math.hypot(b[0] - a[0], b[2] - a[2]) or 1.0
+                ax, az = -(b[2] - a[2]) / run, (b[0] - a[0]) / run
+                for (c, pose, tid), far in zip(star, reach):
+                    # Too far from this chamber to matter.
+                    if math.hypot(a[0] - pose["pos"][0], a[2] - pose["pos"][2]) > far + half + run + 1:
+                        continue
+                    own_start = tid is None
+                    own_end = tid == t["id"]
+                    n = max(1, math.ceil(math.dist(a, b) / 0.5))
+                    for k in range(n + 1):
+                        f = k / n
+                        s = walked[i] + f * (walked[i + 1] - walked[i])
+                        if (own_start and s < 1.5 + half) or (own_end and total - s < 1.5 + half):
+                            continue
+                        p = [a[j] + f * (b[j] - a[j]) for j in range(3)]
+                        for side in (-1, 1):
+                            if inside(c, pose, [p[0] + side * half * ax, p[1], p[2] + side * half * az], t["height"]):
+                                wrong.add((home["id"], t["id"], c["id"]))
+    assert not wrong, sorted(wrong)
 
 
 def test_tunnels_run_door_to_door_and_drop_exactly_the_depth_difference(world):

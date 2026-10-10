@@ -22,6 +22,14 @@ type W = {
 };
 const ev = <T>(page: Page, fn: () => T) => page.evaluate(fn);
 
+// The guided move runs on frame time (each frame's step is capped at 50 ms), and the emulated
+// headset draws about 5 frames a second under SwiftShader, so a 140 m tunnel takes minutes.
+// Travel the shortest tunnel out of the chamber; the checks are the same for any of them.
+type SceneJson = { chambers: { id: string; portals: { target: string; tunnel: string }[] }[]; tunnels: { id: string; length: number }[] };
+const sceneJson = JSON.parse(readFileSync(new URL('../data/scene.json', import.meta.url), 'utf8')) as SceneJson;
+const lengths = new Map(sceneJson.tunnels.map((t) => [t.id, t.length]));
+const nearest = [...(sceneJson.chambers.find((c) => c.id === 'sqrt2irr')?.portals ?? [])].sort((a, b) => (lengths.get(a.tunnel) ?? Infinity) - (lengths.get(b.tunnel) ?? Infinity))[0]?.target as string;
+
 test.skip(({ browserName }) => browserName !== 'chromium');
 test.use({ viewport: { width: 1200, height: 800 } });
 
@@ -96,14 +104,14 @@ test('headset: enter, snap turn, teleport, guided tunnel travel', async ({ page 
     .toBeLessThan(0.5);
 
   // A doorway: point at its opening and pull; a guided move with a vignette takes you through.
-  const door = await ev(page, () => (window as unknown as W).__mines.inside.doors().find((d) => d.target === 'ltnr') as { pos: [number, number, number] });
+  const door = await page.evaluate((t) => (window as unknown as W).__mines.inside.doors().find((d) => d.target === t) as { pos: [number, number, number] }, nearest);
   await aim([0.2, 1.3, -0.2], [door.pos[0], 1.4, door.pos[2]]);
   await pull('door');
   await expect.poll(() => ev(page, () => (window as unknown as W).__mines.inside.state.guided)).toBe(true);
   const yawDuring = await ev(page, () => (window as unknown as W).__mines.inside.xr.yaw);
   await expect.poll(() => ev(page, () => (window as unknown as W).__mines.inside.xr.vignette)).toBeGreaterThan(0.3);
   await page.screenshot({ path: `e2e/output/${test.info().project.name}-xr-2-travel.png` });
-  await expect.poll(() => ev(page, () => (window as unknown as W).__mines.inside.state.chamber), { timeout: 120_000 }).toBe('ltnr');
+  await expect.poll(() => ev(page, () => (window as unknown as W).__mines.inside.state.chamber), { timeout: 120_000 }).toBe(nearest);
   // The view was never turned for us (the yaw only changes by the frame change on arrival).
   expect(await ev(page, () => (window as unknown as W).__mines.inside.state.guided)).toBe(false);
   expect(yawDuring).toBeCloseTo(y1, 5);

@@ -153,3 +153,92 @@ def test_a_crowded_hub_splits_a_subject_into_wedges_no_longer_than_the_cap():
     assert sorted(covered) == list(range(len(hall["portals"])))
     for p in hall["portals"]:
         assert math.hypot(p["pos"][0], p["pos"][2]) > hall["radius"] + 1
+
+
+def test_a_tunnel_wall_that_grazes_a_neighbour_is_reported():
+    # The centre line passes 1 m outside `side`'s hall; the tunnel is 4 m wide, so its wall cuts 1 m in.
+    def scene(width: float) -> dict:
+        return {
+            "chambers": [
+                {
+                    "id": "home",
+                    "radius": 8,
+                    "height": 6,
+                    "galleries": [],
+                    "portals": [
+                        {"dir": "down", "target": "far", "yaw": 0.0, "tunnel": "far>home", "pos": [0, 0, 8]},
+                        {"dir": "down", "target": "side", "yaw": math.pi / 2, "tunnel": "side>home", "pos": [8, 0, 0]},
+                    ],
+                },
+                {"id": "far", "radius": 4, "height": 6, "galleries": [], "portals": []},
+                {"id": "side", "radius": 4, "height": 6, "galleries": [], "portals": []},
+            ],
+            "tunnels": [
+                {"id": "far>home", "width": width, "height": 3.4, "path": [[0, 0, 8], [0, 0, 56]], "lower_in_upper": {"pos": [0, 0, 60], "yaw": 0.0}},
+                # `side` sits 5 m to the right of the far>home centre line, 30 m out.
+                {"id": "side>home", "width": 2.4, "height": 3.4, "path": [[8, 0, 0], [8, 0, 30]], "lower_in_upper": {"pos": [5, 0, 30], "yaw": 0.0}},
+            ],
+        }
+
+    def far_hits_side(found: list[dict]) -> bool:
+        return any(v["kind"] == "path" and v["tunnel"] == "far>home" and v["other"] == "side" for v in found)
+
+    assert far_hits_side(collect_violations(scene(4.0)))
+    assert not far_hits_side(collect_violations(scene(1.6)))
+
+
+def test_a_tunnel_wall_that_grazes_a_gallery_is_reported():
+    # A wedge off `side`; the far>home centre line runs 1 m past its outer arc, the wall 1 m inside.
+    def scene(width: float) -> dict:
+        return {
+            "chambers": [
+                {
+                    "id": "home",
+                    "radius": 8,
+                    "height": 6,
+                    "galleries": [],
+                    "portals": [
+                        {"dir": "down", "target": "far", "yaw": 0.0, "tunnel": "far>home", "pos": [0, 0, 8]},
+                        {"dir": "down", "target": "side", "yaw": math.pi, "tunnel": "side>home", "pos": [0, 0, -8]},
+                    ],
+                },
+                {"id": "far", "radius": 4, "height": 6, "galleries": [], "portals": []},
+                {
+                    "id": "side",
+                    "radius": 4,
+                    "height": 6,
+                    # Faces -X in its own frame: from 4 m to 9 m out, a quarter turn wide.
+                    "galleries": [{"inner_radius": 4, "outer_radius": 9, "a0": 1.25 * math.pi, "a1": 1.75 * math.pi}],
+                    "portals": [],
+                },
+            ],
+            "tunnels": [
+                {"id": "far>home", "width": width, "height": 3.4, "path": [[0, 0, 8], [0, 0, 70]], "lower_in_upper": {"pos": [0, 0, 74], "yaw": 0.0}},
+                # Puts `side` 10 m to the right of the far>home line: its wedge reaches to x = 1.
+                {"id": "side>home", "width": 2.4, "height": 3.4, "path": [[0, 0, -8], [0, 0, -9]], "lower_in_upper": {"pos": [10, 0, 40], "yaw": 0.0}},
+            ],
+        }
+
+    def far_hits_side(found: list[dict]) -> bool:
+        return any(v["kind"] == "path" and v["tunnel"] == "far>home" and v["other"] == "side" for v in found)
+
+    assert far_hits_side(collect_violations(scene(4.0)))
+    assert not far_hits_side(collect_violations(scene(1.6)))
+
+
+def test_a_layout_that_does_not_separate_fails_the_build_and_names_the_chambers(monkeypatch):
+    import pipeline.scene as scene_mod
+    from pipeline.scene_fit import LayoutError
+
+    cfg = config()["inside"]
+    hub = node("hub", 10, "logic", [], [], kind="axiom")
+    children = [node(f"c{i:02d}", 10, "logic", ["hub"], [1]) for i in range(12)]
+    nodes = [hub, *children]
+    # No passes allowed: the twelve same-depth neighbours of `hub` still overlap.
+    monkeypatch.setattr(scene_mod, "SEPARATION_PASSES", 0)
+    with pytest.raises(LayoutError) as err:
+        build(nodes, cfg, depth_of(nodes))
+    names = str(err.value).split("chambers: ", 1)[1].split(", ")
+    assert "hub" in names and any(n.startswith("c") for n in names)
+    assert err.value.violations
+    assert {v["home"] for v in err.value.violations} | {v["other"] for v in err.value.violations} <= set(names)

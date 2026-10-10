@@ -92,6 +92,31 @@ def strata(depth: int, max_depth: int, cfg: dict, subject: str) -> dict:
 # ---------------------------------------------------------------- chambers
 
 
+def plaque(yaw: float, wall: float, half_slot: float, door_width: float, cfg: dict) -> dict:
+    """The sign above a doorway: flat, facing into the chamber, over the lintel.
+
+    A flat sign in front of a curved wall: its ends must stay in front of the wall, so the
+    narrower the room, the further in the sign stands. It also stays inside its own doorway's slot
+    of the wall, so neighbouring signs never meet.
+    """
+    clear = 0.12
+    half = max(3.2, door_width + 1.6) / 2
+    # A slot is at least a doorway and its gap wide, so this stays well above zero.
+    limit = half_slot - 0.1 / wall
+    rho = math.sqrt((wall - clear) ** 2 - half**2)
+    for _ in range(20):
+        if math.atan2(half, rho) <= limit + 1e-9:
+            break
+        half = rho * math.tan(limit)
+        rho = math.sqrt((wall - clear) ** 2 - half**2)
+    hx, hz = heading(yaw)
+    return {
+        "pos": [R2(rho * hx), R2(cfg["portal"]["height"] + 0.55), R2(rho * hz)],
+        "yaw": RA(wrap(yaw + math.pi)),
+        "width": R2(2 * half - 0.02),
+    }
+
+
 def chamber(node: dict, ups: list[tuple[str, float, str]], downs: list[tuple[str, float, str]], cfg: dict, max_depth: int) -> dict:
     """ups/downs: (target id, doorway width, target subject), ups first around the wall."""
     c = cfg["chamber"]
@@ -127,8 +152,7 @@ def chamber(node: dict, ups: list[tuple[str, float, str]], downs: list[tuple[str
             yaw = wrap(cursor + span / 2)
             cursor += span
             hx, hz = heading(yaw)
-            # The plaque sits on the wall above the doorway's lintel, facing into the chamber, so
-            # the pillar standing in front of an up doorway never hides it.
+            # The plaque sits above the doorway's lintel, facing into the chamber.
             portals.append(
                 {
                     "dir": direction,
@@ -137,7 +161,7 @@ def chamber(node: dict, ups: list[tuple[str, float, str]], downs: list[tuple[str
                     "pos": [R2(radius * hx), 0.0, R2(radius * hz)],
                     "width": R2(w),
                     "height": cfg["portal"]["height"],
-                    "plaque": {"pos": [R2((radius - 0.12) * hx), R2(cfg["portal"]["height"] + 0.55), R2((radius - 0.12) * hz)], "yaw": RA(wrap(yaw + math.pi))},
+                    "plaque": plaque(yaw, radius, span / 2, w, cfg),
                 }
             )
             if direction == "up":
@@ -163,6 +187,7 @@ def chamber(node: dict, ups: list[tuple[str, float, str]], downs: list[tuple[str
         "floor_y": R2(-node["depth"] * cfg["metres_per_depth"]),
         "radius": R2(radius),
         "height": R2(height),
+        "dome": R2(height * c["dome_rise"]),
         "statement": {"pos": [0.0, R2(sw["lift"] + sw["height"] / 2), R2(-back)], "yaw": 0.0, "size": [R2(width), sw["height"]]},
         "spawn": {"pos": [0.0, 0.0, R2(radius * 0.35)], "yaw": RA(math.pi)},
         "portals": portals,
@@ -343,6 +368,7 @@ def build(nodes: list[dict], cfg: dict, depth_of: dict[str, int]) -> dict:
                 "handedness": "right",
                 "yaw": "angle about +Y; heading(yaw) = (sin yaw, 0, cos yaw), so yaw 0 faces +Z",
                 "chamber_frame": "origin at the centre of the chamber floor; absolute floor height is floor_y",
+                "dome": "the hall's ceiling rises from height at the wall to dome at the centre; gallery ceilings are flat at height",
                 "tunnel_frame": "path, markers and lower_in_upper are in the upper chamber's frame",
                 "statement_wall": "centred at pos, facing heading(yaw), size [width, height]",
                 "portal": "a doorway in the chamber wall at pos; yaw points out of the chamber, down the tunnel",

@@ -14,7 +14,7 @@ interface Inside {
   walk(dx: number, dz: number): void;
   stepAlong(d: number): void;
 }
-type W = { __mines: { inside: Inside; renderer: { info: { render: { calls: number; triangles: number } } }; graph: { must(id: string): { deps: string[] }; dependentsOf(id: string): string[] }; store: { view: { selected: string | null } } } };
+type W = { __mines: { inside: Inside; renderer: { info: { render: { calls: number; triangles: number }; memory: { geometries: number; textures: number } } }; graph: { must(id: string): { deps: string[] }; dependentsOf(id: string): string[] }; store: { view: { selected: string | null } } } };
 const st = (page: Page) => page.evaluate(() => (window as unknown as W).__mines.inside.state);
 const shot = (page: Page, name: string) => page.screenshot({ path: `e2e/output/${test.info().project.name}-${name}.png` });
 
@@ -62,9 +62,9 @@ test('walk through a doorway, down the tunnel, into the next chamber', async ({ 
     }
   }, door as { yaw: number; pos: [number, number, number] });
   expect((await st(page)).inTunnel).toBe('sqrt2irr>nnssre');
-  // Inside a tunnel only its destination is drawn besides the chamber you came from.
-  await page.waitForTimeout(300);
-  expect((await st(page)).drawn.sort()).toEqual(['nnssre', 'sqrt2irr']);
+  // Inside a tunnel only its destination is drawn besides the chamber you came from. The switch
+  // happens on the next frame, which SwiftShader can take longer than a fixed sleep to draw.
+  await expect.poll(async () => (await st(page)).drawn.sort()).toEqual(['nnssre', 'sqrt2irr']);
   await page.waitForTimeout(1500);
   await shot(page, 'inside-2-tunnel');
   // Keep walking forward along the tunnel until the far chamber is reached.
@@ -94,4 +94,21 @@ test('journey: from the axioms, chamber by chamber, guided', async ({ page }) =>
   const second = await st(page);
   expect(second.chamber).toBe(second.journey?.path[1]);
   expect(second.guided).toBe(false);
+});
+
+test('leaving a chamber frees its meshes: entering again does not grow GPU memory', async ({ page }) => {
+  const geometries = () => page.evaluate(() => (window as unknown as W).__mines.renderer.info.memory.geometries);
+  const visit = async () => {
+    await page.locator('#panel [data-act=enter]').click();
+    await expect.poll(async () => (await st(page)).chamber).toBe('sqrt2irr');
+    await page.waitForTimeout(1500);
+    await page.locator('#ih-map').click();
+    await expect(page.locator('#inside-hud')).toBeHidden();
+    await page.waitForTimeout(500);
+  };
+  await visit();
+  const after1 = await geometries();
+  await visit();
+  await visit();
+  expect(await geometries()).toBe(after1);
 });

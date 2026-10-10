@@ -19,14 +19,14 @@ const view = (page: Page) =>
 const shot = (page: Page, name: string) => page.screenshot({ path: `e2e/output/${test.info().project.name}-${name}.png` });
 
 test.beforeEach(async ({ page }) => {
+  // Each test has a fresh browser context, so storage starts empty and one load is enough. (A
+  // second load to clear storage aborted the first one's fetches, logging "Failed to fetch".)
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => {
     if (m.type() === 'error') errors.push(m.text());
   });
   (page as unknown as { errors: string[] }).errors = errors;
-  await page.goto('/');
-  await page.evaluate(() => localStorage.clear());
   await page.goto('/');
   await expect.poll(() => hook(page)).toBe(true);
   await page.waitForTimeout(1500);
