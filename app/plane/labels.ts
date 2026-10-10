@@ -36,7 +36,9 @@ void main() {
   vec3 world = offset + right * position.x * size.x + vec3(0.0, 1.0, 0.0) * position.y * size.y;
   vUv = rect.xy + (position.xy + 0.5) * rect.zw;
   vTint = tint;
-  vAlpha = alpha * (1.0 - smoothstep(uNear, uFar, distance(cameraPosition, offset)));
+  float d = distance(cameraPosition, offset);
+  // Fade with distance, and also very close up, where a glyph would fill the view.
+  vAlpha = alpha * smoothstep(1.5, 4.0, d) * (1.0 - smoothstep(uNear, uFar, d));
   gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
 }`;
 

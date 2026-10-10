@@ -412,6 +412,36 @@ def test_each_window_shows_the_primes_among_100_consecutive_integers(plane):
     assert wins[-1]["count"] < wins[0]["count"] / 2  # they thin out
 
 
+def test_a_window_is_a_10_by_10_panel_in_reading_order_lit_only_at_primes(plane):
+    ov = plane["overlook"]
+    cell, base = ov["panel"]["cell"], ov["panel"]["base"]
+    yaw = ov["scale"]["yaw"]
+    fwd = (math.sin(yaw), math.cos(yaw))
+    lft = (math.cos(yaw), -math.sin(yaw))
+    ox, _, oz = ov["scale"]["origin"]
+    mpd = ov["scale"]["metres_per_decade"]
+    for j, w in enumerate(ov["windows"]):
+        s0 = mpd * j / 4
+        for p in w["primes"]:
+            i = p["p"] - w["x0"]
+            row, col = divmod(i, 10)
+            x, y, z = p["pos"]
+            assert (x - ox) * fwd[0] + (z - oz) * fwd[1] == pytest.approx(s0, abs=0.02)  # the panel stands across the road
+            assert (x - ox) * lft[0] + (z - oz) * lft[1] == pytest.approx((4.5 - col) * cell, abs=0.02)  # column 0 on the left
+            assert y == pytest.approx(base + (9 - row) * cell, abs=0.01)  # row 0 on top
+    # Only primes have a light: 100 positions, never more lights than primes in the window.
+    assert all(len(w["primes"]) == w["count"] <= 25 for w in ov["windows"])
+
+
+def test_the_stops_leave_room_before_the_first_window(plane):
+    ov = plane["overlook"]
+    stop = {s["id"]: s for s in plane["stops"]}["overlook"]
+    ox, _, oz = ov["scale"]["origin"]
+    yaw = ov["scale"]["yaw"]
+    s = (stop["pos"][0] - ox) * math.sin(yaw) + (stop["pos"][2] - oz) * math.cos(yaw)
+    assert s == pytest.approx(-4.0, abs=0.02)
+
+
 def test_primes_appear_at_constant_brightness_only_height_and_place_vary(plane):
     for w in plane["overlook"]["windows"]:
         for p in w["primes"]:
@@ -435,6 +465,31 @@ def test_overlook_geometry_stays_on_the_axis_and_curves_stand_to_the_left(plane)
         assert s["pi_at"][1] == pytest.approx(ov["curve"]["base"] + ov["curve"]["height"] * s["pi"] / 78498, abs=0.01)
         last = s
     assert last["pi_at"][1] > last["est_at"][1]
+
+
+def test_the_ratio_curve_and_its_baseline_at_one(plane):
+    ov = plane["overlook"]
+    cv = ov["curve"]
+    for s in ov["samples"]:
+        assert s["ratio_at"][1] == pytest.approx(cv["base"] + cv["ratio_scale"] * (s["pi"] / (s["x"] / math.log(s["x"])) - 1), abs=0.01)
+        assert s["ratio_at"][0] == pytest.approx(s["pi_at"][0], abs=0.02)  # in the same vertical plane
+    # The baseline is where the ratio is exactly 1, from the first sample to the last.
+    a, b = cv["baseline"]
+    assert a[1] == b[1] == cv["base"]
+    assert a[0] == pytest.approx(ov["samples"][0]["pi_at"][0], abs=0.02)
+    assert b[0] == pytest.approx(ov["samples"][-1]["pi_at"][0], abs=0.02)
+    assert all(s["ratio_at"][1] > cv["base"] for s in ov["samples"])  # the ratio stays above 1
+
+
+def test_the_marker_sign_stands_beside_the_road(plane):
+    ov = plane["overlook"]
+    yaw = ov["scale"]["yaw"]
+    lft = (math.cos(yaw), -math.sin(yaw))
+    for s in ov["samples"]:
+        side = (s["sign_at"][0] - s["at"][0]) * lft[0] + (s["sign_at"][2] - s["at"][2]) * lft[1]
+        assert side == pytest.approx(CFG["overlook"]["marker_sign_lateral"], abs=0.02)
+        assert s["sign_at"][1] == CFG["overlook"]["marker_sign_height"]
+    assert CFG["overlook"]["marker_sign_lateral"] < ov["road"]["half_width"]  # within reach of the walkable road
 
 
 def test_build_writes_identical_bytes_twice(plane):

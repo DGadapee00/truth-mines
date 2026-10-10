@@ -411,6 +411,11 @@ export function createPlane(o: PlaneOptions) {
     },
     strike,
     reset: () => (plaza as Plaza).reset(),
+    /** For tests: stand at a stop at once (the real way is guided travel). */
+    jump(id: string) {
+      setPose(stopPose(id));
+      lastStop = id;
+    },
     goto: (id: string) => startTravel(id),
     /** For tests: the screen position (px) of a column's middle, for a real click. */
     screenOf(kind: 'road' | 'plaza', n: number): { x: number; y: number } | null {

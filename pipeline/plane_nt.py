@@ -239,35 +239,57 @@ def build_overlook(cfg: dict, origin: tuple[float, float], yaw: float) -> dict:
                 "at": road_at(s),
                 "pi_at": road_at(s, o["curve_base"] + o["curve_height"] * pi / pi_max, o["curve_offset"]),
                 "est_at": road_at(s, o["curve_base"] + o["curve_height"] * est / pi_max, o["curve_offset"]),
+                "ratio_at": road_at(s, o["curve_base"] + o["ratio_scale"] * (pi / est - 1), o["curve_offset"]),
+                "sign_at": road_at(s, o["marker_sign_height"], o["marker_sign_lateral"]),
             }
         )
 
+    # A window is a 10 by 10 panel of lights standing across the road, one light per integer in
+    # reading order (top-left first, as the sieve plaza reads), lit only where the integer is prime.
+    # You walk through it; fewer lights are lit the further out the panel stands.
     windows = []
+    cell, base = o["window_cell"], o["window_base"]
+    span = o["window_span"]
+    assert span == 100, "a window is a 10 by 10 panel"
     for j in range(decades * o["windows_per_decade"] + 1):
         w0 = round(10 ** (math.log10(x0) + j / o["windows_per_decade"]))
         s0 = mpd * j / o["windows_per_decade"]
-        span = o["window_span"]
         ps = [p for p in primes_up_to(w0 + span - 1) if p >= w0]
+
+        def light(p: int) -> list[float]:
+            i = p - w0
+            row, col = i // 10, i % 10
+            return road_at(s0, base + (9 - row) * cell, (4.5 - col) * cell)
+
         windows.append(
             {
                 "x0": w0,
                 "span": span,
                 "label": f"{w0:,}–{w0 + span - 1:,}",
                 "count": len(ps),
-                "label_at": road_at(s0, o["point_height"] + 1.2),
-                "primes": [{"p": p, "pos": road_at(s0 + (p - w0) / span * o["window_metres"], o["point_height"])} for p in ps],
+                "label_at": road_at(s0, base + 10 * cell + 0.5),
+                "primes": [{"p": p, "pos": light(p)} for p in ps],
             }
         )
 
     return {
         "scale": {"x0": x0, "x1": x1, "decades": decades, "metres_per_decade": mpd, "origin": pt(origin[0], 0, origin[1]), "yaw": RA(yaw)},
         "road": {"length": R2(decades * mpd + o["tail"]), "half_width": cfg["road"]["half_width"]},
+        "panel": {"cell": cell, "base": base},
         "decades": [{"x": x0 * 10**k, "label": f"10{superscript(2 + k)}", "pos": road_at(mpd * k)} for k in range(decades + 1)],
         "windows": windows,
         "samples": samples,
-        "marker": {"height": o["marker_height"], "sign_offset": o["marker_sign_offset"], "sign_size": o["marker_sign_size"]},
+        "marker": {"sign_size": o["marker_sign_size"]},
         "labels": {"height": o["label_height"]},
-        "curve": {"offset": o["curve_offset"], "base": o["curve_base"], "height": o["curve_height"]},
+        "curve": {
+            "offset": o["curve_offset"],
+            "base": o["curve_base"],
+            "height": o["curve_height"],
+            "width": o["curve_width"],
+            "ratio_scale": o["ratio_scale"],
+            # Where the ratio is exactly 1, along the whole road: the line the ratio curve settles toward.
+            "baseline": [road_at(0.0, o["curve_base"], o["curve_offset"]), road_at(decades * mpd, o["curve_base"], o["curve_offset"])],
+        },
     }
 
 
@@ -337,7 +359,7 @@ def build(cfg: dict) -> dict:
     stops = [
         {"id": "road", "name": "The road", "pos": pt(sx, 0, sz), "yaw": RA(cl.yaw(0)), "pitch": 0.04},
         {"id": "plaza", "name": "The sieve plaza", "pos": pt(ex + hx * (near + 1.5), 0, ez + hz * (near + 1.5)), "yaw": RA(eyaw), "pitch": -0.2},
-        {"id": "overlook", "name": "The overlook", "pos": pt(origin[0], 0, origin[1]), "yaw": RA(eyaw), "pitch": 0.12},
+        {"id": "overlook", "name": "The overlook", "pos": pt(origin[0] - hx * cfg["overlook"]["arrival"], 0, origin[1] - hz * cfg["overlook"]["arrival"]), "yaw": RA(eyaw), "pitch": 0.12},
     ]
     return {
         "schema_version": PLANE_SCHEMA_VERSION,

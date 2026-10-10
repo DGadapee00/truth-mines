@@ -334,6 +334,10 @@ export interface OverlookSample {
   at: Vec3;
   pi_at: Vec3;
   est_at: Vec3;
+  /** On the ratio curve: base + ratio_scale * (ratio - 1) */
+  ratio_at: Vec3;
+  /** Where the marker's sign stands, beside the road */
+  sign_at: Vec3;
 }
 
 export interface OverlookWindow {
@@ -348,12 +352,13 @@ export interface OverlookWindow {
 export interface Overlook {
   scale: { x0: number; x1: number; decades: number; metres_per_decade: number; origin: Vec3; yaw: number };
   road: { length: number; half_width: number };
+  panel: { cell: number; base: number };
   decades: { x: number; label: string; pos: Vec3 }[];
   windows: OverlookWindow[];
   samples: OverlookSample[];
-  marker: { height: number; sign_offset: number; sign_size: [number, number] };
+  marker: { sign_size: [number, number] };
   labels: { height: number };
-  curve: { offset: number; base: number; height: number };
+  curve: { offset: number; base: number; height: number; width: number; ratio_scale: number; baseline: [Vec3, Vec3] };
 }
 
 export interface PlaneFile {
@@ -394,6 +399,6 @@ export function parsePlane(raw: unknown): PlaneFile {
   for (const c of pl.grid) if (!Number.isInteger(c.n) || !isVec3(c.pos) || !pl.multiples[String(c.n)]) throw new SchemaError(`plane plaza cell ${String(c?.n)}`);
   const ov = p.overlook;
   if (!ov || !Array.isArray(ov.samples) || ov.samples.length < 2 || !Array.isArray(ov.windows)) throw new SchemaError('plane: overlook');
-  for (const s of ov.samples) if (!(s.x > 0) || !isVec3(s.at) || !isVec3(s.pi_at) || !isVec3(s.est_at) || !Number.isFinite(s.s)) throw new SchemaError(`plane overlook sample ${String(s?.x)}`);
+  for (const s of ov.samples) if (!(s.x > 0) || !isVec3(s.at) || !isVec3(s.pi_at) || !isVec3(s.est_at) || !isVec3(s.ratio_at) || !isVec3(s.sign_at) || !Number.isFinite(s.s)) throw new SchemaError(`plane overlook sample ${String(s?.x)}`);
   return p as PlaneFile;
 }

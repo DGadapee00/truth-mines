@@ -177,18 +177,21 @@ number_theory_plane:
     x_end: 1000000
     metres_per_decade: 60.0
     windows_per_decade: 4
-    window_span: 100 # consecutive integers shown at each window
-    window_metres: 10.0 # the window's length along the road
-    point_height: 2.6
+    window_span: 100 # consecutive integers shown at each window: a 10 by 10 panel, in reading order
+    window_cell: 0.55 # metres between lights in a panel
+    window_base: 1.0 # metres from the ground to the panel's lowest row
     curve_offset: 10.0 # metres to the left of the road
     curve_base: 2.0
     curve_height: 40.0 # metres of sky for pi(x_end)
+    curve_width: 0.16 # metres: thickness of the curves
+    ratio_scale: 60.0 # metres of sky per unit of ratio above 1, for the third curve
     samples_per_decade: 60
-    marker_height: 5.0
-    marker_sign_offset: 2.2 # metres above the marker's top
-    marker_sign_size: [4.8, 1.9]
+    marker_sign_lateral: 3.4 # metres left of the road: the sign stands beside the road, not in your way
+    marker_sign_height: 2.6 # metres above the ground: the sign's centre
+    marker_sign_size: [3.4, 1.35]
     label_height: 0.9
-    tail: 10.0 # road beyond x_end
+    tail: 14.0 # road beyond x_end
+    arrival: 4.0 # metres before x = 100 where the visitor arrives
   texts:
     - id: arrive
       text: "Every whole number is built from primes in exactly one way. The road runs from {first} to {limit}: one stone column for each."
