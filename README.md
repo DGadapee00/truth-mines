@@ -9,7 +9,7 @@ where every theorem is proved step by step from the axioms of logic and ZFC set 
 statements and 909,530 citations. The mine shows 345 landmarks (named theorems, key definitions
 and every axiom) and folds the lemmas between them into tunnels that record how much they hide.
 
-Two ways to look:
+Three ways to look:
 
 - **The map**: the whole mine from outside. Select a theorem and its critical path to the axioms
   lights up.
@@ -17,6 +17,12 @@ Two ways to look:
   for each result it rests on, tunnels up to those results and down to what rests on it, with the
   lemmas of each tunnel marked at their own depth. "Journey here" walks you down from the axioms.
   Desktop (W A S D and the mouse) or a VR headset (teleport, snap turn, guided tunnels).
+- **The number theory plane**: a second place, not a theorem. Walk a road of the integers 1 to 100
+  (a prime is one tall monolith, every other number a stack of prime blocks, threads of light to
+  what it is made of), strike numbers in the sieve plaza until only the 25 primes stand, and look
+  out over the primes to a million as the count thins along a logarithmic road. Entered from the
+  header or `#/plane/number-theory`; desktop and headset. The brief is
+  [docs/plane-number-theory.md](docs/plane-number-theory.md).
 
 ## Run it
 
@@ -50,9 +56,11 @@ runs.
 | `pipeline/` | Python: fetch, extract, validate, curate, collapse, depth, layout, export ([README](pipeline/README.md)) |
 | `pipeline/landmarks.yaml` | The curated landmarks and their names: the only place curation happens |
 | `pipeline/sources.lock` | Pinned sources (set.mm commit, the label font) with hashes |
-| `core/` | TypeScript graph model and queries (ancestors, descendants, critical path, search), and the schema of every data file. No rendering |
+| `core/` | TypeScript graph model and queries (ancestors, descendants, critical path, search), the sieve's rules, and the schema of every data file. No rendering |
 | `pipeline/scene.py` | The Inside view's chambers and tunnels, as engine-neutral scene descriptors (data/scene.json) |
+| `pipeline/numtheory.py`, `pipeline/plane_nt.py` | The number theory plane: arithmetic (tested against trial division) and its descriptors (data/plane-number-theory.json) |
 | `app/inside/` | The Inside view: renders the descriptors for the local subgraph; desktop walking, Journey, headset |
+| `app/plane/` | The number theory plane: draws and animates its descriptors; walking, focus, the sieve, stops, headset |
 | `app/render/` | The mine in three.js: instanced nodes and tunnels, batched labels, MathJax |
 | `app/ui/` | Panel, search, desktop camera |
 | `content/` | Plain-language notes, shown only once reviewed ([README](content/README.md)) |

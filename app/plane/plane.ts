@@ -4,6 +4,7 @@ import { pickTarget, type Target } from './focus';
 import { buildGround, buildWorld } from './world';
 import { Sign } from './labels';
 import { Travel, type Pose } from './travel';
+import { attachXR, type XRInfo } from './xr';
 import { EYE, PlaneWalk, type Blocker } from './walk';
 import { primeColours, type Road } from './road';
 import type { Plaza } from './plaza';
@@ -138,6 +139,7 @@ export function createPlane(o: PlaneOptions) {
   // ---- the XR seam (app/plane/xr.ts attaches itself here)
   let xrEnd: (() => void) | null = null;
   let xrActive: () => boolean = () => false;
+  let xrInfo: () => XRInfo = () => ({ active: false, heading: 0, vignette: 0, target: false, aim: null });
 
   // ---- what the student is looking at
   function viewRay(): { o: THREE.Vector3; d: THREE.Vector3 } | null {
@@ -288,6 +290,7 @@ export function createPlane(o: PlaneOptions) {
   // ---- each frame
   function update(dt: number) {
     if (!active || !data || !walk) return;
+    xr.update();
     (plaza as Plaza).update(dt);
     if (travel) {
       travel.t += dt;
@@ -320,6 +323,30 @@ export function createPlane(o: PlaneOptions) {
     (overlook as Overlook).mark(marker, cam);
     updateHud(zoneOf(walk.x, walk.z));
   }
+
+  const xr = attachXR({
+    renderer: o.renderer,
+    camera,
+    rig,
+    scene,
+    eye: EYE,
+    walk: () => walk as PlaneWalk,
+    isPlaneActive: () => active,
+    getHeading: () => heading,
+    setHeading: (h) => (heading = h),
+    focusKind: () => focus?.kind ?? null,
+    strikeFocused,
+    startTravel,
+    nextStop,
+    travelling: () => !!travel,
+    travelK: () => (travel ? Math.min(1, travel.t / travel.plan.duration) : null),
+    setRay: (fn) => (extraRay = fn),
+    onXR(end, isActive, info) {
+      xrEnd = end;
+      xrActive = isActive;
+      xrInfo = info;
+    },
+  });
 
   return {
     scene,
@@ -356,19 +383,16 @@ export function createPlane(o: PlaneOptions) {
       nextStop,
       strikeFocused,
       scene,
-      setRay(fn: (() => { o: THREE.Vector3; d: THREE.Vector3 } | null) | null) {
-        extraRay = fn;
-      },
-      onXR(end: () => void, isActive: () => boolean) {
-        xrEnd = end;
-        xrActive = isActive;
-      },
       get focus() {
         return focus;
       },
       get travelTo() {
         return travel?.to ?? null;
       },
+    },
+    /** For tests: the headset state. */
+    get xr() {
+      return xrInfo();
     },
     /** For tests: where you are and what you see. */
     get state() {

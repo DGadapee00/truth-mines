@@ -497,3 +497,16 @@ def test_build_writes_identical_bytes_twice(plane):
     b = json.dumps(build(CFG), separators=(",", ":"))
     assert a == b
     assert len(a) < 1_000_000  # well inside the 2 MB payload budget
+
+
+def test_every_size_the_app_draws_with_comes_from_the_descriptor(plane):
+    """Rule 9: the app decides no geometry, so even the cosmetic sizes are exported."""
+    r, pz, o = CFG["road"], CFG["plaza"], CFG["overlook"]
+    road = plane["road"]
+    assert road["block"] == {"size": r["block"], "gap": r["block_gap"]}
+    assert road["thread_radius"] == r["thread_radius"] and road["labels"] == r["labels"]
+    assert road["monolith"]["width"] == r["monolith_width"]
+    assert plane["plaza"]["labels"] == pz["labels"] and plane["plaza"]["column"] == pz["column"]
+    assert plane["overlook"]["marker"]["sign_size"] == o["marker_sign_size"]
+    assert plane["overlook"]["curve"]["width"] == o["curve_width"]
+    assert plane["overlook"]["labels"]["height"] == o["label_height"]

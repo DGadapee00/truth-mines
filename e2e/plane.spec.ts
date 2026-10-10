@@ -256,3 +256,20 @@ test('travel: a key takes you to a stop, eased, and nothing moves you unasked', 
   expect(s.zone).toBe('overlook');
   expect(s.marker).toMatchObject({ x: 100 });
 });
+
+test('enter by address, leave by Map: the mine is as it was', async ({ page }) => {
+  await page.locator('#pl-map').click();
+  await expect.poll(async () => (await st(page)).active).toBe(false);
+  await expect(page.locator('#plane-hud')).toBeHidden();
+  await expect(page.locator('.bar')).toBeVisible();
+  await expect(page.locator('#counts')).toContainText('landmarks');
+  expect(await page.evaluate(() => location.hash)).toBe('');
+  // The map still selects and traces as before.
+  await page.goto('/#/n/sqrt2irr');
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __mines: { store: { view: { selected: string | null } } } }).__mines?.store.view.selected)).toBe('sqrt2irr');
+  // And the address of the plane enters it directly.
+  await page.goto('/#/plane/number-theory');
+  await expect.poll(() => page.evaluate(() => !!(window as unknown as W).__mines?.plane)).toBe(true);
+  await expect.poll(async () => (await st(page)).active).toBe(true);
+  await expect(page.locator('#pl-name')).toHaveText('The road of integers');
+});

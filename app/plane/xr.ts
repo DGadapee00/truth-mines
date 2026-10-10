@@ -78,8 +78,8 @@ export function attachXR(x: XRContext) {
     h.c.updateMatrixWorld();
     return { o: new THREE.Vector3().setFromMatrixPosition(h.c.matrixWorld), d: new THREE.Vector3(0, 0, -1).transformDirection(h.c.matrixWorld) };
   };
-  /** The ray that points: the hand holding the trigger, else the first hand that is connected. */
-  const activeHand = () => hands.find((h) => h.aiming && h.source) ?? hands.find((h) => h.source) ?? null;
+  /** The ray that points: the hand holding the trigger, else the right hand, else any that is connected. */
+  const activeHand = () => hands.find((h) => h.aiming && h.source) ?? hands.find((h) => h.source?.handedness === 'right') ?? hands.find((h) => h.source) ?? null;
 
   function teleport() {
     if (x.focusKind() === 'plaza') {
