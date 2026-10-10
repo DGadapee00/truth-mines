@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import type { Gallery } from '../../core/schema';
+import { liftAngle } from './geometry';
 import type { Passage, Star } from './star';
 
 /**
@@ -14,6 +16,33 @@ import type { Passage, Star } from './star';
  */
 export const EYE = 1.65;
 const WALL_GAP = 0.45;
+
+type WalkRoom = { radius: number; galleries: Pick<Gallery, 'a0' | 'a1' | 'inner_radius' | 'outer_radius'>[] };
+
+/**
+ * Hall disk, or a gallery wedge from the descriptor, inset from the solid walls.
+ * A mouth is an opening in the hall wall, so the floor runs straight through it.
+ */
+export function inWalkable(ch: WalkRoom, x: number, z: number): boolean {
+  const r = Math.hypot(x, z);
+  if (r <= ch.radius - WALL_GAP) return true;
+  const a = Math.atan2(x, z);
+  let inner = Infinity;
+  let outer = -1;
+  let opensHall = false;
+  for (const g of ch.galleries) {
+    const y = liftAngle(a, g.a0);
+    const inset = WALL_GAP / Math.max(r, 1);
+    if (y <= g.a0 + inset || y >= g.a1 - inset) continue;
+    inner = Math.min(inner, g.inner_radius);
+    outer = Math.max(outer, g.outer_radius);
+    if (g.inner_radius <= ch.radius + 0.05) opensHall = true;
+  }
+  if (!(outer > 0) || r > outer - WALL_GAP) return false;
+  // The mouth meets the hall, so the inset that keeps you off a solid wall does not apply there.
+  if (opensHall) return true;
+  return r >= inner - 0.05;
+}
 
 export interface Floor {
   /** Floor point under you, in the current chamber's frame */
@@ -83,35 +112,32 @@ export class Walker {
           nz = p.pos[2] + (oz / d) * min;
         }
       }
-      const r = Math.hypot(nx, nz);
-      if (r > ch.radius - WALL_GAP) {
-        // Through a doorway? Then into its tunnel.
-        const a = Math.atan2(nx, nz);
-        const door = this.star.passages.find((p) => {
-          const half = (p.portal.width / 2 - WALL_GAP) / ch.radius;
-          const diff = Math.abs(((a - p.portal.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI);
-          return diff < half;
-        });
-        if (door && r > ch.radius - 0.05) {
-          const start = door.path[0] as THREE.Vector3;
-          const next = door.path[1] as THREE.Vector3;
-          const fx = next.x - start.x;
-          const fz = next.z - start.z;
-          const len = Math.hypot(fx, fz) || 1;
-          this.passage = door;
-          this.s = Math.max(0.01, ((nx - start.x) * fx + (nz - start.z) * fz) / len);
-          this.u = ((nx - start.x) * -fz + (nz - start.z) * fx) / len;
-          this.clampAcross();
-          return null;
-        }
-        if (!door) {
-          const k = (ch.radius - WALL_GAP) / r;
-          nx *= k;
-          nz *= k;
-        }
+      const door = this.doorAt(nx, nz);
+      if (inWalkable(ch, nx, nz)) {
+        this.x = nx;
+        this.z = nz;
+        return null;
       }
-      this.x = nx;
-      this.z = nz;
+      if (door?.past) {
+        const start = door.passage.path[0] as THREE.Vector3;
+        const next = door.passage.path[1] as THREE.Vector3;
+        const fx = next.x - start.x;
+        const fz = next.z - start.z;
+        const len = Math.hypot(fx, fz) || 1;
+        this.passage = door.passage;
+        this.s = Math.max(0.01, ((nx - start.x) * fx + (nz - start.z) * fz) / len);
+        this.u = ((nx - start.x) * -fz + (nz - start.z) * fx) / len;
+        this.clampAcross();
+        return null;
+      }
+      if (door) {
+        this.x = nx;
+        this.z = nz;
+        return null;
+      }
+      // Stay inside the walkable floor: keep whichever axis still fits.
+      if (inWalkable(ch, nx, this.z) || this.doorAt(nx, this.z)) this.x = nx;
+      else if (inWalkable(ch, this.x, nz) || this.doorAt(this.x, nz)) this.z = nz;
       return null;
     }
     // In a tunnel: along and across the floor line.
@@ -132,6 +158,20 @@ export class Walker {
       return null;
     }
     if (this.s >= total) return p;
+    return null;
+  }
+
+  /** A doorway whose opening this point has reached. `past` means the step leaves into the tunnel. */
+  private doorAt(x: number, z: number): { passage: Passage; past: boolean } | null {
+    const r = Math.hypot(x, z);
+    const a = Math.atan2(x, z);
+    for (const p of this.star.passages) {
+      const doorR = Math.hypot(p.portal.pos[0], p.portal.pos[2]);
+      const half = (p.portal.width / 2 - WALL_GAP) / doorR;
+      if (!(half > 0)) continue;
+      const diff = Math.abs(Math.atan2(Math.sin(a - p.portal.yaw), Math.cos(a - p.portal.yaw)));
+      if (diff < half && r > doorR - WALL_GAP) return { passage: p, past: r > doorR - 0.05 };
+    }
     return null;
   }
 

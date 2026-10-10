@@ -18,7 +18,7 @@ layout and `pipeline/README.md` for the data.
    them; the pipeline exports only reviewed notes, so the app never shows an unreviewed one.
 8. Every feature lands with desktop support and a test.
 9. Engine independence: all procedural layout of the Inside view (chamber dimensions, statement
-   wall placement, doorways and plaques, pillar positions, tunnel paths, marker positions,
+   wall placement, doorways and plaques, pillar positions, gallery wedges, tunnel paths, marker positions,
    strata light, fog and rock colour) is computed in the pipeline (pipeline/scene.py) and
    exported as scene descriptors in data/scene.json. The app only renders those descriptors and
    decides no geometry of its own, so a second engine (Unreal) can render the identical mine.
@@ -74,15 +74,18 @@ Quest 3 must be measured on the device (chrome://inspect over USB); the emulator
 
 ## Checks before a commit
 
-`npm run check` (typecheck, lint, unit tests, pipeline tests), then `npm run e2e` and look at the
-screenshots in `e2e/output/`. In a sandbox without a GPU, Chromium renders with SwiftShader and is
-slow; the e2e timeouts allow for that.
+`npm run check` is the fast local gate: typecheck, lint, unit tests, pipeline tests, and the map
+e2e (`e2e/mine.spec.ts` on laptop and phone). `npm run e2e` is the full Playwright suite, including
+the Inside view and the headset. CI runs that full suite (`.github/workflows/build.yml`). In a
+sandbox without a GPU, Chromium renders with SwiftShader and is slow; the e2e timeouts allow for that.
+Screenshots land in `e2e/output/`.
 
 ## Decisions that differ from the spec, and why
 
-- **MathJax, not KaTeX.** KaTeX's HTML needs web fonts and cannot be drawn into a WebGL texture
-  for the headset without tainting the canvas. MathJax's SVG output draws glyphs as paths, so one
-  renderer serves the page and the headset.
+- **MathJax for statement textures, KaTeX for panel names.** KaTeX's HTML needs web fonts and cannot
+  be drawn into a WebGL texture for the headset without tainting the canvas. Statement walls are
+  rasterized once with MathJax SVG and kept in an LRU of 32 textures (`app/inside/textureCache.ts`);
+  entering a chamber again does not draw them again. Names in the side panel stay on KaTeX.
 - **Validation's grounding rule** accepts theorems proved from their own hypotheses alone and
   restatements of a definition. set.mm contains 25 such statements, so "every node reaches an
   axiom" can never pass on it as written.

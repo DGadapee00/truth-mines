@@ -3,7 +3,7 @@ import { plainName, type MineGraph } from '../../core/graph';
 import { parseScene } from '../../core/schema';
 import { poseMatrix } from './geometry';
 import { buildStar, SceneIndex, type Passage, type Star } from './star';
-import { EYE, Route, Walker } from './walk';
+import { EYE, inWalkable, Route, Walker } from './walk';
 
 /**
  * The Inside view: you stand in a theorem's chamber at human scale and walk its tunnels.
@@ -26,7 +26,8 @@ export function createInside(o: InsideOptions) {
   scene.background = new THREE.Color(0x050506);
   const fog = new THREE.FogExp2(0x050506, 0.02);
   scene.fog = fog;
-  const camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.05, 400);
+  // Far enough to see the end of the longest tunnel (about 700 m) from its doorway.
+  const camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.05, 1600);
   const rig = new THREE.Group(); // the student: floor point and facing; the camera sits at eye height
   rig.add(camera);
   camera.position.set(0, EYE, 0);
@@ -122,10 +123,15 @@ export function createInside(o: InsideOptions) {
     const inv = poseMatrix(p.farPose).invert();
     const there = floorHere.clone().applyMatrix4(inv);
     yaw -= p.farPose.yaw;
+    const portalIndex = p.up ? p.tunnel.upper_portal : p.tunnel.lower_portal;
     build(p.far.id);
-    const r = Math.hypot(there.x, there.z);
-    const room = (star as Star).chamber.radius - 0.8;
-    (walker as Walker).place(r > room ? (there.x * room) / r : there.x, r > room ? (there.z * room) / r : there.z);
+    const ch = (star as Star).chamber;
+    const portal = ch.portals[portalIndex];
+    if (portal && !inWalkable(ch, there.x, there.z)) {
+      there.x -= Math.sin(portal.yaw) * 0.8;
+      there.z -= Math.cos(portal.yaw) * 0.8;
+    }
+    (walker as Walker).place(there.x, there.z);
     if (journey) {
       const k = journey.path.indexOf(p.far.id);
       if (k >= 0) journey.at = k;
@@ -223,37 +229,46 @@ export function createInside(o: InsideOptions) {
   }
   let xrSession: XRSession | null = null;
   let hands: Hand[] = [];
-  const ray = new THREE.Raycaster();
+  let xrAim: 'door' | 'floor' | null = null;
+
+  /** Where the ray meets a doorway's rectangle: the plane through its centre, facing out. */
+  function portalHit(o3: THREE.Vector3, d: THREE.Vector3, portal: { pos: [number, number, number]; yaw: number; width: number; height: number }): { t: number; at: THREE.Vector3 } | null {
+    const nx = Math.sin(portal.yaw);
+    const nz = Math.cos(portal.yaw);
+    const denom = d.x * nx + d.z * nz;
+    if (denom <= 1e-6) return null;
+    const t = ((portal.pos[0] - o3.x) * nx + (portal.pos[2] - o3.z) * nz) / denom;
+    if (t <= 0.05) return null;
+    const hit = o3.clone().addScaledVector(d, t);
+    const u = (hit.x - portal.pos[0]) * -nz + (hit.z - portal.pos[2]) * nx;
+    if (Math.abs(u) > portal.width / 2 || hit.y < 0 || hit.y > portal.height) return null;
+    return { t, at: new THREE.Vector3(hit.x, 0, hit.z) };
+  }
 
   function aimOf(h: Hand): Aim {
     if (!star || !walker || walker.passage) return null;
     h.c.updateMatrixWorld();
     const o3 = new THREE.Vector3().setFromMatrixPosition(h.c.matrixWorld);
     const d = new THREE.Vector3(0, 0, -1).transformDirection(h.c.matrixWorld);
-    ray.set(o3, d);
     const ch = star.chamber;
-    // A doorway: where the ray meets the round wall, inside a doorway's opening.
-    const a = d.x * d.x + d.z * d.z;
-    const b = 2 * (o3.x * d.x + o3.z * d.z);
-    const c = o3.x * o3.x + o3.z * o3.z - ch.radius * ch.radius;
-    const disc = b * b - 4 * a * c;
-    if (a > 1e-9 && disc > 0) {
-      const t = (-b + Math.sqrt(disc)) / (2 * a);
-      const hit = o3.clone().addScaledVector(d, t);
-      if (t > 0 && hit.y > 0 && hit.y < 3.6) {
-        const ang = Math.atan2(hit.x, hit.z);
-        const p = star.passages.find((x) => Math.abs(Math.atan2(Math.sin(ang - x.portal.yaw), Math.cos(ang - x.portal.yaw))) < x.portal.width / 2 / ch.radius && hit.y < x.portal.height);
-        if (p) return { kind: 'door', at: new THREE.Vector3(hit.x, 0, hit.z), passage: p };
+    let best: Aim = null;
+    let bestT = Infinity;
+    for (const p of star.passages) {
+      const hit = portalHit(o3, d, p.portal);
+      if (hit && hit.t < bestT) {
+        bestT = hit.t;
+        best = { kind: 'door', at: hit.at, passage: p };
       }
     }
-    // The floor: inside the wall, clear of pillars.
     if (d.y < -1e-3) {
       const t = -o3.y / d.y;
-      const hit = o3.clone().addScaledVector(d, t);
-      const ok = Math.hypot(hit.x, hit.z) < ch.radius - 0.6 && !ch.pillars.some((p) => Math.hypot(hit.x - p.pos[0], hit.z - p.pos[2]) < p.radius * 1.1 + 0.35);
-      if (ok) return { kind: 'floor', at: hit };
+      if (t > 0 && t < bestT) {
+        const hit = o3.clone().addScaledVector(d, t);
+        const clear = inWalkable(ch, hit.x, hit.z) && !ch.pillars.some((p) => Math.hypot(hit.x - p.pos[0], hit.z - p.pos[2]) < p.radius * 1.1 + 0.35);
+        if (clear) best = { kind: 'floor', at: hit };
+      }
     }
-    return null;
+    return best;
   }
 
   function teleportOrTravel(h: Hand) {
@@ -302,7 +317,10 @@ export function createInside(o: InsideOptions) {
   }
 
   function updateXR() {
-    if (!xrSession) return;
+    if (!xrSession) {
+      xrAim = null;
+      return;
+    }
     let shown: Aim = null;
     for (const h of hands) {
       const gp = h.source?.gamepad;
@@ -327,6 +345,7 @@ export function createInside(o: InsideOptions) {
         if (h.aiming || !shown) shown = aim ?? shown;
       }
     }
+    xrAim = shown?.kind ?? null;
     target.visible = !!shown && !guided;
     if (shown) {
       target.position.copy(shown.at).setY(0.02);
@@ -432,7 +451,7 @@ export function createInside(o: InsideOptions) {
     },
     /** For tests: the headset state. */
     get xr() {
-      return { active: !!xrSession, yaw, vignette: vignette.visible ? ((vignette.material as THREE.ShaderMaterial).uniforms.uOpacity!.value as number) : 0, target: target.visible };
+      return { active: !!xrSession, yaw, vignette: vignette.visible ? ((vignette.material as THREE.ShaderMaterial).uniforms.uOpacity!.value as number) : 0, target: target.visible, aim: xrAim };
     },
     /** For tests: the current chamber's doorways. */
     doors: () => (star ? star.chamber.portals.map((x) => ({ yaw: x.yaw, target: x.target, dir: x.dir, pos: x.pos })) : []),

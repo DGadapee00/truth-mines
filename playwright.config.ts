@@ -14,9 +14,17 @@ export default defineConfig({
     launchOptions: { args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] },
   },
   projects: [
-    { name: 'laptop', use: { ...devices['Desktop Chrome'], viewport: { width: 1400, height: 860 } } },
+    // XR runs only after the other WebGL tests have released SwiftShader. It passes alone and
+    // fails when a parallel laptop test keeps the software GPU from producing a frame in time.
+    { name: 'laptop', testIgnore: /xr\.spec\.ts/, use: { ...devices['Desktop Chrome'], viewport: { width: 1400, height: 860 } } },
     // The phone covers the map; the Inside view and the headset are desktop and XR modes.
     { name: 'phone', use: { ...devices['Pixel 7'] }, testMatch: /mine\.spec\.ts/ },
+    {
+      name: 'xr',
+      testMatch: /xr\.spec\.ts/,
+      dependencies: ['laptop', 'phone'],
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1200, height: 800 } },
+    },
   ],
   webServer: {
     command: 'npx vite --port 5176 --strictPort',

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 KINDS = ("axiom", "definition", "theorem")
 

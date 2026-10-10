@@ -13,8 +13,9 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:pipeline": "python3 -m pytest -q pipeline/tests",
+    "test:map": "playwright test e2e/mine.spec.ts",
     "e2e": "playwright test",
-    "check": "npm run typecheck && npm run lint && npm test && npm run test:pipeline"
+    "check": "npm run typecheck && npm run lint && npm test && npm run test:pipeline && npm run test:map"
   },
   "dependencies": {
     "katex": "^0.16.25",

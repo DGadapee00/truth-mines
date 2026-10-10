@@ -29,8 +29,10 @@ npm run dev         # http://localhost:5173
 
 ## Checks
 
-All of these run in CI on every push (`.github/workflows/build.yml`), and a change merges only if
-they pass:
+CI (`.github/workflows/build.yml`) runs the pipeline, the unit tests, and the full Playwright suite
+on a pull request and on a push to `main`. A change merges only if they pass. `npm run check` is the
+fast local gate: the same unit and pipeline tests, plus the map e2e, and not the Inside or headset
+runs.
 
 | Command | What it checks |
 | --- | --- |
@@ -38,7 +40,8 @@ they pass:
 | `npm run test:pipeline` | Each pipeline stage on a small .mm fixture |
 | `npm test` | core/ queries, and every landmark's ancestors against the full set.mm graph; every statement typesets |
 | `npm run typecheck`, `npm run lint` | TypeScript strict; core/ imports no rendering code |
-| `npm run e2e` | Playwright: the map on laptop and phone; the Inside view (locality, budget, walking a tunnel, Journey); the headset on an emulated Quest 3 |
+| `npm run check` | typecheck, lint, unit tests, pipeline tests, and the map e2e. The fast local gate |
+| `npm run e2e` | Full Playwright suite, which CI runs: the map on laptop and phone; the Inside view; the headset on an emulated Quest 3 |
 
 ## Layout of the code
 

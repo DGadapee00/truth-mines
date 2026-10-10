@@ -1,73 +1,40 @@
-# Handoff: Phase 3 (the Inside view), stopped mid-phase
+# Handoff: Phase 3, the Inside view
 
-Branch: `wip/phase3`. `main` stays at Phase 2 (`ef62f41`). Phase 3 is not ready for review: one
-e2e test is flaky (below) and nothing in Phase 3 has run in CI yet.
+Branch: `wip/phase3`. `main` stays at Phase 2 (`ef62f41`). Phase 3 is not merged.
+A push of this branch does not start CI. The workflow runs on a push to `main`, on a
+pull request, and on `workflow_dispatch`.
 
-## Test state at the stop
+## Test state
 
 | Suite | Result |
 |---|---|
-| `pytest pipeline/tests` | 26 / 26 pass (8 new in `test_scene.py`) |
-| `vitest` (core) | 25 / 25 pass |
-| `tsc --noEmit`, lint | pass |
-| Playwright, full run | 17 pass, 1 fail: `[laptop] e2e/xr.spec.ts` |
-| Playwright, `xr.spec.ts` alone | passed twice |
+| `npm run check` | pass. Typecheck, lint, vitest 30, pytest 31, map e2e 14 |
+| `npm run e2e` | 18 pass, including `e2e/xr.spec.ts` in the full run |
+
+`npm run check` is the fast local gate. It skips the Inside view and the headset.
+`npm run e2e` is the full Playwright suite, and CI runs that suite.
 
 ## Done in Phase 3
 
-- **Scene descriptors, schema v4.** `pipeline/scene.py` computes all Inside-view layout and writes
-  `data/scene.json` (about 3.85 MB raw, 0.94 MB gzipped). The `inside:` section of
-  `pipeline/config.yaml` holds every parameter. `core/schema.ts` has the matching types and
-  `parseScene`. The pipeline and core move together at v4.
-- **Chambers.** A round hall per landmark. The statement slab sits on the wall at yaw π. Doorways
-  up come first, then doorways down. A pillar stands in front of each doorway, and a plaque sits
-  above each lintel. Spawn is at (0, 0, 0.35R), facing the statement.
-- **Tunnels.** The drop equals the depth difference × `metres_per_depth` (0.25 m). The grade is at
-  most 20° and each turn at most 20°. Both ends are level. Markers come from `chain`, each at its
-  own lemma depth. Width, ornament and the entrance plaque come from `feeding_lemmas`.
-  `lower_in_upper` gives the far chamber's pose.
-- **Strata.** Light, fog and rock colour change with depth.
-- **Pipeline tests** (`pipeline/tests/test_scene.py`) cover every descriptor: coverage, chamber
-  fit, path drop, grade and level ends, marker placement, the feeding-driven fields, strata,
-  determinism (including input order), and conventions.
-- **Renderer** (`app/inside/`). It turns descriptors into meshes and computes no layout. Locality:
-  only the current chamber, its tunnels and their far chambers are drawn. The budget is 9–10 draw
-  calls and about 50k triangles. Labels use rank locality (the 14 nearest).
-- **Desktop.** WASD/arrows and pointer lock. Walls and pillars collide. Walking through a doorway
-  enters its tunnel, and reaching the far end arrives in the next chamber.
-- **Journey.** It follows `criticalPath` from an axiom to the chosen node. "Next" makes a guided,
-  eased move. The panel has an **Enter** button and a **Journey here** button.
-- **WebXR.** Enter VR, teleport on the floor, a 30° snap turn, and pointing at a doorway for a
-  guided tunnel move with a vignette. The view never turns during a guided move. A goes to the
-  next Journey step and B exits.
-- **Docs.** `CLAUDE.md` rules 9 (engine independence), 10 (deterministic geometry from node id) and
-  11 (local subgraph only), plus "The Inside view" section. The README has "Two ways to look" and
-  layout rows for `pipeline/scene.py` and `app/inside/`.
+- **Scene descriptors, schema v5.** `pipeline/scene.py` and `pipeline/scene_fit.py` compute the Inside-view layout and write `data/scene.json` (4.0 MB raw, 1.01 MB gzipped). The review left that size as it is. The file loads on the first Enter. `pipeline/schema.py` and `core/schema.ts` both read version 5, and so do `graph.json` and `meta.json`.
+- **Halls are at most 15 m.** `chamber.max_radius` is 15. When the doorways do not fit on that circle, the pipeline groups them by the target landmark's subject into side galleries. A gallery rank is at most 20 m deep. A subject that needs more depth gets another rank of the same subject, and the doors sit on the outermost rank. `php` has radius 15, 50 doors, and 16 galleries. The farthest gallery wall is 64.3 m from the centre.
+- **Chambers drawn together do not overlap.** The pipeline tests check every star: hall disks, gallery wedges, and tunnel paths, except at the tunnel's own doorway. After each change the build checks every star again. It stops after 50 passes and names the chambers if any still meet. This scene separated in 7 passes. The longest tunnel is `lgsquad>df-field`, 691 m.
+- **Renderer.** `app/inside/` turns descriptors into meshes. It does not choose radii, door angles, gallery sizes, or tunnel lengths. A gallery mouth is walkable, so a door on the outer arc can be reached from the hall. The hall lamp reaches that outer door. The camera far plane is 1600 m, past the longest tunnel.
+- **Statement textures.** MathJax SVG, drawn once per statement and kept in an LRU of 32 (`app/inside/textureCache.ts`). Eviction disposes the texture. Entering a chamber again does not draw it again. Names in the side panel stay on KaTeX.
+- **Desktop, Journey, WebXR.** As before: pointer lock and WASD, guided Journey from the axiom end of `criticalPath`, and a headset with teleport, a 30° snap turn, and a guided tunnel move. The Inside view is desktop and XR. The phone project still runs only `e2e/mine.spec.ts`, the surface map.
+- **Headset test.** `xr.spec.ts` used to pass alone and fail in the full run. A fixed sleep fired while SwiftShader was still busy with the other WebGL tests, so the snap turn and the button press landed between frames. The `xr` project now runs after the laptop and phone projects. The test holds the stick, the trigger, and B until a frame reports the change.
+- **Screenshots.** Retaken under SwiftShader. The folder is gitignored. `e2e/output/laptop-inside-1-chamber.png`, `laptop-inside-2-tunnel.png`, `laptop-inside-3-arrived.png`, `laptop-inside-4-journey-start.png`, `laptop-inside-5-journey-guided.png`, `xr-xr-1-chamber.png`, `xr-xr-2-travel.png`. The arrival shot is `nnssre` at depth 128, so it is dark.
 
 ## Left to do
 
-1. **Make `e2e/xr.spec.ts` stable** in the full run (see Broken). Then run CI on the branch.
-2. **Re-take the Inside screenshots.** The surface-chamber light and the plaque position changed
-   after the last screenshots, so the current images are out of date.
-3. **Measure 72 fps on a real Quest 3**, in the hub chambers (`php`, R ≈ 46 m) and in a long tunnel.
-4. **Add in-headset Journey text and HUD.** The HUD is HTML today, so the headset can't show it.
-5. **Phone and touch support for the Inside view.** Playwright's phone project only runs
-   `mine.spec.ts`, and nobody has tried the Inside view on touch.
-6. **Phase 3 review**, then merge `wip/phase3` into `main`.
+1. **Measure 72 fps on a real Quest 3.** The hall is 15 m, a gallery can reach about 64 m, and one tunnel is 691 m.
+2. **Add in-headset Journey text and HUD.** The HUD is HTML, so a headset cannot show it.
+3. **Phase 3 review**, then merge `wip/phase3` into `main`.
 
-## Broken or untested
+## Still untested
 
-- **`xr.spec.ts` is flaky.** It fails in the full Playwright run and passes on its own. The cause
-  is not diagnosed. Suspects: SwiftShader load from the earlier specs (timing in the guided-move
-  wait), and the IWER device state carrying over between tests.
-- **72 fps is unverified.** There are no device measurements.
-- **Hand-tracking teleport is untested.** Only controllers are emulated.
-- **Neighbour chambers may overlap.** In star mode, two far chambers placed by their tunnel poses
-  can intersect. They are hidden behind walls in a tunnel but may show through doorways in the
-  chamber.
-- **Textures use MathJax, not KaTeX.** The statement and name textures are drawn with MathJax SVG
-  into a canvas (`app/render/canvasMath.ts`), because KaTeX has no SVG output. This deviates from
-  the spec on purpose and needs your sign-off.
+- **72 fps.** There are no device measurements. The emulator cannot give them.
+- **Hand-tracking teleport.** Only controllers are emulated.
 - **Markers show only set.mm labels.** They have no statements.
 - **CI has not run on Phase 3.**
 
@@ -78,22 +45,13 @@ cd truth-mines
 git checkout wip/phase3
 pip install -r pipeline/requirements.txt && npm ci
 python3 -m pipeline                 # builds data/, including data/scene.json
-npm run check                       # pytest, typecheck, lint, vitest
-npx vite --port 5176 --strictPort & # dev server for e2e
-npx playwright test                 # full e2e (about 7 min under SwiftShader)
-npx playwright test --project=laptop e2e/xr.spec.ts   # the flaky one, alone
+npm run check                       # typecheck, lint, unit, pipeline, map e2e
+npm run e2e                         # full Playwright suite: map, Inside view, headset
 ```
 
-Screenshots land in `e2e/output/` (`laptop-inside-*.png`, `laptop-xr-*.png`). The folder is
-gitignored.
-
-Avoid `pkill -f` with a pattern that also matches your own shell command: it kills the shell.
+Screenshots land in `e2e/output/`. The folder is gitignored.
 
 ## For you to review
 
-- **The 154 theorem `display` forms** in `pipeline/landmarks.yaml`. They are all still
-  `reviewed: false`.
-- **Inside-view visuals**, once the screenshots are re-taken (Left to do, item 2).
-- **Hub hall size.** `php` has 50 doorways and gets R ≈ 46 m. Is that too big to walk?
-- **Size of `scene.json`**, 0.94 MB gzipped. It loads only when you first enter.
-- **The MathJax-for-textures deviation** (above).
+- **The 154 theorem `display` forms** in `pipeline/landmarks.yaml`. They are all still `reviewed: false`.
+- **Inside-view visuals**, from the screenshots named above.

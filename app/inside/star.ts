@@ -145,7 +145,9 @@ export function buildStar(id: string, scene: SceneIndex, graph: MineGraph, fontU
 
   // ---- light: ambient from the stratum, a lamp under the dome
   const ambient = new THREE.AmbientLight(0xffffff, 0.3 + 0.75 * ch.light);
-  const lamp = new THREE.PointLight(0xffe0b0, 10 + 45 * ch.light, ch.radius * 3, 1.6);
+  // The hall lamp has to reach the outer gallery doors. A plain hall stays at three radii.
+  const galleryReach = ch.galleries.reduce((far, g) => Math.max(far, g.outer_radius), 0);
+  const lamp = new THREE.PointLight(0xffe0b0, 10 + 45 * ch.light, Math.max(ch.radius * 3, galleryReach + 4), 1.6);
   lamp.position.set(0, ch.height * 0.85, 0);
   group.add(ambient, lamp);
 

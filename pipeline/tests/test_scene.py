@@ -13,6 +13,7 @@ import pytest
 
 from pipeline.files import config, read_stage, stage_file
 from pipeline.scene import build, heading, ornament_level, rotate, tunnel_width
+from pipeline.scene_fit import collect_violations
 
 BUILT = all(stage_file(s).exists() for s in ("curate", "collapse", "depth", "scene"))
 pytestmark = pytest.mark.skipif(not BUILT and not os.environ.get("CI"), reason="run `python -m pipeline` first")
@@ -54,49 +55,99 @@ def test_one_chamber_per_landmark_and_one_tunnel_per_edge(world):
         assert (low["dir"], low["target"], low["tunnel"]) == ("up", t["upper"], t["id"])
 
 
+def _ups_first(dirs: list[str]) -> bool:
+    return dirs == sorted(dirs, key=lambda d: d != "up")
+
+
+def _lift(a: float, a0: float) -> float:
+    y = a
+    while y < a0 - 1e-6:
+        y += 2 * math.pi
+    while y >= a0 + 2 * math.pi - 1e-6:
+        y -= 2 * math.pi
+    return y
+
+
 def test_chambers_fit_their_doorways_statement_and_pillars(world):
-    cfg, scene, col, _, _ = world
+    cfg, scene, col, _, lms = world
+    assert collect_violations(scene) == []
+    subject = {lm["label"]: lm["subject"] for lm in lms}
     stmt = cfg["chamber"]["statement_arc"]
+    split = False
     for c in scene["chambers"]:
         r = c["radius"]
-        assert r >= cfg["chamber"]["min_radius"] - CM
+        assert cfg["chamber"]["min_radius"] - CM <= r <= cfg["chamber"]["max_radius"] + CM
         assert c["height"] >= cfg["portal"]["height"] + 2 - CM
-        # Doorways: on the wall, and their arcs clear of each other and of the statement wall.
-        arcs = [(math.pi, stmt / 2 / r)] + [(p["yaw"], (p["width"] / 2) / r) for p in c["portals"]]
-        for p in c["portals"]:
-            assert abs(math.hypot(p["pos"][0], p["pos"][2]) - r) < CM
-            # Its plaque: on the wall above the lintel, centred on the doorway, facing in.
+        owned: dict[int, dict] = {}
+        for g in c["galleries"]:
+            assert cfg["gallery"]["min_length"] - CM <= g["length"] <= cfg["gallery"]["max_length"] + CM
+            assert g["outer_radius"] == pytest.approx(g["inner_radius"] + g["length"], abs=CM)
+            assert g["inner_radius"] >= r - CM
+            half = stmt / (2 * r)
+            assert g["a0"] >= math.pi + half - 1e-3
+            assert g["a1"] <= 2 * math.pi + (math.pi - half) + 1e-2
+            for i in g["portal_indices"]:
+                assert i not in owned, (c["id"], i)
+                owned[i] = g
+                assert subject[c["portals"][i]["target"]] == g["subject"]
+        if any(sum(1 for g in c["galleries"] if g["subject"] == s) >= 2 for s in {g["subject"] for g in c["galleries"]}):
+            split = True
+        if c["galleries"]:
+            assert sorted(owned) == list(range(len(c["portals"])))
+            sectors = sorted({(g["a0"], g["a1"]) for g in c["galleries"]})
+            for (a0, a1), (b0, _b1) in zip(sectors, sectors[1:]):
+                assert a1 <= b0 + 1e-4, c["id"]
+        else:
+            assert c["galleries"] == []
+        for i, p in enumerate(c["portals"]):
+            wall = math.hypot(p["pos"][0], p["pos"][2])
+            if i in owned:
+                assert wall == pytest.approx(owned[i]["outer_radius"], abs=CM)
+                yaw = _lift(p["yaw"], owned[i]["a0"])
+                assert owned[i]["a0"] - 1e-3 <= yaw <= owned[i]["a1"] + 1e-3
+            else:
+                assert abs(wall - r) < CM
             pl = p["plaque"]
-            assert abs(math.hypot(pl["pos"][0], pl["pos"][2]) - (r - 0.12)) < CM
+            assert abs(math.hypot(pl["pos"][0], pl["pos"][2]) - (wall - 0.12)) < 2 * CM
             assert angle_gap(math.atan2(pl["pos"][0], pl["pos"][2]), p["yaw"]) < 1e-3
             assert p["height"] < pl["pos"][1] < c["height"]
             assert angle_gap(pl["yaw"], p["yaw"] + math.pi) < 1e-4
+        # Ring doorways, and the statement wall, keep clear of each other. Gallery doorways sit
+        # further out; they are checked against their own wedge above.
+        ring = [p for i, p in enumerate(c["portals"]) if i not in owned]
+        arcs = [(math.pi, stmt / 2 / r)] + [(p["yaw"], (p["width"] / 2) / r) for p in ring]
         for i in range(len(arcs)):
             for j in range(i):
                 assert angle_gap(arcs[i][0], arcs[j][0]) + 1e-4 >= arcs[i][1] + arcs[j][1], (c["id"], i, j)
-        # The statement wall stands inside the chamber, on the -Z side, facing in.
+        for g in c["galleries"]:
+            doors = [c["portals"][i] for i in g["portal_indices"]]
+            assert _ups_first([p["dir"] for p in doors])
+            for i, p in enumerate(doors):
+                pr = math.hypot(p["pos"][0], p["pos"][2])
+                for q in doors[:i]:
+                    assert angle_gap(p["yaw"], q["yaw"]) + 1e-4 >= (p["width"] / 2 + q["width"] / 2) / pr, (c["id"], p["target"], q["target"])
         sw = c["statement"]
         assert sw["pos"][2] < 0 and abs(sw["pos"][2]) < r and sw["yaw"] == 0
         assert sw["size"][0] <= 2 * r
-        # Its corners stand inside the curved wall, so the wall never cuts across the statement.
         for sx in (-1, 1):
             assert math.hypot(sx * sw["size"][0] / 2, sw["pos"][2]) < r - 0.1, c["id"]
-        # Pillars: one per dependency, each in front of the doorway to it, inside, apart.
         assert sorted(p["target"] for p in c["pillars"]) == sorted(col[c["id"]]["deps"])
         door = {p["target"]: p for p in c["portals"] if p["dir"] == "up"}
         for p in c["pillars"]:
             a = math.atan2(p["pos"][0], p["pos"][2])
-            assert angle_gap(a, door[p["target"]]["yaw"]) < 1e-2
-            assert math.hypot(p["pos"][0], p["pos"][2]) + p["radius"] < r - 1
+            opening = door[p["target"]]
+            assert angle_gap(a, opening["yaw"]) < 1e-2
+            # In front of its doorway, with room between the pillar and that wall.
+            assert math.hypot(p["pos"][0], p["pos"][2]) + p["radius"] < math.hypot(opening["pos"][0], opening["pos"][2]) - 0.5
             assert cfg["pillar"]["min_radius"] - CM <= p["radius"] <= cfg["pillar"]["max_radius"] + CM
             assert p["height"] == c["height"]
         for i, p in enumerate(c["pillars"]):
             for q in c["pillars"][:i]:
                 assert math.dist(p["pos"], q["pos"]) >= p["radius"] + q["radius"] + 0.5, (c["id"], p["target"], q["target"])
-        # Up doorways first, then down, as the wall goes round.
-        dirs = [p["dir"] for p in c["portals"]]
-        assert dirs == sorted(dirs, key=lambda d: d != "up")
+        if not c["galleries"]:
+            assert _ups_first([p["dir"] for p in c["portals"]])
         assert c["floor_y"] == pytest.approx(-c["depth"] * cfg["metres_per_depth"], abs=CM)
+    assert split, "a hub should need more than one wedge for one subject"
 
 
 def test_tunnels_run_door_to_door_and_drop_exactly_the_depth_difference(world):

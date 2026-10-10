@@ -90,11 +90,19 @@ inside:
   flat_ends: 3 # metres of level floor at each end of a tunnel
   chamber:
     min_radius: 8
+    max_radius: 15 # a hall never grows past this; extra doorways become galleries
     radius_spread: 3 # seeded extra radius, 0..this
     base_height: 6
     height_spread: 2
     axiom_height_scale: 1.35
     statement_arc: 11 # metres of wall kept for the statement
+  # When the doorways do not fit on max_radius, each subject’s doorways move into one or more
+  # wedges off the hall. A wedge is only as long as its own doors, and never longer than max_length.
+  gallery:
+    mouth: 3.2 # metres: narrowest opening from the hall into a wedge
+    min_length: 4
+    max_length: 20
+    pillar_setback: 1.8 # metres inward from an outer doorway to its pillar
   statement_wall: { width: 9, height: 4.5, lift: 1.2 }
   portal: { gap: 1.6, height: 3.4 }
   tunnel:

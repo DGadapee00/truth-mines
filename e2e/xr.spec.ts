@@ -14,7 +14,7 @@ type W = {
     inside: {
       active: boolean;
       state: { chamber: string | null; guided: boolean };
-      xr: { active: boolean; yaw: number; vignette: number; target: boolean };
+      xr: { active: boolean; yaw: number; vignette: number; target: boolean; aim: 'door' | 'floor' | null };
       doors(): { yaw: number; target: string; pos: [number, number, number] }[];
       where(): [number, number, number] | null;
     };
@@ -38,14 +38,14 @@ test('headset: enter, snap turn, teleport, guided tunnel travel', async ({ page 
   await page.waitForTimeout(1000);
   await page.screenshot({ path: `e2e/output/${test.info().project.name}-xr-1-chamber.png` });
 
-  // Snap turn: one flick, one 30-degree step.
+  // Snap turn: hold the stick until a frame takes the one 30-degree step, then release.
+  // A fixed sleep misses that frame when SwiftShader is busy, and the step never happens.
   const y0 = await ev(page, () => (window as unknown as W).__mines.inside.xr.yaw);
   await ev(page, () => (window as unknown as W).__dev.controllers.right.updateAxes('thumbstick', 0.95, 0));
-  await page.waitForTimeout(400);
+  await expect.poll(async () => (await ev(page, () => (window as unknown as W).__mines.inside.xr.yaw)) - y0, { timeout: 20_000 }).toBeCloseTo(-Math.PI / 6, 5);
   await ev(page, () => (window as unknown as W).__dev.controllers.right.updateAxes('thumbstick', 0, 0));
-  await page.waitForTimeout(200);
+  await expect.poll(async () => (await ev(page, () => (window as unknown as W).__mines.inside.xr.yaw)) - y0, { timeout: 20_000 }).toBeCloseTo(-Math.PI / 6, 5);
   const y1 = await ev(page, () => (window as unknown as W).__mines.inside.xr.yaw);
-  expect(y1 - y0).toBeCloseTo(-Math.PI / 6, 5);
 
   // Aim the right controller from `from` (in the rig's frame) at a point given in the chamber's frame.
   const aim = (from: [number, number, number], world: [number, number, number]) =>
@@ -76,27 +76,29 @@ test('headset: enter, snap turn, teleport, guided tunnel travel', async ({ page 
       },
       [from, world] as [[number, number, number], [number, number, number]],
     );
-  const pull = async () => {
+  const pull = async (kind: 'floor' | 'door') => {
+    await expect.poll(() => ev(page, () => (window as unknown as W).__mines.inside.xr.aim), { timeout: 20_000 }).toBe(kind);
     await ev(page, () => (window as unknown as W).__dev.controllers.right.updateButtonValue('trigger', 1));
-    await page.waitForTimeout(250);
+    await expect.poll(() => ev(page, () => (window as unknown as W).__mines.inside.xr.aim), { timeout: 20_000 }).toBe(kind);
     await ev(page, () => (window as unknown as W).__dev.controllers.right.updateButtonValue('trigger', 0));
-    await page.waitForTimeout(300);
   };
 
   // Teleport: two metres toward the middle of the chamber.
   const before = (await ev(page, () => (window as unknown as W).__mines.inside.where())) as [number, number, number];
   const spot: [number, number, number] = [before[0] * 0.4, 0, before[2] * 0.4];
   await aim([0.2, 1.3, -0.2], spot);
-  await page.waitForTimeout(300);
-  await pull();
-  const after = (await ev(page, () => (window as unknown as W).__mines.inside.where())) as [number, number, number];
-  expect(Math.hypot(after[0] - spot[0], after[2] - spot[2])).toBeLessThan(0.5);
+  await pull('floor');
+  await expect
+    .poll(async () => {
+      const after = (await ev(page, () => (window as unknown as W).__mines.inside.where())) as [number, number, number];
+      return Math.hypot(after[0] - spot[0], after[2] - spot[2]);
+    })
+    .toBeLessThan(0.5);
 
   // A doorway: point at its opening and pull; a guided move with a vignette takes you through.
   const door = await ev(page, () => (window as unknown as W).__mines.inside.doors().find((d) => d.target === 'ltnr') as { pos: [number, number, number] });
   await aim([0.2, 1.3, -0.2], [door.pos[0], 1.4, door.pos[2]]);
-  await page.waitForTimeout(300);
-  await pull();
+  await pull('door');
   await expect.poll(() => ev(page, () => (window as unknown as W).__mines.inside.state.guided)).toBe(true);
   const yawDuring = await ev(page, () => (window as unknown as W).__mines.inside.xr.yaw);
   await expect.poll(() => ev(page, () => (window as unknown as W).__mines.inside.xr.vignette)).toBeGreaterThan(0.3);
@@ -107,9 +109,8 @@ test('headset: enter, snap turn, teleport, guided tunnel travel', async ({ page 
   expect(yawDuring).toBeCloseTo(y1, 5);
   expect(await ev(page, () => (window as unknown as W).__mines.inside.xr.vignette)).toBe(0);
 
-  // B leaves the headset.
+  // B leaves the headset. Hold it until a frame sees the press; a sleep can miss that edge.
   await ev(page, () => (window as unknown as W).__dev.controllers.right.updateButtonValue('b-button', 1));
-  await page.waitForTimeout(300);
+  await expect.poll(() => ev(page, () => (window as unknown as W).__mines.inside.xr.active), { timeout: 20_000 }).toBe(false);
   await ev(page, () => (window as unknown as W).__dev.controllers.right.updateButtonValue('b-button', 0));
-  await expect.poll(() => ev(page, () => (window as unknown as W).__mines.inside.xr.active)).toBe(false);
 });

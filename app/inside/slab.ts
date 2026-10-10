@@ -2,13 +2,46 @@ import * as THREE from 'three';
 import { plainName } from '../../core/graph';
 import type { MineNode } from '../../core/schema';
 import { drawFitted, mathImageToFit } from '../render/canvasMath';
+import { createLruCache, STATEMENT_TEXTURE_CAP } from './textureCache';
 
 /**
  * The texture on a chamber's statement wall: the landmark's name, its statement (the readable
  * form when there is one), and where it comes from. Drawn on a canvas, so it works the same on
  * the headset.
+ *
+ * Each distinct statement is rasterized once. Re-entering a chamber reuses the texture. The cache
+ * keeps STATEMENT_TEXTURE_CAP textures and disposes the rest.
  */
+const textures = createLruCache<THREE.CanvasTexture>(STATEMENT_TEXTURE_CAP);
+const inflight = new Map<string, Promise<THREE.CanvasTexture>>();
+
+function textureKey(n: MineNode, aspect: number): string {
+  return [n.id, n.kind, plainName(n), n.statement, n.display, n.display_reviewed ? '1' : '0', n.depth, aspect].join('\u0000');
+}
+
+/** The statement wall's texture, from the cache when this statement was already rasterized. */
 export async function statementTexture(n: MineNode, aspect: number): Promise<THREE.CanvasTexture> {
+  const key = textureKey(n, aspect);
+  const hit = textures.get(key);
+  if (hit) return hit;
+  const pending = inflight.get(key);
+  if (pending) return pending;
+  const job = rasterizeStatement(n, aspect).then(
+    (tex) => {
+      inflight.delete(key);
+      textures.set(key, tex);
+      return tex;
+    },
+    (err: unknown) => {
+      inflight.delete(key);
+      throw err;
+    },
+  );
+  inflight.set(key, job);
+  return job;
+}
+
+async function rasterizeStatement(n: MineNode, aspect: number): Promise<THREE.CanvasTexture> {
   const W = 2048;
   const H = Math.round(W / aspect);
   const canvas = document.createElement('canvas');
