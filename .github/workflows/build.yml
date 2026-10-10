@@ -1,0 +1,86 @@
+# Build the data, run every gate, and on main deploy the site to GitHub Pages.
+#
+# Pages needs switching on once: Settings → Pages → Build and deployment → Source: GitHub Actions.
+# On a free GitHub plan the repository must be public for Pages to serve it.
+
+name: Build, test and deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+      - run: pip install -r pipeline/requirements.txt
+
+      # The pinned sources are large (set.mm is ~50 MB); keep them between runs.
+      - uses: actions/cache@v4
+        with:
+          path: pipeline/.cache
+          key: sources-${{ hashFiles('pipeline/sources.lock') }}
+
+      - name: Pipeline tests
+        run: python -m pytest -q pipeline/tests
+      - name: Build the data (fetch, extract, validate, curate, collapse, depth, layout, export)
+        run: python -m pipeline
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+
+      - name: Typecheck (strict)
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: core/ and app unit tests (incl. ancestors against the full graph)
+        run: npm test
+
+      - name: End-to-end (desktop and phone)
+        run: |
+          npx playwright install --with-deps chromium
+          npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-screenshots
+          path: e2e/output/
+          if-no-files-found: ignore
+
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          path: dist
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

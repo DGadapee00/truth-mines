@@ -1,0 +1,13 @@
+node_modules/
+dist/
+# Generated: built by `python -m pipeline` (locally) and by CI. Never edit by hand.
+data/
+pipeline/.cache/
+pipeline/build/
+test-results/
+playwright-report/
+e2e/output/
+__pycache__/
+.pytest_cache/
+.DS_Store
+.vite/

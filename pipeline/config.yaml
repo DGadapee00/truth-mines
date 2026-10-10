@@ -1,0 +1,79 @@
+# Pipeline settings. Curation lives here and in landmarks.yaml, never in the generated data.
+
+source: set.mm
+
+# set.mm's parts (its `####` headings) mapped to the subjects the mine is laid out and coloured by.
+# A part not listed here is an error: a new part in a new pin must be placed on purpose.
+subjects:
+  - id: logic
+    name: Logic
+    parts: ["CLASSICAL FIRST-ORDER LOGIC WITH EQUALITY"]
+  - id: sets
+    name: Set theory
+    parts:
+      - "ZF (ZERMELO-FRAENKEL) SET THEORY"
+      - "ZFC (ZERMELO-FRAENKEL WITH CHOICE) SET THEORY"
+      - "TG (TARSKI-GROTHENDIECK) SET THEORY"
+  - id: numbers
+    name: Real and complex numbers
+    parts: ["REAL AND COMPLEX NUMBERS"]
+  - id: numtheory
+    name: Number theory
+    parts: ["ELEMENTARY NUMBER THEORY"]
+  - id: structures
+    name: Structures, order and categories
+    parts: ["BASIC STRUCTURES", "BASIC CATEGORY THEORY", "BASIC ORDER THEORY"]
+  - id: algebra
+    name: Algebra
+    parts: ["BASIC ALGEBRAIC STRUCTURES", "BASIC LINEAR ALGEBRA"]
+  - id: topology
+    name: Topology
+    parts: ["BASIC TOPOLOGY"]
+  - id: analysis
+    name: Analysis
+    parts: ["BASIC REAL AND COMPLEX ANALYSIS", "BASIC REAL AND COMPLEX FUNCTIONS"]
+  - id: surreals
+    name: Surreal numbers
+    parts: ["SURREAL NUMBERS"]
+  - id: geometry
+    name: Geometry
+    parts: ["ELEMENTARY GEOMETRY"]
+  - id: graphs
+    name: Graph theory
+    parts: ["GRAPH THEORY"]
+  - id: other
+    name: Other
+    parts:
+      - "(before the first part)"
+      - "GUIDES AND MISCELLANEA"
+      - "COMPLEX TOPOLOGICAL VECTOR SPACES (DEPRECATED)"
+      - "COMPLEX HILBERT SPACE EXPLORER (DEPRECATED)"
+      - "SUPPLEMENTARY MATERIAL (USERS' MATHBOXES)"
+
+# Every axiom in these subjects becomes a landmark. Axioms elsewhere (deprecated parts, user
+# mathboxes, examples in the guides) stay hidden.
+axiom_subjects: [logic, sets, numbers]
+
+collapse:
+  # Drop a tunnel A -> C when C is already reached through another landmark (A -> B -> C).
+  # Reachability, and so every ancestor set, is unchanged; the picture loses the hairball.
+  transitive_reduction: true
+
+layout:
+  metres_per_depth: 0.25 # vertical spacing: depth 464 is 116 m down
+  inner_radius: 6 # metres: the open shaft in the middle of the mine
+  outer_radius: 46
+  min_spacing: 2.2 # metres between two landmarks at about the same depth
+  iterations: 400
+  seed: 7
+
+# set.mm's latexdef for a few symbols uses LaTeX packages a web renderer lacks. These replace
+# them with standard TeX that shows the same symbol. app/render/tex.test.ts typesets every
+# statement and fails on anything left over.
+latex_overrides:
+  "[.": '\underset{\cdot}{[}' # dotted bracket of class substitution
+  "].": '\underset{\cdot}{]}'
+  "iota": "℩" # turned iota, the description operator
+  "iota_": '\underline{℩}'
+  "iota'": "℩'"
+  "`": '\mathbin{\text{‘}}' # function application F ‘ A, as the Metamath site shows it

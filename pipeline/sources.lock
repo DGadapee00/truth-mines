@@ -1,0 +1,19 @@
+# Pinned sources. Every build reads exactly these bytes; change a pin only on purpose.
+# Format: one source per block; `python -m pipeline fetch` downloads and checks the hash.
+
+[set.mm]
+repo = https://github.com/metamath/set.mm
+commit = 55d9e5f1853b464846b92b5f3b6ddbbf797ad949
+file = set.mm
+url = https://raw.githubusercontent.com/metamath/set.mm/55d9e5f1853b464846b92b5f3b6ddbbf797ad949/set.mm
+sha256 = fbd95903ffa6d3b7c09763feeb323a390d5e9f3f86951fbbb54d7e693569c520
+license = CC0-1.0, public domain dedication (LICENSE in the repo; also stated at the top of set.mm)
+
+[dejavu-sans]
+repo = https://github.com/dejavu-fonts/dejavu-fonts
+commit = version_2_37
+file = dejavu-fonts-ttf-2.37.zip
+url = https://github.com/dejavu-fonts/dejavu-fonts/releases/download/version_2_37/dejavu-fonts-ttf-2.37.zip
+sha256 = 7576310b219e04159d35ff61dd4a4ec4cdba4f35c00e002a136f00e96a908b0a
+member = dejavu-fonts-ttf-2.37/ttf/DejaVuSans.ttf
+license = Bitstream Vera Fonts license with DejaVu changes (free to use, modify and redistribute); LICENSE in the zip

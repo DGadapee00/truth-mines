@@ -1,0 +1,36 @@
+{
+  "name": "truth-mines",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A walkable 3D map of mathematics: set.mm's axioms at the surface, every landmark below what it depends on.",
+  "scripts": {
+    "data": "python3 -m pipeline",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:pipeline": "python3 -m pytest -q pipeline/tests",
+    "e2e": "playwright test",
+    "check": "npm run typecheck && npm run lint && npm test && npm run test:pipeline"
+  },
+  "dependencies": {
+    "mathjax-full": "^3.2.2",
+    "three": "^0.172.0",
+    "troika-three-text": "^0.52.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^22.20.5",
+    "@types/three": "^0.172.0",
+    "eslint": "^9.39.1",
+    "iwer": "^2.5.0",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.47.0",
+    "vite": "^6.4.4",
+    "vitest": "^3.2.4"
+  }
+}

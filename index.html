@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>The Truth Mines</title>
+    <meta name="description" content="A walkable 3D map of mathematics: the axioms on the surface, every theorem deeper than everything its proof uses, and tunnels that follow the proofs. Built from Metamath's set.mm." />
+    <meta name="color-scheme" content="dark" />
+  </head>
+  <body>
+    <canvas id="c" aria-label="The mine: crystals for theorems, tunnels for the proofs between them"></canvas>
+
+    <header class="bar">
+      <div class="brand">
+        <h1>The Truth Mines</h1>
+        <p id="counts">Loading the mine…</p>
+      </div>
+      <div class="find">
+        <input id="search" type="search" placeholder="Find a theorem  ( / )" autocomplete="off" spellcheck="false" aria-label="Find a theorem" aria-controls="results" />
+        <ul id="results" role="listbox" hidden></ul>
+      </div>
+      <div class="tools">
+        <button type="button" class="ghost" id="btn-home" title="Back to the view of the whole mine (H)">Whole mine</button>
+        <button type="button" class="ghost" id="btn-help" title="What is this?">?</button>
+      </div>
+    </header>
+
+    <section class="intro" id="intro" hidden>
+      <h2>A map of mathematics as a mine</h2>
+      <p>The axioms sit on the surface. Every theorem lies below everything its proof uses, and the tunnels follow the proofs. The deeper a crystal, the longer the chain of reasoning under it.</p>
+      <p>Click a crystal to see what it says. Its whole ancestry lights up, all the way back to the axioms.</p>
+      <p class="try">Try:
+        <button type="button" data-go="sqrt2irr">√2 is irrational</button>
+        <button type="button" data-go="2p2e4">2 + 2 = 4</button>
+        <button type="button" data-go="fta">Fundamental theorem of algebra</button>
+        <button type="button" data-go="pnt">Prime number theorem</button>
+      </p>
+      <p class="keys"><b>Mouse:</b> drag to turn, scroll to zoom, right-drag to slide. <b>Touch:</b> one finger turns, two pinch and slide. <b>Keys:</b> / search, U step up toward the axioms, H whole mine, Esc clear.</p>
+      <p class="legend"><span class="shape axiom"></span> axiom <span class="shape definition"></span> definition <span class="shape theorem"></span> theorem · colour is the subject</p>
+      <button type="button" class="primary" data-act="close">Into the mine</button>
+    </section>
+
+    <aside class="panel" id="panel" hidden></aside>
+    <div class="tip" id="tip" hidden></div>
+
+    <footer class="credit">
+      Built from <a href="https://us.metamath.org/" target="_blank" rel="noopener">Metamath</a> <span id="credit-mm">set.mm</span> (CC0, public domain) ·
+      labels in DejaVu Sans
+    </footer>
+
+    <div class="fail" id="fail" hidden>
+      <h2>The mine did not load</h2>
+      <p>The data may not have been built. Run <code>npm run data</code>, then reload.</p>
+      <p><code></code></p>
+    </div>
+
+    <script type="module" src="/app/main.ts"></script>
+  </body>
+</html>
