@@ -142,7 +142,11 @@ number_theory_plane:
     step: 0.05 # metres: integration step for the centre line
     lead_in: 6.0 # metres of road behind column 1
     half_width: 4.0 # walkable half-width of the road
+    arrival_offset: 2.4 # metres left of the centre line where the visitor arrives, so the stacks do not wall off the road
     block: 0.8 # metres: a block is a cube of this size
+    block_gap: 0.03 # metres shaved off each block so the seams between blocks show
+    thread_radius: 0.035
+    labels: { number_height: 0.5, number_offset: 0.45, sign_offset: 1.3, sign_size: [3.6, 0.5] }
     monolith_width: 0.7
     monolith_blocks: 4 # a prime's monolith is this many block heights tall
     footprint: 0.6 # a column blocks walking within this radius
@@ -167,6 +171,7 @@ number_theory_plane:
     glow: "#e8c25a"
     stone: "#8d8f94"
     footprint: 0.7
+    labels: { number_height: 0.4, number_offset: 0.3 }
   overlook:
     gap: 10.0 # metres from the plaza's far edge to x = 100
     x_end: 1000000
@@ -180,6 +185,9 @@ number_theory_plane:
     curve_height: 40.0 # metres of sky for pi(x_end)
     samples_per_decade: 60
     marker_height: 5.0
+    marker_sign_offset: 2.2 # metres above the marker's top
+    marker_sign_size: [4.8, 1.9]
+    label_height: 0.9
     tail: 10.0 # road beyond x_end
   texts:
     - id: arrive

@@ -162,7 +162,9 @@ def build_road(cfg: dict, cl: Centreline, primes: list[int]) -> dict:
     sx, sz, sy = cl.at(0)
     return {
         "spacing": r["spacing"],
-        "block": {"size": block},
+        "block": {"size": block, "gap": r["block_gap"]},
+        "thread_radius": r["thread_radius"],
+        "labels": r["labels"],
         "monolith": {"width": r["monolith_width"], "height": R2(mono_h)},
         "seed": {"pos": pt(sx, 0, sz), "size": [r["seed"]["width"], r["seed"]["height"]]},
         "columns": columns,
@@ -194,6 +196,7 @@ def build_plaza(cfg: dict, centre: tuple[float, float], yaw: float) -> dict:
         "seed_cell": {"row": 0, "col": 0, "pos": at(0, 0)},
         "grid": grid,
         "column": p["column"],
+        "labels": p["labels"],
         "footprint": p["footprint"],
         "stone": p["stone"],
         "glow": p["glow"],
@@ -262,7 +265,8 @@ def build_overlook(cfg: dict, origin: tuple[float, float], yaw: float) -> dict:
         "decades": [{"x": x0 * 10**k, "label": f"10{superscript(2 + k)}", "pos": road_at(mpd * k)} for k in range(decades + 1)],
         "windows": windows,
         "samples": samples,
-        "marker": {"height": o["marker_height"]},
+        "marker": {"height": o["marker_height"], "sign_offset": o["marker_sign_offset"], "sign_size": o["marker_sign_size"]},
+        "labels": {"height": o["label_height"]},
         "curve": {"offset": o["curve_offset"], "base": o["curve_base"], "height": o["curve_height"]},
     }
 
@@ -326,7 +330,10 @@ def build(cfg: dict) -> dict:
         pt(origin[0], 0, origin[1]),
         pt(origin[0] + hx * overlook["road"]["length"], 0, origin[1] + hz * overlook["road"]["length"]),
     ]
-    sx, sz, _ = cl.at(-3.0)
+    sx, sz, syaw = cl.at(-2.0)
+    off = r["arrival_offset"]
+    lx0, lz0 = left(syaw)
+    sx, sz = sx + lx0 * off, sz + lz0 * off
     stops = [
         {"id": "road", "name": "The road", "pos": pt(sx, 0, sz), "yaw": RA(cl.yaw(0)), "pitch": 0.04},
         {"id": "plaza", "name": "The sieve plaza", "pos": pt(ex + hx * (near + 1.5), 0, ez + hz * (near + 1.5)), "yaw": RA(eyaw), "pitch": -0.2},

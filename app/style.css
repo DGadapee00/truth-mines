@@ -617,3 +617,86 @@ body.inside .credit {
   display: flex;
   gap: 8px;
 }
+
+/* ---- the number theory plane */
+body.plane .bar,
+body.plane .panel,
+body.plane .intro,
+body.plane .tip,
+body.plane .credit {
+  display: none !important;
+}
+.pl-where {
+  max-width: min(720px, 72vw);
+}
+.pl-where span {
+  display: block;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+.draft {
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #ffcf5a;
+  border: 1px solid rgba(255, 207, 90, 0.5);
+  border-radius: 6px;
+  padding: 0 5px;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+.pl-stops {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pl-stops button.here {
+  border-color: rgba(255, 207, 90, 0.6);
+  color: #ffcf5a;
+}
+.pl-focus {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 28px);
+  transform: translateX(-50%);
+  font-size: 18px;
+  font-weight: 600;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+.pl-sieve {
+  position: absolute;
+  right: 12px;
+  bottom: 54px;
+  width: min(380px, calc(100vw - 24px));
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 9px 12px;
+  font-size: 14px;
+}
+.pl-sieve p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.pl-sieve button {
+  margin-left: 8px;
+}
+.pl-readout {
+  position: absolute;
+  left: 50%;
+  bottom: 54px;
+  transform: translateX(-50%);
+  background: var(--panel);
+  border: 1px solid rgba(255, 207, 90, 0.4);
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: 14px;
+  max-width: calc(100vw - 24px);
+}

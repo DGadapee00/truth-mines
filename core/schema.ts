@@ -312,6 +312,7 @@ export interface Plaza {
   seed_cell: { row: number; col: number; pos: Vec3 };
   grid: PlazaCell[];
   column: { width: number; height: number; rubble_height: number };
+  labels: { number_height: number; number_offset: number };
   footprint: number;
   stone: string;
   glow: string;
@@ -350,7 +351,8 @@ export interface Overlook {
   decades: { x: number; label: string; pos: Vec3 }[];
   windows: OverlookWindow[];
   samples: OverlookSample[];
-  marker: { height: number };
+  marker: { height: number; sign_offset: number; sign_size: [number, number] };
+  labels: { height: number };
   curve: { offset: number; base: number; height: number };
 }
 
@@ -364,7 +366,9 @@ export interface PlaneFile {
   primes: PrimeColour[];
   road: {
     spacing: number;
-    block: { size: number };
+    block: { size: number; gap: number };
+    thread_radius: number;
+    labels: { number_height: number; number_offset: number; sign_offset: number; sign_size: [number, number] };
     monolith: { width: number; height: number };
     seed: { pos: Vec3; size: [number, number] };
     columns: RoadColumn[];
