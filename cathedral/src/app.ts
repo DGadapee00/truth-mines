@@ -21,7 +21,7 @@ import { doorStates, type DoorState } from '../../core/doors';
 import { createDoing, type DoingKind } from '../../core/doing';
 import { validResume } from '../../core/progress';
 import { parseCathedral, parseGraph, parsePathways, parsePlane, type CathedralDoor, type CathedralFile, type GraphFile, type PathwaysFile, type PlaneFile } from '../../core/schema';
-import { line, type Line } from './copy';
+import { approveForTest, doors, hints, places, type Line } from './copy';
 import { DesktopInput } from './input-desktop';
 import { createActivity, type Activity } from './lib/activity';
 import { DEFAULT_WORKER_URL } from './lib/config';
@@ -366,7 +366,7 @@ export class CathedralApp {
         this.motion.done = false;
         this.ui.showHud();
         this.placeName = 'The threshold';
-        this.ui.setPlace('The threshold', 'Look around. The way ahead is self-similar all the way down.');
+        this.ui.setPlace('The threshold', places.threshold());
         break;
       case 'cathedral':
         this.thresholdGroup.visible = false;
@@ -375,7 +375,7 @@ export class CathedralApp {
         this.ui.showPlane(false);
         this.ui.setSkip(false);
         this.placeName = 'The cathedral';
-        this.ui.setPlace('The cathedral', 'Twelve doors. The ones that glow are open to you.');
+        this.ui.setPlace('The cathedral', places.cathedral());
         break;
       case 'plane':
         this.ui.showPlane(true, this.plane.data.stops.map((s) => ({ id: s.id, name: s.name })));
@@ -476,11 +476,17 @@ export class CathedralApp {
 
   private pttError(kind: PttError): void {
     this.ui.setTalking(false);
-    this.say({ 'no-microphone': 'No microphone here: type to Trurl instead.', unavailable: 'The speech service did not answer. Try again, or type.', unauthorized: 'The speech service does not accept this secret.' }[kind]);
+    this.notice({ 'no-microphone': 'No microphone here: type to Trurl instead.', unavailable: 'The speech service did not answer. Try again, or type.', unauthorized: 'The speech service does not accept this secret.' }[kind]);
   }
 
-  private say(text: string): void {
-    this.sayLine(line('app-' + text.toLowerCase().replace(/[^a-z]+/g, '-').slice(0, 40), text));
+  /** Test lever: show a plain interface message */
+  showNotice(text: string): void {
+    this.notice(text);
+  }
+
+  /** A plain interface message (no microphone, the secret was not accepted): no voice, no mathematics, so not a draft of anything */
+  private notice(text: string): void {
+    this.sayLine({ id: 'notice', text, draft: false });
   }
 
   private sayLine(l: Line): void {
@@ -531,12 +537,12 @@ export class CathedralApp {
 
   private openDoor(door: CathedralDoor): void {
     if (!doorLook(this.states[door.plane] ?? 'sealed').enterable) {
-      this.say(`${door.name} is not open to you yet.`);
+      this.sayLine(doors.notOpen(door.name));
       return;
     }
     const pathway = this.pathways.pathways.find((p) => p.plane === door.plane);
     if (!pathway || pathway.stretches.length === 0) {
-      this.say(`Behind ${door.name} nothing is built yet. It will be.`);
+      this.sayLine(doors.unbuilt(door.name));
       return;
     }
     this.currentDoor = door;
@@ -568,7 +574,7 @@ export class CathedralApp {
     }
     this.flow.send('enter-plane');
     this.placeName = 'The number theory plane';
-    this.ui.setPlace('The number theory plane', 'A road of integers.');
+    this.ui.setPlace('The number theory plane', places.plane());
   }
 
   private leavePlane(): void {
@@ -709,15 +715,11 @@ export class CathedralApp {
 
   /** What the panel tells a headset visitor to do here */
   private xrHint(phase: Phase): Line {
-    if (phase === 'ready') return line('xr-ready', 'Pull the trigger to begin.');
-    if (phase === 'threshold') return this.flow.canSkip() ? line('xr-skip', 'Pull the trigger to skip.') : line('xr-look', 'Look around. Nothing will turn you.');
-    if (phase === 'cathedral') return this.focusDoor ? line('xr-door-' + this.focusDoor.plane + '-' + (this.states[this.focusDoor.plane] ?? 'sealed'), this.doorSentence(this.focusDoor)) : line('xr-point', 'Point at a glowing door and pull the trigger. Hold A to talk to Trurl.');
-    if (phase === 'plane') {
-      if (this.lastZone === 'road') return line('xr-road', 'Point at a stack, hold A and say the primes that multiply to it. B goes back.');
-      if (this.lastZone === 'plaza') return line('xr-plaza', 'Point at the next prime and pull the trigger, or hold A and say it. Say "done" when nothing more would fall. B goes back.');
-      return line('xr-overlook', 'B goes back. Hold A to talk to Trurl.');
-    }
-    return line('xr-talk', 'Hold A to talk to Trurl.');
+    if (phase === 'ready') return hints.ready();
+    if (phase === 'threshold') return this.flow.canSkip() ? hints.skip() : hints.look();
+    if (phase === 'cathedral') return this.focusDoor ? this.doorLine(this.focusDoor) : hints.point();
+    if (phase === 'plane') return this.lastZone === 'road' ? hints.road() : this.lastZone === 'plaza' ? hints.plaza() : hints.overlook();
+    return hints.talk();
   }
 
   private updateThreshold(dt: number): void {
@@ -755,7 +757,7 @@ export class CathedralApp {
     // What is looked at: the mouse in a window, the middle of the view otherwise
     this.viewRay(this.origin, this.dir);
     this.focusDoor = this.transition ? null : this.doorAt(this.origin, this.dir);
-    if (!this.xr()) this.ui.setDoorLabel(this.focusDoor ? this.doorSentence(this.focusDoor) : null);
+    if (!this.xr()) this.ui.setDoorLabel(this.focusDoor ? this.doorLine(this.focusDoor) : null);
   }
 
   /** The ray the visitor is pointing along: the mouse in a window, the middle of the view otherwise. No allocation. */
@@ -783,11 +785,11 @@ export class CathedralApp {
     return pickDoor(this.cathedral.doors, this.cathedral.hall, this.o3, this.d3);
   }
 
-  private doorSentence(d: CathedralDoor): string {
+  private doorLine(d: CathedralDoor): Line {
     const state = this.states[d.plane] ?? 'sealed';
-    if (state === 'frontier') return `${d.name}: open. ${this.xr() ? 'Pull the trigger' : 'Click, or press Enter,'} to go through.`;
-    if (state === 'dim') return `${d.name}: dim. It rests on ideas you have not reached yet.`;
-    return `${d.name}: sealed. Nothing on your map leads here yet.`;
+    if (state === 'frontier') return doors.open(d.name, this.xr() ? 'Pull the trigger' : 'Click, or press Enter,');
+    if (state === 'dim') return doors.dim(d.name);
+    return doors.sealed(d.name);
   }
 
   private updatePlane(dt: number): void {
@@ -979,6 +981,11 @@ export class CathedralApp {
     const z = cell.pos[2] - Math.cos(pl.yaw) * 1.2;
     this.plane.walk.place(x, z);
     this.place(x, 0, z);
+  }
+
+  /** Test lever: treat these lines as reviewed by a person, as adding their ids to REVIEWED_LINES would */
+  approveLines(...ids: string[]): void {
+    approveForTest(...ids);
   }
 
   /** Act on the plaza column in view, as a click or a trigger pull would */

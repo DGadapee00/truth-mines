@@ -1,4 +1,5 @@
 import './style.css';
+import { intro, type Line } from '../copy';
 import type { SyncStatus } from '../lib/progress-store';
 import type { TrurlState } from '../lib/trurl-session';
 
@@ -50,7 +51,7 @@ export class Ui {
 <section class="card" id="gate" aria-labelledby="gate-title">
   <div>
     <h1 id="gate-title">The Truth Mines</h1>
-    <p>A cathedral of mathematics, built from the formal record. You will cross a threshold, choose a door, and earn ideas by explaining them to Trurl.</p>
+    <p id="gate-intro"></p>
     <p class="fine">Trurl and progress sync need a secret, entered once on each device. Without it the cathedral still opens; Trurl stays asleep.</p>
     <label for="gate-worker">Worker address</label>
     <input id="gate-worker" type="url" autocomplete="off" spellcheck="false" placeholder="https://trurl.your-name.workers.dev" value="${opts.workerUrl.replace(/"/g, '&quot;')}">
@@ -65,7 +66,7 @@ export class Ui {
 <section class="card" id="ready" aria-labelledby="ready-title" hidden>
   <div>
     <h1 id="ready-title">Ready</h1>
-    <p id="ready-text">Press begin to cross the threshold. You can look around the whole way; nothing turns your view for you.</p>
+    <p id="ready-text"></p>
     <div class="row">
       <button id="begin" class="primary" type="button">Begin</button>
       <button id="enter-vr" type="button" hidden>Enter VR</button>
@@ -103,6 +104,10 @@ export class Ui {
   <div class="row"><button id="set-save" type="button">Save</button><button id="set-forget" class="ghost" type="button">Forget this device</button><button id="set-close" class="ghost" type="button">Close</button></div>
 </div>`,
     );
+    for (const [id, l] of [['gate-intro', intro.gate()], ['ready-text', intro.ready()]] as const) {
+      this.text(id, l.text);
+      this.q(id).dataset.draft = String(l.draft);
+    }
     this.wire();
   }
 
@@ -194,15 +199,19 @@ export class Ui {
     this.q(id).textContent = value;
   }
 
-  setPlace(name: string, text: string): void {
+  setPlace(name: string, line: Line): void {
     this.text('place-name', name);
-    this.text('place-text', text);
+    this.text('place-text', line.text);
+    this.q('place-text').dataset.draft = String(line.draft);
   }
 
-  setDoorLabel(text: string | null): void {
+  setDoorLabel(line: Line | null): void {
     const e = this.q('door-label');
-    e.hidden = text === null;
-    if (text !== null) this.text('door-label', text);
+    e.hidden = line === null;
+    if (line !== null) {
+      this.text('door-label', line.text);
+      e.dataset.draft = String(line.draft);
+    }
   }
 
   setSkip(visible: boolean): void {

@@ -176,13 +176,14 @@ The client sends only facts about where Dalton is:
 
 ```json
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "plane": "number-theory",
   "stretch": "nt-1",
   "moment": "nt-1-sieve",
   "landmark": "infpn",
   "looking_at": "door:number-theory",
   "earned": ["infpn"],
+  "doing": { "predicted": [12, 18, 8], "struck": [2, 3, 5, 7], "stopped": true },
   "dialogue": [{ "role": "user", "text": "…" }, { "role": "trurl", "text": "…" }],
   "utterance": "why did nothing fall after seven?"
 }
@@ -194,7 +195,7 @@ The Worker builds the prompt; the client cannot change it.
 
 - **System prompt:** Trurl's persona, tone and guardrails, taken from the Guide section of `docs/experience-design.md` (snarky, edgy, robotic, teasing but never cruel; never lectures; quiet until called; guards the frame against scores).
 - **Grounding:** the Worker adds the verified statement, display form and reviewed note for the current `landmark` and `moment` from a bundled copy of the pipeline data. Trurl may only assert mathematics found there and says so when it doesn't know. Unreviewed notes are not used.
-- **Judging understanding:** when a moment is active, Trurl's reply ends with a structured verdict the Worker parses (`{"earned": ["infpn"]}` or none). The client applies it to progress; the verdict is never spoken.
+- **Judging understanding:** an idea is earned by doing, then explaining. `doing` is what the visitor did in this visit, as numbers only (stacks taken apart, sieve strikes in order, whether they rightly said it was safe to stop; `core/doing.ts` holds the rules). Until the Worker's own check of those numbers says the activity was done, Trurl is told not to ask the moment's question or judge, and any verdict is dropped. Once it was done, Trurl's reply ends with a structured verdict the Worker parses (`{"earned": ["infpn"]}` or none), cut to what the moment can earn. The client applies it only if its own session did the activity, so a verdict can never follow a doing from another visit. The verdict is never spoken.
 - Prompt caching on the system prompt keeps cost down.
 
 All schemas live in `docs/schemas/` as JSON Schema files, with matching TypeScript types in `core/`.

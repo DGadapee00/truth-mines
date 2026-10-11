@@ -33,6 +33,28 @@ works without the Worker, with progress kept on the device.
 - On a return visit a trigger or click during the drift fades straight to the dais. The first visit
   always plays in full.
 
+## Earning by doing
+
+An idea joins the map by doing, then explaining, in the same visit (core/doing.ts holds the rules):
+
+- **The road**: a composite stack is veiled (one plain colour, its sign only its number). Look at it and say
+  or type the primes that multiply to it ("2, 2, 3"); a right answer assembles it. Three stacks finish it.
+- **The sieve**: name the next prime to strike (say it, type it, or point and pull the trigger), and say
+  "done" when nothing more would fall.
+- Then, and only then, Trurl asks his question (a caption from `pathways.json`, nothing sent). The Worker
+  gets what was done as numbers and grants nothing unless it was done; the app checks again, and the doing
+  is never saved, so a verdict can only follow a doing from this visit.
+- While a moment is open nothing on screen says its answer: the plane shows the `*_open` lines, and the
+  phrases in `never_show` (pipeline/config.yaml) are scanned for in the data and on the screen.
+
+## Drafts
+
+Prose written ahead of time (the app's own lines in `src/copy.ts`, the plane's texts, Trurl's questions) is
+a draft until a person approves it, and a draft carries a small tag drawn by the style beside it (the
+`data-draft` attribute in the page, a `DRAFT` tag on the headset panel), never inside the sentence. To approve
+an app line add its id to `REVIEWED_LINES`; a plane text or a question, set its `reviewed` flag in the data's
+source. Interface text (buttons, status, plain errors) is not content and has no tag.
+
 ## Checks
 
 ```bash

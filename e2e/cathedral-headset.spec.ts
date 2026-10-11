@@ -56,6 +56,8 @@ test.describe('headset', () => {
   test('the panel tells you to pull the trigger; the trigger begins; on a return visit it skips to the dais', async ({ page }) => {
     await inHeadset(page, { seen: true });
     await expect.poll(async () => (await debug(page)).xrPanel?.hint, { timeout: 20_000 }).toContain('trigger');
+    expect((await debug(page)).xrPanel?.draft, 'the hint is a draft line, and the panel says so apart from its words').toBe(true);
+    expect((await debug(page)).xrPanel?.hint).not.toMatch(/draft/i);
     expect((await debug(page)).xrPanel?.visible).toBe(true);
     await page.screenshot({ path: 'e2e/output/cathedral-headset-1-ready.png' });
     await pull(page, 'right', 'trigger', () => untilPhase(page, 'threshold', 30_000));
