@@ -16,6 +16,7 @@ PLANE_SCHEMA_VERSION = 1
 # cathedral.json and pathways.json are versioned on their own too (docs/schemas/*.schema.json).
 CATHEDRAL_SCHEMA_VERSION = 1
 PATHWAYS_SCHEMA_VERSION = 1
+GROUNDING_SCHEMA_VERSION = 1  # grounding.json: what Trurl may say (bundled into the Worker)
 
 KINDS = ("axiom", "definition", "theorem")
 
