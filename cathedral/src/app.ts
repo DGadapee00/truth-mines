@@ -18,9 +18,12 @@ import {
   type World,
 } from '@iwsdk/core';
 import { doorStates, type DoorState } from '../../core/doors';
+import { createDoing, type DoingKind } from '../../core/doing';
 import { validResume } from '../../core/progress';
 import { parseCathedral, parseGraph, parsePathways, parsePlane, type CathedralDoor, type CathedralFile, type GraphFile, type PathwaysFile, type PlaneFile } from '../../core/schema';
+import { line, type Line } from './copy';
 import { DesktopInput } from './input-desktop';
+import { createActivity, type Activity } from './lib/activity';
 import { DEFAULT_WORKER_URL } from './lib/config';
 import { doorLook } from './lib/door-look';
 import { createFlow, type Flow, type Phase } from './lib/flow';
@@ -66,6 +69,10 @@ export class CathedralApp {
   private readonly thresholdGroup;
   private readonly vault;
   private readonly plane: NumberTheoryPlane;
+  /** What the visitor has done since this page was opened; never saved */
+  private readonly doing = createDoing();
+  private readonly activity: Activity;
+  private readonly asked = new Set<DoingKind>();
   private readonly planeGroupEntity: Entity;
   private readonly planeGroundEntity: Entity;
   private readonly plan: MotionPlan;
@@ -93,6 +100,7 @@ export class CathedralApp {
   private slideGone = false;
   private wasImmersive = false;
   private toastUntil = 0;
+  private toastLine: Line | null = null;
   private clock = 0;
   private currentDoor: CathedralDoor | null = null;
   private lastZone = 'road';
@@ -122,6 +130,22 @@ export class CathedralApp {
     this.plane = new NumberTheoryPlane(planeData);
     this.plane.group.visible = false;
     this.plane.ground.visible = false;
+    this.activity = createActivity({
+      doing: this.doing,
+      plane: {
+        standing: () => this.plane.plaza.state().standing,
+        struck: () => this.plane.plaza.state().struck,
+        strike: (n) => void this.plane.strike(n),
+        reveal: (n) => this.plane.reveal(n),
+        isRevealed: (n) => this.plane.isRevealed(n),
+        labelOf: (n) => this.plane.column(n).label,
+      },
+      zone: () => this.lastZone as 'road' | 'plaza' | 'overlook',
+      looking: () => (this.plane.focused?.kind === 'road' ? this.plane.focused.n : null),
+      say: (l) => this.sayLine(l),
+      onDone: (kind) => this.doingDone(kind),
+    });
+    this.syncVeil();
     this.plan = buildPlan(cathedral.threshold);
 
     world.createTransformEntity(this.hall.group);
@@ -148,7 +172,7 @@ export class CathedralApp {
       onInterim: (t) => this.ui.setSayInterim(t),
       onTranscript: (t) => {
         this.ui.setSayInterim('');
-        void this.trurl.say(t);
+        this.utter(t);
       },
       onError: (k) => this.pttError(k),
       now: () => performance.now(),
@@ -159,6 +183,8 @@ export class CathedralApp {
       ask: (req, signal) => askTrurl(this.creds(), req, signal),
       context: () => this.trurlContext(),
       earned: () => this.store.get().earned,
+      doing: () => this.doing.facts(),
+      allowed: (ids) => this.allowedEarned(ids),
       onEarned: (ids) => this.store.earn(ids),
       enabled: () => this.hasCreds(),
     });
@@ -171,12 +197,15 @@ export class CathedralApp {
         onBegin: () => this.begin(),
         onEnterVR: () => void this.enterVR(),
         onSkip: () => this.skip(),
-        onSay: (t) => void this.trurl.say(t),
+        onSay: (t) => this.utter(t),
         onTalkStart: () => this.talk(true),
         onTalkEnd: () => this.talk(false),
         onLeavePlane: () => this.leavePlane(),
         onStop: (id) => this.goToStop(id),
-        onResetSieve: () => this.plane.plaza.reset(),
+        onResetSieve: () => {
+          this.plane.plaza.reset();
+          this.doing.resetSieve();
+        },
         onForget: () => this.forget(),
       },
       { workerUrl: this.device.workerUrl.get() ?? DEFAULT_WORKER_URL },
@@ -404,7 +433,7 @@ export class CathedralApp {
       if (door) this.openDoor(door);
     } else if (phase === 'plane') {
       const f = this.plane.pick(origin, dir);
-      if (f?.kind === 'plaza') this.plane.strike(f.n);
+      if (f?.kind === 'plaza') this.activity.name(f.n);
     }
   }
 
@@ -451,8 +480,51 @@ export class CathedralApp {
   }
 
   private say(text: string): void {
-    this.ui.toast(text);
+    this.sayLine(line('app-' + text.toLowerCase().replace(/[^a-z]+/g, '-').slice(0, 40), text));
+  }
+
+  private sayLine(l: Line): void {
+    this.toastLine = l;
+    this.ui.toast(l.text, l.draft);
     this.toastUntil = this.clock + 4;
+  }
+
+  // ---------------------------------------------------------------- what the visitor says: the doing, or Trurl
+
+  /** What was said or typed: an answer to the activity is judged here; anything else is for Trurl. */
+  private utter(text: string): void {
+    if (this.flow.phase() === 'plane' && this.activity.utter(text)) return;
+    void this.trurl.say(text);
+  }
+
+  /** The moments of the current stretch, with whether the visitor already holds what each earns */
+  private momentOf(kind: DoingKind) {
+    const stretch = this.pathways.pathways.find((p) => p.plane === 'number-theory')?.stretches[0];
+    return stretch?.moments.find((m) => m.kind === kind);
+  }
+
+  private momentOpen(kind: DoingKind): boolean {
+    const m = this.momentOf(kind);
+    return !!m && !m.earns.every((e) => this.store.get().earned.includes(e));
+  }
+
+  /** The doing for a moment is complete: now, and only now, Trurl asks his question */
+  private doingDone(kind: DoingKind): void {
+    const m = this.momentOf(kind);
+    if (!m || this.asked.has(kind) || !this.momentOpen(kind)) return;
+    this.asked.add(kind);
+    this.trurl.announce(m.question, !m.question_reviewed);
+  }
+
+  /** A verdict can grant an idea only if the visitor did the activity behind it in this session. */
+  private allowedEarned(ids: string[]): string[] {
+    const stretch = this.pathways.pathways.flatMap((p) => p.stretches);
+    return ids.filter((id) => stretch.some((s) => s.moments.some((m) => m.earns.includes(id) && this.doing.done(m.kind))));
+  }
+
+  /** The road's stacks stay veiled while the idea behind the road is not yet the visitor's */
+  private syncVeil(): void {
+    if (!this.momentOpen('road')) this.plane.unveil();
   }
 
   // ---------------------------------------------------------------- doors and planes
@@ -541,6 +613,7 @@ export class CathedralApp {
   }
 
   private progressChanged(): void {
+    this.syncVeil();
     this.states = doorStates(this.store.get().earned, this.cathedral, this.pathways, this.graph);
     this.hall.setStates(this.states);
     this.previews.setStates(this.states);
@@ -627,12 +700,24 @@ export class CathedralApp {
     if (this.xrClock < 0.1) return;
     this.xrClock = 0;
     const t = this.trurl.state();
-    let hint = 'Hold A to talk to Trurl.';
-    if (phase === 'ready') hint = 'Pull the trigger to begin.';
-    else if (phase === 'threshold') hint = this.flow.canSkip() ? 'Pull the trigger to skip.' : 'Look around. Nothing will turn you.';
-    else if (phase === 'cathedral') hint = this.focusDoor ? this.doorSentence(this.focusDoor) : 'Point at a glowing door and pull the trigger. Hold A to talk to Trurl.';
-    else if (phase === 'plane') hint = 'Trigger strikes a column. B goes back. Hold A to talk to Trurl.';
-    panel.setText({ place: this.placeName, caption: t.caption || (t.status === 'thinking' ? '...' : (t.hint ?? '')), hint });
+    const hint = this.xrHint(phase);
+    const toast = this.clock < this.toastUntil ? this.toastLine : null;
+    const caption = t.caption || (t.status === 'thinking' ? '...' : toast?.text || (t.hint ?? ''));
+    const captionDraft = t.caption ? t.draft : !!toast?.draft || (!!t.hint && !toast);
+    panel.setText({ place: this.placeName, caption, hint: hint.text, draft: hint.draft || (caption !== '' && caption !== '...' && captionDraft) });
+  }
+
+  /** What the panel tells a headset visitor to do here */
+  private xrHint(phase: Phase): Line {
+    if (phase === 'ready') return line('xr-ready', 'Pull the trigger to begin.');
+    if (phase === 'threshold') return this.flow.canSkip() ? line('xr-skip', 'Pull the trigger to skip.') : line('xr-look', 'Look around. Nothing will turn you.');
+    if (phase === 'cathedral') return this.focusDoor ? line('xr-door-' + this.focusDoor.plane + '-' + (this.states[this.focusDoor.plane] ?? 'sealed'), this.doorSentence(this.focusDoor)) : line('xr-point', 'Point at a glowing door and pull the trigger. Hold A to talk to Trurl.');
+    if (phase === 'plane') {
+      if (this.lastZone === 'road') return line('xr-road', 'Point at a stack, hold A and say the primes that multiply to it. B goes back.');
+      if (this.lastZone === 'plaza') return line('xr-plaza', 'Point at the next prime and pull the trigger, or hold A and say it. Say "done" when nothing more would fall. B goes back.');
+      return line('xr-overlook', 'B goes back. Hold A to talk to Trurl.');
+    }
+    return line('xr-talk', 'Hold A to talk to Trurl.');
   }
 
   private updateThreshold(dt: number): void {
@@ -745,17 +830,24 @@ export class CathedralApp {
     const walk = this.plane.walk;
     const text = (id: string) => d.texts.find((t) => t.id === id);
     const near = Math.hypot(walk.x - d.road.seed.pos[0], walk.z - d.road.seed.pos[2]) < 14;
-    const t = text(zone === 'road' ? (near ? 'arrive' : 'road') : zone);
+    // While a moment is open the lines say what to do, never what is true; the lines that say what is true wait until the idea is the visitor's
+    const roadOpen = this.momentOpen('road');
+    const sieveOpen = this.momentOpen('sieve');
+    const id = zone === 'road' ? (near ? (roadOpen ? 'arrive_open' : 'arrive') : roadOpen ? 'road_open' : 'road') : zone === 'plaza' ? (sieveOpen ? 'plaza_open' : 'plaza') : zone;
+    const t = text(id);
     const ps = this.plane.plaza.state();
     const f = this.plane.focused;
     const m = this.plane.marker;
+    const note = !sieveOpen && ps.done ? text('sieve_note') : undefined;
     this.ui.setPlane({
       name: zone === 'road' ? 'The road of integers' : (d.stops.find((s) => s.id === zone)?.name ?? zone),
-      text: (t?.text ?? '') + (t && !t.reviewed ? ' (draft)' : ''),
-      focus: f?.kind === 'road' ? this.plane.column(f.n).label : f?.kind === 'plaza' ? `${f.n}: click to strike it` : '',
+      text: t?.text ?? '',
+      draft: !!t && !t.reviewed,
+      focus: f?.kind === 'road' ? (this.plane.isRevealed(f.n) ? this.plane.column(f.n).label : String(f.n)) : f?.kind === 'plaza' ? `${f.n}: click to name it` : '',
       sieve: zone === 'plaza',
       count: `${ps.standing.length} of ${d.plaza.grid.length} standing`,
-      note: ps.done ? (text('sieve_note')?.text ?? '') : null,
+      note: note?.text ?? null,
+      noteDraft: !!note && !note.reviewed,
       readout: zone === 'overlook' && m ? `x = ${m.x.toLocaleString('en-US')} · π(x) = ${m.pi.toLocaleString('en-US')} · x / ln x ≈ ${Math.round(m.estimate).toLocaleString('en-US')} · ratio ${m.ratio.toFixed(3)}` : null,
       here: zone,
     });
@@ -830,6 +922,9 @@ export class CathedralApp {
       captions: this.trurl.state(),
       zone: this.lastZone,
       standing: this.flow.phase() === 'plane' ? this.plane.plaza.state().standing.length : null,
+      doing: this.doing.facts(),
+      doingDone: { road: this.doing.done('road'), sieve: this.doing.done('sieve') },
+      focus: this.plane.focused,
       plane: this.flow.phase() === 'plane' ? { x: this.plane.walk.x, z: this.plane.walk.z } : null,
       plazaInView: this.flow.phase() === 'plane' ? this.plazaInView() : null,
       shown: { hall: this.hall.group.visible && this.hall.floor.visible && this.previews.group.visible, vault: this.vault.visible, plane: this.plane.group.visible || this.plane.ground.visible },
@@ -866,6 +961,46 @@ export class CathedralApp {
   }
 
   /** Test lever: look at a plaza column from where you stand */
+  /** Walk the visitor to a spot beside a road column (three metres to its left), so a ray to it meets nothing nearer */
+  standBeside(n: number): void {
+    const c = this.plane.column(n);
+    const x = c.pos[0] + Math.cos(c.yaw) * 3;
+    const z = c.pos[2] - Math.sin(c.yaw) * 3;
+    this.plane.walk.place(x, z);
+    this.place(x, 0, z);
+  }
+
+  /** Walk the visitor into the gap just in front of a plaza column, so a ray to it meets nothing nearer */
+  standBesidePlaza(n: number): void {
+    const pl = this.plane.data.plaza;
+    const cell = pl.grid.find((g) => g.n === n);
+    if (!cell) return;
+    const x = cell.pos[0] - Math.sin(pl.yaw) * 1.2;
+    const z = cell.pos[2] - Math.cos(pl.yaw) * 1.2;
+    this.plane.walk.place(x, z);
+    this.place(x, 0, z);
+  }
+
+  /** Act on the plaza column in view, as a click or a trigger pull would */
+  activateFocus(): void {
+    const f = this.plane.focused;
+    if (f?.kind === 'plaza') this.activity.name(f.n);
+  }
+
+  /** The colour a road block is drawn in, and whether the column's threads and sign are showing its factors */
+  roadBlock(n: number, k: number): string {
+    return this.plane.road.blockColour(n, k);
+  }
+
+  roadRevealed(n: number): boolean {
+    return this.plane.isRevealed(n);
+  }
+
+  /** Every line of text a visitor can read at this moment, for the test that nothing says the answer */
+  visibleText(): string[] {
+    return [...document.querySelectorAll<HTMLElement>('#hud *')].filter((e) => e.childElementCount === 0 && e.offsetParent !== null && !!e.textContent?.trim()).map((e) => e.textContent!.trim());
+  }
+
   lookAtColumn(kind: 'road' | 'plaza', n: number): void {
     const d = this.plane.data;
     const c = kind === 'road' ? this.plane.column(n) : null;

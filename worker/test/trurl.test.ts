@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MAX_TOKENS, MODEL, streamTrurl } from '../src/trurl';
 import { FAKE_ANTHROPIC_KEY, makeEnv } from './helpers';
 import { readEvents, stubFetch, type Script } from './anthropic-stub';
-import { grounding, request } from './fixtures';
+import { DID_NOTHING, DID_THE_ROAD, DID_THE_SIEVE, grounding, request } from './fixtures';
 
 const g = grounding();
 const V = (ids: string[]) => `<verdict>${JSON.stringify({ earned: ids })}</verdict>`;
@@ -169,5 +169,37 @@ describe('streamTrurl: when things go wrong', () => {
     await reader.cancel();
     await new Promise((r) => setTimeout(r, 10));
     expect(stub.sent[0]!.signal?.aborted).toBe(true);
+  });
+});
+
+describe('streamTrurl: an explanation earns nothing unless the doing happened in this visit', () => {
+  it('grants what the model proposes when the facts show the activity was done', async () => {
+    const { events } = await ask({ chunks: ['Yes, ', 'that is it.\n', V(['df-prm'])] }, request({ doing: DID_THE_SIEVE }));
+    expect(verdicts(events)).toEqual([['df-prm']]);
+  });
+
+  it('grants nothing when the model is convinced but the visitor did nothing', async () => {
+    const { events } = await ask({ chunks: ['Brilliant.\n', V(['df-prm'])] }, request({ doing: DID_NOTHING }));
+    expect(verdicts(events)).toEqual([[]]);
+    expect(texts(events).join('')).toBe('Brilliant.\n');
+  });
+
+  it('grants nothing for a half-done sieve or road, or the wrong activity for the moment', async () => {
+    const cases: [string, string, ReturnType<typeof request>['doing'], string[]][] = [
+      ['nt-1-sieve', 'df-prm', { predicted: [], struck: [2, 3, 5, 7], stopped: false }, ['df-prm']],
+      ['nt-1-sieve', 'df-prm', { predicted: [], struck: [2, 3], stopped: true }, ['df-prm']],
+      ['nt-1-sieve', 'df-prm', DID_THE_ROAD, ['df-prm']],
+      ['nt-1-road', '1arith', { predicted: [12, 18], struck: [], stopped: false }, ['1arith']],
+      ['nt-1-road', '1arith', DID_THE_SIEVE, ['1arith']],
+    ];
+    for (const [moment, landmark, doing, ids] of cases) {
+      const { events } = await ask({ chunks: ['Fine.\n', V([...ids])] }, request({ moment, landmark, doing }));
+      expect(verdicts(events), `${moment} ${JSON.stringify(doing)}`).toEqual([[]]);
+    }
+  });
+
+  it('grants the road’s idea after the road and nothing the road cannot earn', async () => {
+    const { events } = await ask({ chunks: ['Good.\n', V(['1arith', 'df-prm'])] }, request({ moment: 'nt-1-road', landmark: '1arith', doing: DID_THE_ROAD }));
+    expect(verdicts(events)).toEqual([['1arith']]);
   });
 });

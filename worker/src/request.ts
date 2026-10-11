@@ -1,5 +1,6 @@
 import type { GroundingFile, TrurlRequest, TrurlTurn } from '../../core/schema';
 import { TRURL_SCHEMA_VERSION } from '../../core/schema';
+import { PLANE_LIMIT } from '../../core/doing';
 
 /** A request the Worker refuses, with the HTTP status to answer. */
 export class RequestError extends Error {
@@ -11,13 +12,30 @@ export class RequestError extends Error {
   }
 }
 
-const KEYS = new Set(['schema_version', 'plane', 'stretch', 'moment', 'landmark', 'looking_at', 'earned', 'dialogue', 'utterance']);
+const KEYS = new Set(['schema_version', 'plane', 'stretch', 'moment', 'landmark', 'looking_at', 'earned', 'doing', 'dialogue', 'utterance']);
+const DOING_KEYS = new Set(['predicted', 'struck', 'stopped']);
 const LOOKING = /^[a-z]{2,12}:[A-Za-z0-9._-]{1,40}$/;
 /** A set.mm label. Earned ids are written into the system prompt, so they may be nothing else. */
 const LABEL = /^[A-Za-z0-9._-]{1,80}$/;
 export const MAX_TEXT = 600;
 export const MAX_TURNS = 12;
 const MAX_EARNED = 500;
+
+/** A list of whole numbers on the road, nothing else: this is what the visitor did, and no word of theirs goes in. */
+function numbers(v: unknown, field: string, unique: boolean): number[] {
+  if (!Array.isArray(v) || v.length > PLANE_LIMIT || !v.every((x) => Number.isInteger(x) && x >= 2 && x <= PLANE_LIMIT)) return bad(`doing.${field} is malformed`);
+  const list = v as number[];
+  if (unique && new Set(list).size !== list.length) return bad(`doing.${field} repeats a number`);
+  return list;
+}
+
+function doing(v: unknown): TrurlRequest['doing'] {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return bad('doing must be an object');
+  const o = v as Record<string, unknown>;
+  for (const k of Object.keys(o)) if (!DOING_KEYS.has(k)) return bad(`unknown field doing.${k}`);
+  if (typeof o.stopped !== 'boolean') return bad('doing.stopped must be true or false');
+  return { predicted: numbers(o.predicted, 'predicted', true), struck: numbers(o.struck, 'struck', false), stopped: o.stopped };
+}
 
 const bad = (message: string): never => {
   throw new RequestError(400, message);
@@ -80,5 +98,5 @@ export function parseTrurlRequest(raw: unknown, grounding: GroundingFile): Trurl
   if (!utterance) return bad('utterance is empty');
   if (utterance.length > MAX_TEXT) return bad(`utterance is longer than ${MAX_TEXT} characters`);
 
-  return { schema_version: TRURL_SCHEMA_VERSION, plane, stretch, moment, landmark, looking_at: lookingAt, earned: [...new Set(r.earned as string[])], dialogue, utterance };
+  return { schema_version: TRURL_SCHEMA_VERSION, plane, stretch, moment, landmark, looking_at: lookingAt, earned: [...new Set(r.earned as string[])], doing: doing(r.doing), dialogue, utterance };
 }

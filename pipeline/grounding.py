@@ -65,6 +65,7 @@ def build(cfg: dict, nodes: dict[str, dict], comments: dict[str, str], notes: di
                     "kind": m["kind"],
                     "landmarks": list(s["landmarks"]),
                     "earns": sorted(m["earns"]),
+                    "question": " ".join(str(m.get("question", "")).split()),
                     "rubric": re.sub(r"\s+", " ", rubric),
                     "rubric_reviewed": reviewed,
                 }

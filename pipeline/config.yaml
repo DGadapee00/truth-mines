@@ -155,6 +155,7 @@ number_theory_plane:
     thread_lift: 2.0 # metres: arc rise of a thread, plus thread_lift_per_metre for its length
     thread_lift_per_metre: 0.1
     thread_lift_max: 14.0
+    veil: { colour: "#5d636e", assemble_step_s: 0.3 } # an unrevealed composite is drawn in this one colour; a right answer lets its blocks take their prime colours one by one
   hues:
     step: 3 # prime i gets hue 360 * ((step * i) mod K) / K; coprime to K, so neighbours differ
     strong_primes: 4 # 2, 3, 5, 7: the most saturated, as they appear most in stacks
@@ -199,6 +200,15 @@ number_theory_plane:
       text: "A prime stands alone as a tall monolith. Every other number is a stack of prime blocks, one for each prime factor, smallest at the bottom. The tallest stacks up to {limit} have {tallest_blocks} blocks: {tallest_list}. Look at a column to see what it is made of."
     - id: plaza
       text: "The numbers 2 to {limit} stand in a grid, in reading order. Strike a standing number and every multiple of it after itself crumbles. What is left standing is the primes."
+    # The variants shown while a moment is still open (nothing has been earned there yet): they say what
+    # to do, never what is true. The lines above hold the answer ("exactly one way", "are the primes") and
+    # show only once the idea is earned; the map app shows all of them, as it has no moments.
+    - id: arrive_open
+      text: "The road runs from {first} to {limit}: one stone column for each number. A prime stands alone as a tall monolith."
+    - id: road_open
+      text: "Every other number is a veiled stack. Look at a stack, then say or type the primes that multiply to make it. A right answer takes the veil off."
+    - id: plaza_open
+      text: 'The numbers 2 to {limit} stand in a grid. Name the next prime to strike: say it, type it or point at it. It and every multiple of it crumbles. Say "done" when you think nothing more would fall.'
     - id: sieve_note
       text: "After {small_primes}, striking anything else knocks nothing down: every composite up to {limit} has a prime factor no larger than {bound}, the square root of {limit}. The {survivors} that survive are the primes."
     - id: overlook
@@ -340,6 +350,13 @@ cathedral:
             - id: nt-1-road
               kind: road
               earns: [1arith]
+              # Trurl asks this once the visitor has done the activity (core/doing.ts), never before. It is
+              # a draft line: it must not contain the answer (see never_show), and a person reviews it.
+              question: Could any number be taken apart into primes in two different ways, not counting order? What do you think?
+              question_reviewed: false
+              # Phrases that must never reach the visitor's eyes while this moment is open: they are the
+              # answer. A test scans the plane's texts, the question and everything the app shows.
+              never_show: ["exactly one way", "only one way", "one way only", "unique(ly)? factori", "one and only one", "no other way", "the same primes"]
               rubric_reviewed: true # approved by the project owner as written
               rubric: >-
                 The visitor says, in their own words, that every whole number above 1 is built from
@@ -348,6 +365,9 @@ cathedral:
             - id: nt-1-sieve
               kind: sieve
               earns: [df-prm]
+              question: Look at the numbers left standing. What do they have in common?
+              question_reviewed: false
+              never_show: ["standing (is|are) (exactly |just |only )?the primes", "are the primes", "only divisors", "divisible only", "square root", "knocks? nothing", "prime factor no larger", "no larger than"]
               rubric_reviewed: true # approved by the project owner as written
               rubric: >-
                 The visitor says, in their own words, that a prime is a whole number greater than 1

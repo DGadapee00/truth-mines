@@ -12,7 +12,7 @@ import { parseTrurlRequest } from '../src/request';
 import { readEvents, stubFetch } from './anthropic-stub';
 import { FakeSocket } from './fake-socket';
 import { SECRET, makeEnv } from './helpers';
-import { request } from './fixtures';
+import { DID_THE_ROAD, DID_THE_SIEVE, request } from './fixtures';
 
 const data = (p: string) => {
   const url = new URL(`../../${p}`, import.meta.url);
@@ -71,10 +71,11 @@ describe('grounding.json against pathways.json and graph.json', () => {
 describe('Trurl on the real data', () => {
   it('builds a prompt for every moment, with its landmark’s verified statement and its rubric', () => {
     for (const [id, m] of Object.entries(grounding.moments)) {
-      const req = parseTrurlRequest(request({ plane: m.plane, stretch: m.stretch, moment: id, landmark: m.earns[0]! }), grounding);
+      const req = parseTrurlRequest(request({ plane: m.plane, stretch: m.stretch, moment: id, landmark: m.earns[0]!, doing: m.kind === 'road' ? DID_THE_ROAD : DID_THE_SIEVE }), grounding);
       const { grounding: text } = buildSystem(req, grounding);
       for (const e of m.earns) expect(text).toContain(grounding.landmarks[e]!.source);
       expect(text).toContain(m.rubric);
+      expect(text).toContain(m.question); // Trurl knows what he asked
     }
   });
 

@@ -128,7 +128,11 @@ export class Ui {
       const input = q<HTMLInputElement>('say-input');
       const text = input.value;
       input.value = '';
+      input.blur(); // the keys are the scene's again (W A S D, 1 2 3); T brings the box back
       this.h.onSay(text);
+    });
+    q<HTMLInputElement>('say-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') (e.target as HTMLInputElement).blur();
     });
     const talk = q('talk');
     talk.addEventListener('pointerdown', (e) => {
@@ -209,9 +213,10 @@ export class Ui {
     this.text('sync', SYNC_TEXT[status]);
   }
 
-  toast(text: string | null): void {
+  toast(text: string | null, draft = false): void {
     const e = this.q('toast');
     e.hidden = text === null;
+    e.dataset.draft = String(draft);
     if (text !== null) e.textContent = text;
   }
 
@@ -220,6 +225,8 @@ export class Ui {
     const text = s.hint && !s.caption ? s.hint : s.caption;
     e.dataset.empty = text || s.status === 'thinking' ? 'false' : 'true';
     e.dataset.status = s.status;
+    // A line written ahead of time (a hint, a failure line, the question after the doing) is a draft until a person has reviewed it; a live reply never is
+    e.dataset.draft = String(!!text && (s.draft || (!!s.hint && !s.caption)));
     const key = `${text}|${s.status}`;
     if (this.shown.get('captions') === key) return;
     this.shown.set('captions', key);
@@ -257,9 +264,11 @@ export class Ui {
     }
   }
 
-  setPlane(o: { name: string; text: string; focus: string; sieve: boolean; count: string; note: string | null; readout: string | null; here: string }): void {
+  setPlane(o: { name: string; text: string; draft: boolean; focus: string; sieve: boolean; count: string; note: string | null; noteDraft: boolean; readout: string | null; here: string }): void {
     this.text('pl-name', o.name);
     this.text('pl-text', o.text);
+    this.q('pl-text').dataset.draft = String(o.draft && !!o.text);
+    this.q('pl-note').dataset.draft = String(o.noteDraft);
     this.q('pl-focus-box').hidden = !o.focus;
     this.text('pl-focus', o.focus);
     this.q('pl-sieve').hidden = !o.sieve;

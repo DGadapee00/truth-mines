@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { PlaneFile, RoadColumn } from '../../core/schema';
 import { LabelSet } from './labels';
+import { Veil } from './veil';
 
 /**
  * The road of integers: blocks and monoliths as two instanced meshes, the seed stone, a number
@@ -10,6 +11,16 @@ import { LabelSet } from './labels';
 export interface Road {
   group: THREE.Group;
   labels: LabelSet;
+  /** The veil over the stacks (off unless buildRoad was asked for it). A stack's threads show only once it is revealed. */
+  veil: Veil;
+  /** Take the veil off one stack: its blocks take their prime colours, bottom first */
+  reveal(n: number): void;
+  /** Take it off all of them */
+  unveil(): void;
+  /** The colour block k of column n is drawn in now, as "#rrggbb" (for tests) */
+  blockColour(n: number, k: number): string;
+  /** Advance the assembling stacks */
+  update(dt: number): void;
   /** Show the threads of column n (or none) */
   showThreads(n: number | null): void;
   /** How many triangles' worth of threads column n has (for tests) */
@@ -50,7 +61,7 @@ function tube(points: readonly [number, number, number][], radius: number, colou
   }
 }
 
-export function buildRoad(plane: PlaneFile, colours: Map<number, THREE.Color>): Road {
+export function buildRoad(plane: PlaneFile, colours: Map<number, THREE.Color>, opts: { veiled?: boolean } = {}): Road {
   const r = plane.road;
   const group = new THREE.Group();
   group.name = 'road';
@@ -77,6 +88,44 @@ export function buildRoad(plane: PlaneFile, colours: Map<number, THREE.Color>): 
     return mesh;
   };
   const blocks = make('block', new THREE.MeshLambertMaterial(), r.block.size, gap);
+  // The veil: which column and which block of it each block instance is, so a reveal can recolour just those
+  const veil = new Veil(r.veil.assemble_step_s, opts.veiled ?? false);
+  const veilColour = new THREE.Color(r.veil.colour);
+  const blockOf = parts('block').map(({ c }) => ({ n: c.n, c }));
+  const first = new Map<number, number>();
+  parts('block').forEach(({ c }, i) => {
+    if (!first.has(c.n)) first.set(c.n, i);
+  });
+  const paintBlock = (i: number) => {
+    const { n, c } = blockOf[i] as (typeof blockOf)[number];
+    const k = i - (first.get(n) as number);
+    const state = veil.block(n, k);
+    const part = c.parts[k] as RoadColumn['parts'][number];
+    blocks.setColorAt(i, state.coloured ? (colours.get(part.prime) as THREE.Color) : veilColour);
+    const grow = 1 + 0.2 * state.pulse;
+    dummy.position.set(c.pos[0], part.y + part.h / 2, c.pos[2]);
+    dummy.rotation.set(0, c.yaw, 0);
+    dummy.scale.set((r.block.size - gap) * grow, (part.h - gap) * grow, (r.block.size - gap) * grow);
+    dummy.updateMatrix();
+    blocks.setMatrixAt(i, dummy.matrix);
+  };
+  const flush = () => {
+    blocks.instanceMatrix.needsUpdate = true;
+    if (blocks.instanceColor) blocks.instanceColor.needsUpdate = true;
+  };
+  const paintColumn = (n: number) => {
+    const at = first.get(n);
+    if (at === undefined) return;
+    const count = (r.columns[n - 1] as RoadColumn).parts.filter((q) => q.form === 'block').length;
+    for (let k = 0; k < count; k++) paintBlock(at + k);
+    flush();
+  };
+  const paintAll = () => {
+    for (let i = 0; i < blockOf.length; i++) paintBlock(i);
+    flush();
+  };
+  if (veil.on) paintAll();
+  const assembling = new Set<number>();
   // A monolith is polished: a glossy highlight the matte blocks lack.
   const monoliths = make('monolith', new THREE.MeshPhongMaterial({ shininess: 90, specular: 0x555555 }), r.monolith.width, 0);
   group.add(blocks, monoliths);
@@ -118,8 +167,33 @@ export function buildRoad(plane: PlaneFile, colours: Map<number, THREE.Color>): 
   return {
     group,
     labels,
+    veil,
+    reveal(n) {
+      veil.reveal(n);
+      assembling.add(n);
+      paintColumn(n);
+    },
+    blockColour(n, k) {
+      const c = new THREE.Color();
+      blocks.getColorAt((first.get(n) ?? 0) + k, c);
+      return `#${c.getHexString()}`;
+    },
+    unveil() {
+      veil.on = false;
+      assembling.clear();
+      paintAll();
+    },
+    update(dt) {
+      if (!veil.on || assembling.size === 0) return;
+      veil.tick(dt);
+      for (const n of [...assembling]) {
+        const count = (r.columns[n - 1] as RoadColumn).parts.filter((q) => q.form === 'block').length;
+        paintColumn(n);
+        if (!veil.assembling(n, count + 1)) assembling.delete(n);
+      }
+    },
     showThreads(n) {
-      const range = n === null ? undefined : ranges.get(n);
+      const range = n === null || !veil.isRevealed(n) ? undefined : ranges.get(n);
       if (!range || range.count === 0) {
         threads.visible = false;
         return;

@@ -9,7 +9,8 @@ export class XrPanel {
   private readonly place: UIKit.Text | null;
   private readonly caption: UIKit.Text | null;
   private readonly hint: UIKit.Text | null;
-  private readonly shown = { place: '', caption: '', hint: '' };
+  private readonly draftTag: UIKit.Text | null;
+  private readonly shown = { place: '', caption: '', hint: '', draft: false };
   private readonly target = new Vector3();
   private readonly forward = new Vector3();
   private moving = false;
@@ -18,6 +19,8 @@ export class XrPanel {
     this.place = panel.getElementById<UIKit.Text>('place') ?? null;
     this.caption = panel.getElementById<UIKit.Text>('caption') ?? null;
     this.hint = panel.getElementById<UIKit.Text>('hint') ?? null;
+    this.draftTag = panel.getElementById<UIKit.Text>('draft') ?? null;
+    this.draftTag?.setProperties({ display: 'none' });
     panel.scale.setScalar(0.0028); // 380 cm-units wide becomes about a metre
     panel.visible = false;
   }
@@ -28,14 +31,19 @@ export class XrPanel {
     return new XrPanel(panel);
   }
 
-  setText(t: { place: string; caption: string; hint: string }): void {
+  /** `draft`: some wording on the panel is Claude's draft that no person has reviewed; a tag says so beside the place name, apart from every sentence */
+  setText(t: { place: string; caption: string; hint: string; draft: boolean }): void {
+    if (this.shown.draft !== t.draft) {
+      this.shown.draft = t.draft;
+      this.draftTag?.setProperties({ display: t.draft ? 'flex' : 'none' });
+    }
     if (this.shown.place !== t.place) this.place?.setProperties({ text: (this.shown.place = t.place) });
     if (this.shown.caption !== t.caption) this.caption?.setProperties({ text: (this.shown.caption = t.caption) });
     if (this.shown.hint !== t.hint) this.hint?.setProperties({ text: (this.shown.hint = t.hint) });
   }
 
   /** What the panel shows, for tests */
-  snapshot(): { visible: boolean; place: string; caption: string; hint: string } {
+  snapshot(): { visible: boolean; place: string; caption: string; hint: string; draft: boolean } {
     return { visible: this.panel.visible, ...this.shown };
   }
 

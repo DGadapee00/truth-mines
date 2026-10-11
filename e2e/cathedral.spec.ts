@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { doorStates } from '../core/doors';
 import { parseCathedral, parseGraph, parsePathways } from '../core/schema';
-import { SECRET, WORKER, app, debug, enterSecret, mockWorker, open, settled, toCathedral, untilPhase } from './cathedral-helpers';
+import { SECRET, WORKER, app, debug, enterSecret, lookAt, mockWorker, open, settled, toCathedral, typeLine, untilPhase } from './cathedral-helpers';
 
 const data = (name: string): unknown => JSON.parse(readFileSync(new URL(`../data/${name}`, import.meta.url), 'utf8'));
 const cathedral = parseCathedral(data('cathedral.json'));
@@ -234,12 +234,18 @@ test.describe('Trurl and the Worker', () => {
     await page.keyboard.press('Enter');
     await untilPhase(page, 'plane');
     await settled(page);
+    // the doing first (earning is doing, then explaining): take three stacks apart
+    for (const [n, said] of [[12, '2 2 3'], [18, '2 3 3'], [8, '2 2 2']] as const) {
+      await lookAt(page, 'road', n);
+      await typeLine(page, said);
+      await expect(page.locator('#toast')).toContainText('Yes.');
+    }
     await page.fill('#say-input', 'every number is a product of primes in exactly one way');
     await page.press('#say-input', 'Enter');
     await expect(page.locator('#captions')).toContainText('Prove it to me.');
     expect(worker.trurl).toHaveLength(1);
-    expect(worker.trurl[0]).toMatchObject({ plane: 'number-theory', stretch: 'nt-1', moment: 'nt-1-road', landmark: '1arith', utterance: 'every number is a product of primes in exactly one way' });
-    expect(Object.keys(worker.trurl[0]!).sort()).toEqual(['dialogue', 'earned', 'landmark', 'looking_at', 'moment', 'plane', 'schema_version', 'stretch', 'utterance']);
+    expect(worker.trurl[0]).toMatchObject({ plane: 'number-theory', stretch: 'nt-1', moment: 'nt-1-road', landmark: '1arith', utterance: 'every number is a product of primes in exactly one way', doing: { predicted: [12, 18, 8], struck: [], stopped: false } });
+    expect(Object.keys(worker.trurl[0]!).sort()).toEqual(['dialogue', 'doing', 'earned', 'landmark', 'looking_at', 'moment', 'plane', 'schema_version', 'stretch', 'utterance']);
     await shot(page, '9-trurl');
     await page.click('#leave-plane');
     await untilPhase(page, 'cathedral');

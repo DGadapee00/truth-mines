@@ -13,6 +13,7 @@ import pytest
 
 from pipeline.files import config
 from pipeline.numtheory import factorization_label
+from pipeline.schema import PLANE_SCHEMA_VERSION
 from pipeline.plane_nt import build
 
 CFG = config()["number_theory_plane"]
@@ -196,7 +197,7 @@ def test_hues_distinct_and_small_primes_most_saturated(plane):
 
 def test_texts_are_drafts_with_every_placeholder_filled(plane):
     ids = [t["id"] for t in plane["texts"]]
-    assert ids == ["arrive", "road", "plaza", "sieve_note", "overlook"]
+    assert ids == ["arrive", "road", "plaza", "arrive_open", "road_open", "plaza_open", "sieve_note", "overlook"]
     for t in plane["texts"]:
         assert t["reviewed"] is False
         assert "{" not in t["text"] and "}" not in t["text"], t["text"]
@@ -207,7 +208,7 @@ def test_texts_are_drafts_with_every_placeholder_filled(plane):
 def test_build_is_deterministic(plane):
     again = build(CFG)
     assert json.dumps(again, sort_keys=True) == json.dumps(plane, sort_keys=True)
-    assert plane["schema_version"] == 1
+    assert plane["schema_version"] == PLANE_SCHEMA_VERSION
     assert "heading(yaw)" in " ".join(plane["conventions"].values())
 
 
@@ -510,3 +511,9 @@ def test_every_size_the_app_draws_with_comes_from_the_descriptor(plane):
     assert plane["overlook"]["marker"]["sign_size"] == o["marker_sign_size"]
     assert plane["overlook"]["curve"]["width"] == o["curve_width"]
     assert plane["overlook"]["labels"]["height"] == o["label_height"]
+
+
+def test_the_road_has_a_veil_colour_and_an_assembly_step(plane):
+    veil = plane["road"]["veil"]
+    assert veil["colour"].startswith("#") and len(veil["colour"]) == 7
+    assert veil["assemble_step_s"] > 0

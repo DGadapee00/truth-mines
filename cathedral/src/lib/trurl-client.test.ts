@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { TrurlRequest } from '../../../core/schema';
 import { askTrurl, type TrurlEvent } from './trurl-client';
 
-const REQ: TrurlRequest = { schema_version: 1, plane: 'number-theory', stretch: 'nt-1', moment: 'nt-1-sieve', landmark: 'df-prm', looking_at: 'plaza:97', earned: [], dialogue: [], utterance: 'why?' };
+const REQ: TrurlRequest = { schema_version: 2, plane: 'number-theory', stretch: 'nt-1', moment: 'nt-1-sieve', landmark: 'df-prm', looking_at: 'plaza:97', earned: [], doing: { predicted: [], struck: [], stopped: false }, dialogue: [], utterance: 'why?' };
 const sse = (...events: [string, unknown][]) => events.map(([e, d]) => `event: ${e}\ndata: ${JSON.stringify(d)}\n\n`).join('');
 
 function fakeFetch(res: () => Response | Promise<Response>) {

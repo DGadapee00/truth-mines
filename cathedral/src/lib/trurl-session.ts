@@ -1,3 +1,4 @@
+import type { DoingFacts } from '../../../core/doing';
 import type { TrurlRequest, TrurlTurn } from '../../../core/schema';
 import { TRURL_SCHEMA_VERSION } from '../../../core/schema';
 import type { TrurlEvent } from './trurl-client';
@@ -18,6 +19,8 @@ export interface TrurlState {
   status: 'idle' | 'thinking' | 'talking';
   /** Trurl's words so far; they stay until the next utterance or clearCaption() */
   caption: string;
+  /** The caption is a line written ahead of time that no person has reviewed (never true of a live reply) */
+  draft: boolean;
   disabled: TrurlDisabled;
   /** A line to show instead of a reply when Trurl is off */
   hint: string | null;
@@ -27,6 +30,10 @@ export interface TrurlDeps {
   ask(req: TrurlRequest, signal: AbortSignal): AsyncIterable<TrurlEvent>;
   context(): TrurlContext;
   earned(): string[];
+  /** What the visitor has done in this session: a verdict can only follow a doing from this visit */
+  doing(): DoingFacts;
+  /** Which of the ids a verdict names the doing of this session allows to be earned */
+  allowed(ids: string[]): string[];
   onEarned(ids: string[]): void;
   /** Whether this device has what Trurl needs (a Worker address and the secret) */
   enabled(): boolean;
@@ -52,6 +59,7 @@ function failureLine(status: number): string {
 export function createTrurlSession(deps: TrurlDeps) {
   let status: TrurlState['status'] = 'idle';
   let caption = '';
+  let draft = false;
   let unauthorized = false;
   let dialogue: TrurlTurn[] = [];
   let abort: AbortController | null = null;
@@ -60,7 +68,7 @@ export function createTrurlSession(deps: TrurlDeps) {
   const disabled = (): TrurlDisabled => (!deps.enabled() ? 'no-secret' : unauthorized ? 'unauthorized' : null);
   const state = (): TrurlState => {
     const d = disabled();
-    return { status, caption, disabled: d, hint: d ? HINTS[d] : null };
+    return { status, caption, draft, disabled: d, hint: d ? HINTS[d] : null };
   };
   const emit = () => {
     const s = state();
@@ -84,9 +92,10 @@ export function createTrurlSession(deps: TrurlDeps) {
       const mine = new AbortController();
       abort = mine;
       caption = '';
+      draft = false;
       status = 'thinking';
       emit();
-      const req: TrurlRequest = { schema_version: TRURL_SCHEMA_VERSION, ...deps.context(), earned: deps.earned(), dialogue: [...dialogue], utterance };
+      const req: TrurlRequest = { schema_version: TRURL_SCHEMA_VERSION, ...deps.context(), earned: deps.earned(), doing: deps.doing(), dialogue: [...dialogue], utterance };
       let verdict: string[] = [];
       let ok = false;
       let failure: number | null = null;
@@ -104,7 +113,10 @@ export function createTrurlSession(deps: TrurlDeps) {
       abort = null;
       if (failure !== null || !ok) {
         if (failure === 401) unauthorized = true;
-        else caption = failureLine(failure ?? 0);
+        else {
+          caption = failureLine(failure ?? 0);
+          draft = true; // Trurl's own lost-thread lines are written ahead of time
+        }
         status = 'idle';
         emit();
         return true;
@@ -112,7 +124,8 @@ export function createTrurlSession(deps: TrurlDeps) {
       status = 'idle';
       dialogue = [...dialogue, { role: 'user' as const, text: utterance }, { role: 'trurl' as const, text: caption.slice(0, MAX_TEXT) }].slice(-MAX_TURNS);
       emit();
-      if (verdict.length > 0) deps.onEarned(verdict);
+      const granted = deps.allowed(verdict);
+      if (granted.length > 0) deps.onEarned(granted);
       return true;
     },
     /** The secret or Worker address has changed: try again */
@@ -122,6 +135,16 @@ export function createTrurlSession(deps: TrurlDeps) {
     },
     clearCaption(): void {
       caption = '';
+      draft = false;
+      emit();
+    },
+    /** Trurl says a line he already has (the question after the doing): nothing is sent, nothing is judged */
+    announce(text: string, isDraft = false): void {
+      abort?.abort();
+      abort = null;
+      caption = text.slice(0, MAX_TEXT);
+      draft = isDraft;
+      status = 'idle';
       emit();
     },
   };

@@ -164,6 +164,7 @@ def build_road(cfg: dict, cl: Centreline, primes: list[int]) -> dict:
         "spacing": r["spacing"],
         "block": {"size": block, "gap": r["block_gap"]},
         "thread_radius": r["thread_radius"],
+        "veil": r["veil"],
         "labels": r["labels"],
         "monolith": {"width": r["monolith_width"], "height": R2(mono_h)},
         "seed": {"pos": pt(sx, 0, sz), "size": [r["seed"]["width"], r["seed"]["height"]]},

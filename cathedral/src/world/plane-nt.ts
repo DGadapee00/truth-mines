@@ -38,13 +38,14 @@ export class NumberTheoryPlane {
   private readonly sign: Sign;
   private readonly targets: Target[];
   private focus: Focus = null;
+  private focusShown = '';
   private readonly focusPos = new Vector3();
   marker: OverlookSample | null = null;
 
   constructor(readonly data: PlaneFile) {
     this.group.name = 'plane-number-theory';
     const colours: Map<number, Color> = primeColours(data) as Map<number, Color>;
-    const built = buildWorld(data, colours as never);
+    const built = buildWorld(data, colours as never, { veiled: true });
     this.road = built.road;
     this.plaza = built.plaza;
     this.overlook = built.overlook;
@@ -78,15 +79,32 @@ export class NumberTheoryPlane {
     return { kind, n: Number(n) };
   }
 
-  /** Show the focus: threads and a sign for a road column, a "strike" sign over a plaza column. */
+  /** Take the veil off one stack: the visitor took it apart rightly */
+  reveal(n: number): void {
+    this.road.reveal(n);
+  }
+
+  /** The whole road as the pipeline describes it, once the idea behind it is the visitor's */
+  unveil(): void {
+    this.road.unveil();
+  }
+
+  isRevealed(n: number): boolean {
+    return this.road.veil.isRevealed(n);
+  }
+
+  /** Show the focus: threads and a sign for a road column, a "strike" sign over a plaza column. A veiled column's sign is only its number. */
   setFocus(f: Focus, cam: Vector3): void {
-    const same = f?.kind === this.focus?.kind && f?.n === this.focus?.n;
+    const key = f ? `${f.kind}:${f.n}:${f.kind === 'road' && this.isRevealed(f.n)}` : '';
+    const same = key === this.focusShown;
+    this.focusShown = key;
     this.focus = f;
     if (!same) {
       const d = this.data;
       if (f?.kind === 'road') {
         const c = this.column(f.n);
-        this.sign.set([c.label], c.kind === 'prime' ? (d.primes.find((p) => p.p === c.n)?.color ?? '#ffcf5a') : '#ffcf5a');
+        const known = this.isRevealed(f.n);
+        this.sign.set([known ? c.label : String(c.n)], known && c.kind === 'prime' ? (d.primes.find((p) => p.p === c.n)?.color ?? '#ffcf5a') : '#ffcf5a');
         this.sign.mesh.visible = true;
         this.road.showThreads(f.n);
         this.focusPos.set(c.pos[0], c.height + d.road.labels.sign_offset, c.pos[2]);
@@ -115,6 +133,7 @@ export class NumberTheoryPlane {
   }
 
   update(dt: number, cam: Vector3): void {
+    this.road.update(dt);
     this.plaza.update(dt);
     this.marker = this.overlook.sampleAt(this.walk.x, this.walk.z);
     this.overlook.mark(this.marker, cam as never);

@@ -7,7 +7,7 @@
   "additionalProperties": false,
   "required": ["schema_version", "pathways"],
   "properties": {
-    "schema_version": { "const": 2 },
+    "schema_version": { "const": 3 },
     "pathways": {
       "type": "array",
       "minItems": 12,
@@ -35,11 +35,13 @@
                   "items": {
                     "type": "object",
                     "additionalProperties": false,
-                    "required": ["id", "kind", "earns"],
+                    "required": ["id", "kind", "earns", "question", "question_reviewed"],
                     "properties": {
                       "id": { "type": "string", "minLength": 1 },
                       "kind": { "enum": ["road", "sieve", "overlook"] },
-                      "earns": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+                      "earns": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+                      "question": { "type": "string", "minLength": 1, "description": "What Trurl asks once the visitor has done the activity. Never the answer." },
+                      "question_reviewed": { "type": "boolean", "description": "false until a person approves the wording" }
                     }
                   }
                 }

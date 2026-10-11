@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { GroundingFile, TrurlRequest } from '../../core/schema';
+import { doingDone } from '../../core/doing';
 import type { Env } from './env';
 import { buildMessages, buildSystem } from './prompt';
 import { VerdictSplitter } from './verdict';
@@ -13,10 +14,14 @@ export const EFFORT = 'low';
 const enc = new TextEncoder();
 const frame = (event: string, data: unknown) => enc.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
 
-/** The ids the visitor may be granted: what the model proposed, cut to what this moment can earn and they do not already have. */
+/**
+ * The ids the visitor may be granted: what the model proposed, cut to what this moment can earn and
+ * they do not already have, and only if the facts show the visitor did the activity in this visit.
+ * Whatever Trurl is persuaded of, an explanation without the doing earns nothing.
+ */
 export function allowedEarned(proposed: string[] | null, req: TrurlRequest, grounding: GroundingFile): string[] {
   const moment = req.moment ? grounding.moments[req.moment] : undefined;
-  if (!moment || !proposed) return [];
+  if (!moment || !proposed || !doingDone(moment.kind, req.doing)) return [];
   return [...new Set(proposed)].filter((id) => moment.earns.includes(id) && !req.earned.includes(id));
 }
 

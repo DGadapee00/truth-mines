@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PERSONA, buildMessages, buildSystem } from '../src/prompt';
-import { grounding, request } from './fixtures';
+import { DID_NOTHING, DID_THE_ROAD, DID_THE_SIEVE, grounding, request } from './fixtures';
 
 const g = grounding();
 const system = (over = {}) => buildSystem(request(over), g);
@@ -104,5 +104,46 @@ describe('buildMessages', () => {
 
   it('starts with the utterance alone when there is no dialogue', () => {
     expect(buildMessages(request())).toEqual([{ role: 'user', content: 'why did nothing fall after seven?' }]);
+  });
+});
+
+describe('the doing: no judging until the activity has been done in this visit', () => {
+  it('before: no question, no rubric, no verdict, and an invitation to try the activity', () => {
+    for (const [moment, doing] of [['nt-1-road', DID_NOTHING], ['nt-1-sieve', DID_NOTHING], ['nt-1-road', { predicted: [12, 18], struck: [], stopped: false }], ['nt-1-sieve', { predicted: [], struck: [2, 3, 5, 7], stopped: false }]] as const) {
+      const t = system({ moment, doing }).grounding;
+      expect(t, moment).toContain('has NOT yet done the activity');
+      expect(t).toContain('write no verdict line');
+      expect(t).not.toContain(g.moments[moment]!.rubric);
+      expect(t).not.toContain(g.moments[moment]!.question);
+      expect(t).not.toContain('You may earn');
+    }
+  });
+
+  it('after: Trurl knows what he asked, may earn the moment’s idea, and has the rubric', () => {
+    const road = system({ moment: 'nt-1-road', landmark: '1arith', doing: DID_THE_ROAD }).grounding;
+    expect(road).toContain(g.moments['nt-1-road']!.question);
+    expect(road).toContain('You may earn: 1arith');
+    expect(road).toContain(g.moments['nt-1-road']!.rubric);
+    const sieve = system({ doing: DID_THE_SIEVE }).grounding;
+    expect(sieve).toContain(g.moments['nt-1-sieve']!.question);
+    expect(sieve).toContain('You may earn: df-prm');
+    expect(sieve).not.toContain('NOT yet done');
+  });
+
+  it('tells Trurl the facts in words the Worker chooses, from numbers alone', () => {
+    expect(system({ moment: 'nt-1-road', landmark: '1arith', doing: DID_THE_ROAD }).grounding).toContain('took apart into primes, rightly, in this visit: 12, 18, 8');
+    expect(system({ doing: DID_THE_SIEVE }).grounding).toContain('in order, each the next prime: 2, 3, 5, 7. They said it was safe to stop, rightly: yes');
+    expect(system({ doing: DID_NOTHING }).grounding).toContain('each the next prime: none');
+  });
+
+  it('with no moment active there is no doing line and no judging', () => {
+    const t = system({ moment: null, landmark: null, stretch: null, plane: null, doing: DID_THE_SIEVE }).grounding;
+    expect(t).not.toContain('What the visitor has done');
+    expect(t).toContain('No moment is active');
+  });
+
+  it('the persona still says the verdict line belongs only where JUDGING allows it', () => {
+    expect(PERSONA).toMatch(/When JUDGING says you may earn something/);
+    expect(PERSONA).toMatch(/not done the activity, do not ask the moment's question/);
   });
 });

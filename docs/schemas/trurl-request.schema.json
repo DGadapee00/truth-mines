@@ -5,15 +5,26 @@
   "description": "Only facts about where the visitor is and what was said. The client cannot choose the model, the system prompt or the token limit; unknown fields are refused. The Worker also checks that the named places exist in grounding.json and fit together, which a schema cannot say. Mirrors core/schema.ts (TrurlRequest).",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "plane", "stretch", "moment", "landmark", "looking_at", "earned", "dialogue", "utterance"],
+  "required": ["schema_version", "plane", "stretch", "moment", "landmark", "looking_at", "earned", "doing", "dialogue", "utterance"],
   "properties": {
-    "schema_version": { "const": 1 },
+    "schema_version": { "const": 2 },
     "plane": { "type": ["string", "null"], "minLength": 1 },
     "stretch": { "type": ["string", "null"], "minLength": 1 },
     "moment": { "type": ["string", "null"], "minLength": 1 },
     "landmark": { "type": ["string", "null"], "minLength": 1 },
     "looking_at": { "type": ["string", "null"], "pattern": "^[a-z]{2,12}:[A-Za-z0-9._-]{1,40}$" },
     "earned": { "type": "array", "maxItems": 500, "items": { "type": "string", "pattern": "^[A-Za-z0-9._-]{1,80}$" } },
+    "doing": {
+      "type": "object",
+      "description": "What the visitor has done in this session (core/doing.ts): stacks taken apart rightly, sieve strikes in order, and whether they rightly said it was safe to stop. Numbers only. The Worker decides from these whether the activity was done; it never trusts a flag.",
+      "additionalProperties": false,
+      "required": ["predicted", "struck", "stopped"],
+      "properties": {
+        "predicted": { "type": "array", "maxItems": 100, "uniqueItems": true, "items": { "type": "integer", "minimum": 2, "maximum": 100 } },
+        "struck": { "type": "array", "maxItems": 100, "items": { "type": "integer", "minimum": 2, "maximum": 100 } },
+        "stopped": { "type": "boolean" }
+      }
+    },
     "dialogue": {
       "type": "array",
       "items": {

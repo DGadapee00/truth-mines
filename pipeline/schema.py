@@ -11,12 +11,12 @@ from dataclasses import asdict, dataclass, field
 SCHEMA_VERSION = 6
 
 # plane-number-theory.json has its own version, so adding a plane leaves the mine's files alone.
-PLANE_SCHEMA_VERSION = 1
+PLANE_SCHEMA_VERSION = 2
 
 # cathedral.json and pathways.json are versioned on their own too (docs/schemas/*.schema.json).
 CATHEDRAL_SCHEMA_VERSION = 1
-PATHWAYS_SCHEMA_VERSION = 2
-GROUNDING_SCHEMA_VERSION = 1  # grounding.json: what Trurl may say (bundled into the Worker)
+PATHWAYS_SCHEMA_VERSION = 3
+GROUNDING_SCHEMA_VERSION = 2  # grounding.json: what Trurl may say (bundled into the Worker)
 
 KINDS = ("axiom", "definition", "theorem")
 

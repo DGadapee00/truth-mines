@@ -97,7 +97,7 @@ export interface Debug {
   phase: 'gate' | 'ready' | 'threshold' | 'cathedral' | 'plane';
   xr: boolean;
   rigYaw: number;
-  xrPanel: { visible: boolean; place: string; caption: string; hint: string } | null;
+  xrPanel: { visible: boolean; place: string; caption: string; hint: string; draft: boolean } | null;
   states: Record<string, 'frontier' | 'dim' | 'sealed'>;
   earned: string[];
   sync: 'local' | 'synced' | 'syncing' | 'offline' | 'unauthorized';
@@ -110,7 +110,10 @@ export interface Debug {
   locomotion: { slidingSpeed: number; turningAngle: number; turningMethod: number; enableJumping: boolean } | null;
   transition: { to: string; stage: string } | null;
   focusDoor: string | null;
-  captions: { status: string; caption: string; disabled: string | null; hint: string | null };
+  captions: { status: string; caption: string; draft: boolean; disabled: string | null; hint: string | null };
+  doing: { predicted: number[]; struck: number[]; stopped: boolean };
+  doingDone: { road: boolean; sieve: boolean };
+  focus: { kind: 'road' | 'plaza'; n: number } | null;
   zone: string;
   standing: number | null;
   plane: { x: number; z: number } | null;
@@ -141,3 +144,30 @@ export async function toCathedral(page: Page): Promise<void> {
 
 /** Evaluate an expression on the app, e.g. app(page, "stand(0, -4)"). The app is window.__cathedral. */
 export const app = <T = unknown>(page: Page, expr: string): Promise<T> => page.evaluate(`window.__cathedral.${expr}`) as Promise<T>;
+
+/** Walk through the number theory door of a cathedral you are already standing in, and wait for the plane. */
+export async function intoNumberTheory(page: Page): Promise<void> {
+  await app(page, 'stand(0, -3)');
+  await app(page, "lookAtDoor('number-theory')");
+  await page.waitForFunction(() => (window as unknown as { __cathedral: { debug(): { focusDoor: string | null } } }).__cathedral.debug().focusDoor === 'number-theory', null, { timeout: 30_000 });
+  await page.keyboard.press('Enter');
+  await untilPhase(page, 'plane');
+  await settled(page);
+}
+
+/** Look at a column and wait until the app's view has it in focus (frames are slow under SwiftShader). */
+export async function lookAt(page: Page, kind: 'road' | 'plaza', n: number): Promise<void> {
+  // a ray from afar can meet a nearer column first, so stand close
+  await app(page, kind === 'road' ? `standBeside(${n})` : `standBesidePlaza(${n})`);
+  await app(page, `lookAtColumn('${kind}', ${n})`);
+  await page.waitForFunction(([k, m]) => {
+    const f = (window as unknown as { __cathedral: { debug(): { focus: { kind: string; n: number } | null } } }).__cathedral.debug().focus;
+    return f?.kind === k && f.n === m;
+  }, [kind, n] as const, { timeout: 30_000 });
+}
+
+/** Type a line into the text box, as a visitor would, and send it. */
+export async function typeLine(page: Page, text: string): Promise<void> {
+  await page.fill('#say-input', text);
+  await page.press('#say-input', 'Enter');
+}

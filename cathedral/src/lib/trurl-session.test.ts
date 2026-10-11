@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { noFacts, type DoingFacts } from '../../../core/doing';
 import type { TrurlRequest } from '../../../core/schema';
 import type { TrurlEvent } from './trurl-client';
 import { createTrurlSession, type TrurlContext } from './trurl-session';
 
 const CTX: TrurlContext = { plane: 'number-theory', stretch: 'nt-1', moment: 'nt-1-sieve', landmark: 'df-prm', looking_at: 'plaza:97' };
 
-function setup(script: (req: TrurlRequest, signal: AbortSignal) => TrurlEvent[] | AsyncIterable<TrurlEvent>, opts: { secret?: boolean; earned?: string[] } = {}) {
+function setup(script: (req: TrurlRequest, signal: AbortSignal) => TrurlEvent[] | AsyncIterable<TrurlEvent>, opts: { secret?: boolean; earned?: string[]; facts?: DoingFacts; allow?: (ids: string[]) => string[] } = {}) {
   const requests: TrurlRequest[] = [];
   const earned: string[][] = [];
   let ctx = CTX;
@@ -20,6 +21,8 @@ function setup(script: (req: TrurlRequest, signal: AbortSignal) => TrurlEvent[] 
     },
     context: () => ctx,
     earned: () => opts.earned ?? [],
+    doing: () => opts.facts ?? noFacts(),
+    allowed: (ids) => (opts.allow ? opts.allow(ids) : ids),
     onEarned: (ids) => earned.push(ids),
     enabled: () => hasSecret,
   });
@@ -44,7 +47,7 @@ describe('the Trurl session', () => {
     const t = setup(() => arr({ type: 'text', delta: 'Hm.' }, { type: 'done' }), { earned: ['1arith'] });
     await t.s.say('first');
     await t.s.say('second');
-    expect(t.requests[0]).toEqual({ schema_version: 1, ...CTX, earned: ['1arith'], dialogue: [], utterance: 'first' });
+    expect(t.requests[0]).toEqual({ schema_version: 2, ...CTX, earned: ['1arith'], doing: noFacts(), dialogue: [], utterance: 'first' });
     expect(t.requests[1]!.dialogue).toEqual([{ role: 'user', text: 'first' }, { role: 'trurl', text: 'Hm.' }]);
     expect(t.requests[1]!.utterance).toBe('second');
   });
@@ -164,5 +167,32 @@ describe('the Trurl session', () => {
     await t.s.say('hi');
     t.s.clearCaption();
     expect(t.s.state().caption).toBe('');
+  });
+
+  it('sends what the visitor has done with every request', async () => {
+    const facts = { predicted: [12, 18], struck: [2, 3], stopped: false };
+    const t = setup(() => arr({ type: 'done' }), { facts });
+    await t.s.say('hello');
+    expect(t.requests[0]!.doing).toEqual(facts);
+    expect(t.requests[0]!.schema_version).toBe(2);
+  });
+
+  it('applies only the ids the session’s own doing allows, however the verdict reads', async () => {
+    const t = setup(() => arr({ type: 'text', delta: 'Yes.' }, { type: 'verdict', earned: ['df-prm', '1arith'] }, { type: 'done' }), { allow: (ids) => ids.filter((i) => i === '1arith') });
+    await t.s.say('because');
+    expect(t.earned).toEqual([['1arith']]);
+  });
+
+  it('earns nothing when the doing allows nothing', async () => {
+    const t = setup(() => arr({ type: 'verdict', earned: ['df-prm'] }, { type: 'done' }), { allow: () => [] });
+    await t.s.say('because');
+    expect(t.earned).toEqual([]);
+  });
+
+  it('can say a line it already has, without asking the Worker', () => {
+    const t = setup(() => arr({ type: 'done' }));
+    t.s.announce('Look at the numbers left standing.');
+    expect(t.s.state()).toMatchObject({ status: 'idle', caption: 'Look at the numbers left standing.' });
+    expect(t.requests).toEqual([]);
   });
 });

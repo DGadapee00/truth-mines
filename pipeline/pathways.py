@@ -6,12 +6,15 @@ ideas on the map (the landmarks of any stretch) that the pathway's `gated_on` id
 graph.json's dependencies. `null` means no true gate exists yet (config says why) and the door is
 sealed. Curation lives in config.yaml (CLAUDE.md rule 3); test_gates.py re-derives every gate from the
 raw set.mm.
-Moment rubrics are Trurl's private judging notes: they go to grounding.json, never into this file.
+Moment rubrics are Trurl's private judging notes: they go to grounding.json, never into this file. A moment's
+`question` is what Trurl asks once the visitor has done the activity; it may be shown, so it must not
+contain the moment's answer (`never_show`).
 """
 
 from __future__ import annotations
 
 import json
+import re
 
 from .cathedral import build as build_cathedral
 from .files import DATA, config, read_stage, write_stage
@@ -107,7 +110,16 @@ def build(cfg: dict, deps: dict[str, list[str]], plane_ids: list[str]) -> dict:
                 for e in m["earns"]:
                     if e not in s["landmarks"]:
                         raise SystemExit(f"pathways: moment {m['id']} earns {e}, which is not a landmark of stretch {s['id']}")
-                moments.append({"id": m["id"], "kind": m["kind"], "earns": sorted(m["earns"])})
+                question = " ".join(str(m.get("question", "")).split())
+                if not question:
+                    raise SystemExit(f"pathways: moment {m['id']} has no question for Trurl to ask once the visitor has done the activity")
+                reviewed = m.get("question_reviewed", False)
+                if not isinstance(reviewed, bool):
+                    raise SystemExit(f"pathways: moment {m['id']}: question_reviewed must be true or false")
+                for pattern in m.get("never_show", []):
+                    if re.search(pattern, question, re.IGNORECASE):
+                        raise SystemExit(f"pathways: the question of {m['id']} contains its answer ({pattern!r}): a question beckons, it does not tell")
+                moments.append({"id": m["id"], "kind": m["kind"], "earns": sorted(m["earns"]), "question": question, "question_reviewed": reviewed})
             stretches.append({"id": s["id"], "plane_data": s["plane_data"], "landmarks": list(s["landmarks"]), "moments": moments})
         out.append({"plane": plane, "gated_on": target, "entry_requires": requires, "stretches": stretches})
     # A gate no visitor can ever meet would be a door sealed for good
@@ -131,6 +143,9 @@ def run() -> None:
                 raise SystemExit(f"pathways: {s['plane_data']} is missing; run the 'plane' stage first")
     write_stage("pathways", pathways)
     DATA.mkdir(parents=True, exist_ok=True)
+    # What must never be on screen while a moment is open, for the tests that scan the screen. Not shipped to the client.
+    never = {m["id"]: list(m.get("never_show", [])) for pw in cfg["pathways"] for s in pw["stretches"] for m in s["moments"]}
+    (DATA / "never-show.json").write_text(json.dumps(never, ensure_ascii=False, indent=1), encoding="utf8")
     path = DATA / "pathways.json"
     path.write_text(json.dumps(pathways, ensure_ascii=False, separators=(",", ":")), encoding="utf8")
     stretches = sum(len(p["stretches"]) for p in pathways["pathways"])

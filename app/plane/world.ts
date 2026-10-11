@@ -10,6 +10,6 @@ export function buildGround(plane: PlaneFile): THREE.Mesh {
   return groundMesh(plane.ground);
 }
 
-export function buildWorld(plane: PlaneFile, colours: Map<number, THREE.Color>): { road: Road; plaza: Plaza; overlook: Overlook } {
-  return { road: buildRoad(plane, colours), plaza: buildPlaza(plane, colours), overlook: buildOverlook(plane) };
+export function buildWorld(plane: PlaneFile, colours: Map<number, THREE.Color>, opts: { veiled?: boolean } = {}): { road: Road; plaza: Plaza; overlook: Overlook } {
+  return { road: buildRoad(plane, colours, opts), plaza: buildPlaza(plane, colours), overlook: buildOverlook(plane) };
 }

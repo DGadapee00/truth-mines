@@ -250,7 +250,7 @@ export function parseScene(raw: unknown): SceneFile {
 // plane leaves the mine's files alone. As with scene.json, the app draws and animates this and
 // decides no geometry (CLAUDE.md rule 9). Conventions travel with the file.
 
-export const PLANE_SCHEMA_VERSION = 1;
+export const PLANE_SCHEMA_VERSION = 2;
 
 export interface PlaneText {
   id: string;
@@ -373,6 +373,8 @@ export interface PlaneFile {
     spacing: number;
     block: { size: number; gap: number };
     thread_radius: number;
+    /** An unrevealed composite is drawn in this one colour; its blocks take their prime colours one by one, `assemble_step_s` apart */
+    veil: { colour: string; assemble_step_s: number };
     labels: { number_height: number; number_offset: number; sign_offset: number; sign_size: [number, number] };
     monolith: { width: number; height: number };
     seed: { pos: Vec3; size: [number, number] };
@@ -389,6 +391,7 @@ export function parsePlane(raw: unknown): PlaneFile {
   for (const k of ['texts', 'stops', 'primes'] as const) if (!Array.isArray(p[k])) throw new SchemaError(`plane: ${k}`);
   if (!p.ground || !Array.isArray(p.ground.spine) || p.ground.spine.length < 2 || !p.ground.spine.every(isVec3)) throw new SchemaError('plane: ground');
   if (!p.road || !Array.isArray(p.road.columns)) throw new SchemaError('plane: road');
+  if (!p.road.veil || typeof p.road.veil.colour !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(p.road.veil.colour) || !(p.road.veil.assemble_step_s > 0)) throw new SchemaError('plane: road veil');
   for (const c of p.road.columns) {
     const w = `plane column ${String(c?.n)}`;
     if (!Number.isInteger(c.n) || !isVec3(c.pos) || typeof c.label !== 'string' || !Array.isArray(c.parts) || !Array.isArray(c.threads)) throw new SchemaError(w);
@@ -409,7 +412,7 @@ export function parsePlane(raw: unknown): PlaneFile {
 // docs/schemas/. Doors carry no state: core/doors.ts computes it from what has been earned.
 
 export const CATHEDRAL_SCHEMA_VERSION = 1;
-export const PATHWAYS_SCHEMA_VERSION = 2;
+export const PATHWAYS_SCHEMA_VERSION = 3;
 
 export const PLANE_IDS = [
   'logic',
@@ -505,6 +508,9 @@ export interface PathwayMoment {
   kind: MomentKind;
   /** set.mm ids this moment can grant when the visitor explains it to Trurl */
   earns: string[];
+  /** What Trurl asks once the visitor has done the activity: a draft until a person reviews it, and never the answer */
+  question: string;
+  question_reviewed: boolean;
 }
 
 export interface PathwayStretch {
@@ -599,6 +605,7 @@ export function parsePathways(raw: unknown): PathwaysFile {
       ids.add(s.id);
       for (const m of s.moments) {
         if (typeof m.id !== 'string' || !m.id || ids.has(m.id) || !['road', 'sieve', 'overlook'].includes(m.kind) || !isStringArray(m.earns) || m.earns.length < 1) throw new SchemaError(`${where}: moment ${String(m?.id)}`);
+        if (typeof m.question !== 'string' || !m.question.trim() || typeof m.question_reviewed !== 'boolean') throw new SchemaError(`${where}: moment ${m.id} question`);
         ids.add(m.id);
         if (!m.earns.every((e) => s.landmarks.includes(e))) throw new SchemaError(`${where}: moment ${m.id} earns a landmark outside its stretch`);
       }
@@ -644,8 +651,8 @@ export interface Progress {
 // the Worker builds the prompt. grounding.json (docs/schemas/grounding.schema.json) is what Trurl
 // may assert, bundled into the Worker by pipeline/grounding.py.
 
-export const TRURL_SCHEMA_VERSION = 1;
-export const GROUNDING_SCHEMA_VERSION = 1;
+export const TRURL_SCHEMA_VERSION = 2;
+export const GROUNDING_SCHEMA_VERSION = 2;
 
 export interface TrurlTurn {
   role: 'user' | 'trurl';
@@ -661,6 +668,8 @@ export interface TrurlRequest {
   /** What the visitor is looking at, e.g. door:number-theory or column:12 */
   looking_at: string | null;
   earned: string[];
+  /** What the visitor has done in this session (core/doing.ts). Numbers only: nothing they typed goes in */
+  doing: { predicted: number[]; struck: number[]; stopped: boolean };
   dialogue: TrurlTurn[];
   utterance: string;
 }
@@ -686,6 +695,8 @@ export interface GroundingMoment {
   kind: MomentKind;
   landmarks: string[];
   earns: string[];
+  /** What Trurl asks once the visitor has done the activity; the client shows the same line from pathways.json */
+  question: string;
   /** A draft of what a good explanation says; private to Trurl's judge */
   rubric: string;
   rubric_reviewed: boolean;
