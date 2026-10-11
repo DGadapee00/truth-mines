@@ -56,7 +56,7 @@ runs.
 | `pipeline/` | Python: fetch, extract, validate, curate, collapse, depth, layout, export ([README](pipeline/README.md)) |
 | `pipeline/landmarks.yaml` | The curated landmarks and their names: the only place curation happens |
 | `pipeline/sources.lock` | Pinned sources (set.mm commit, the label font) with hashes |
-| `core/` | TypeScript graph model and queries (ancestors, descendants, critical path, search), the sieve's rules, and the schema of every data file. No rendering |
+| `core/` | TypeScript graph model and queries (ancestors, descendants, critical path, search), the sieve's rules, door states (`doors.ts`), progress merge (`progress.ts`), and the schema of every data file. No rendering |
 | `pipeline/scene.py` | The Inside view's chambers and tunnels, as engine-neutral scene descriptors (data/scene.json) |
 | `pipeline/numtheory.py`, `pipeline/plane_nt.py` | The number theory plane: arithmetic (tested against trial division) and its descriptors (data/plane-number-theory.json) |
 | `app/inside/` | The Inside view: renders the descriptors for the local subgraph; desktop walking, Journey, headset |
