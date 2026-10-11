@@ -267,7 +267,7 @@ cathedral:
   threshold:
     motif_depth: 3
     rings: 48
-    start_radius: 4.3 # the first rings stand just outside the 14 m wall, so they stay narrow enough to clear it
+    start_radius: 3.5 # narrow enough that the first rings, which stand in the wall's thickness, hang clear above its 14 m top
     end_radius: 1.8
     rotation_deg: 7.5
     straight: 22 # metres of level tunnel along +Z; the rings stand on it
