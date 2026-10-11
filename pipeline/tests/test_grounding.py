@@ -75,7 +75,18 @@ def test_a_reviewed_note_is_included_without_its_front_matter_and_no_note_means_
     assert "note" not in g["landmarks"]["df-prm"]
 
 
-def test_every_moment_of_the_pathways_is_here_with_a_draft_rubric(grounding):
+APPROVED = {
+    "nt-1-road": "The visitor says, in their own words, that every whole number above 1 is built from primes in exactly one way, apart from order, for example by pointing at a stack such as 12 = 2 · 2 · 3.",
+    "nt-1-sieve": "The visitor says, in their own words, that a prime is a whole number greater than 1 whose only divisors are 1 and itself, or recognizes that the numbers left standing are exactly those. Why the sieve stops after 7 (every composite up to 100 has a prime factor of at most 7) is a bonus Trurl may draw out, not a requirement.",
+}
+
+
+def configured_moments(cfg):
+    nt = next(p for p in cfg["pathways"] if p["plane"] == "number-theory")
+    return {m["id"]: m for s in nt["stretches"] for m in s["moments"]}
+
+
+def test_every_moment_of_the_pathways_is_here_with_a_rubric(grounding):
     nodes, _, _ = world()
     pw = build_pathways(CFG, set(nodes), sorted(p["id"] for p in CFG["planes"]))
     want = {m["id"]: (p["plane"], s["id"], m["earns"]) for p in pw["pathways"] for s in p["stretches"] for m in s["moments"]}
@@ -83,8 +94,33 @@ def test_every_moment_of_the_pathways_is_here_with_a_draft_rubric(grounding):
     for mid, (plane, stretch, earns) in want.items():
         m = grounding["moments"][mid]
         assert (m["plane"], m["stretch"], m["earns"]) == (plane, stretch, earns)
-        assert m["rubric"].strip() and m["rubric_reviewed"] is False
+        assert m["rubric"].strip() and isinstance(m["rubric_reviewed"], bool)
         assert set(m["earns"]) <= set(m["landmarks"])
+
+
+def test_the_two_approved_rubrics_are_the_owners_exact_words_and_flagged_reviewed(grounding):
+    for mid, text in APPROVED.items():
+        assert grounding["moments"][mid]["rubric"] == text
+        assert grounding["moments"][mid]["rubric_reviewed"] is True
+
+
+def test_the_build_copies_the_flag_and_a_missing_flag_is_a_draft():
+    bad = copy.deepcopy(CFG)
+    moments = configured_moments(bad)
+    del moments["nt-1-road"]["rubric_reviewed"]
+    moments["nt-1-sieve"]["rubric_reviewed"] = False
+    nodes, comments, notes = world()
+    g = build(bad, nodes, comments, notes)
+    assert g["moments"]["nt-1-road"]["rubric_reviewed"] is False
+    assert g["moments"]["nt-1-sieve"]["rubric_reviewed"] is False
+
+
+def test_a_flag_that_is_not_true_or_false_fails_the_build():
+    bad = copy.deepcopy(CFG)
+    configured_moments(bad)["nt-1-road"]["rubric_reviewed"] = "yes"
+    nodes, comments, notes = world()
+    with pytest.raises(SystemExit, match="nt-1-road"):
+        build(bad, nodes, comments, notes)
 
 
 def test_planes_carry_their_names(grounding):

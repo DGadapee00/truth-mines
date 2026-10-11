@@ -293,7 +293,8 @@ cathedral:
   # all be earned for the door to glow; a door with none starts as frontier, and in the prototype
   # that is number theory only. Gates for planes without a stretch yet are placeholders (marked)
   # until those planes are built; each id must exist in the graph or the build fails.
-  # `rubric` is a draft of what a good explanation says, used only by Trurl's judge, never shown.
+  # `rubric` is what a good explanation says, used only by Trurl's judge, never shown. It stays a
+  # draft (`rubric_reviewed` absent or false) until a person approves the exact text and sets it true.
   pathways:
     - plane: logic
       entry_requires: [ax-mp] # placeholder
@@ -314,16 +315,20 @@ cathedral:
             - id: nt-1-road
               kind: road
               earns: [1arith]
+              rubric_reviewed: true # approved by the project owner as written
               rubric: >-
-                The visitor says that every whole number above 1 splits into primes in exactly one
-                way, apart from the order, and can point at a number such as 12 or 60 to show it.
+                The visitor says, in their own words, that every whole number above 1 is built from
+                primes in exactly one way, apart from order, for example by pointing at a stack such
+                as 12 = 2 · 2 · 3.
             - id: nt-1-sieve
               kind: sieve
               earns: [df-prm]
+              rubric_reviewed: true # approved by the project owner as written
               rubric: >-
-                The visitor says that a prime is a number whose only divisors are 1 and itself, and
-                that after striking 2, 3, 5 and 7 nothing else falls because every composite up to
-                100 has a prime factor of at most 10, which is the square root of 100.
+                The visitor says, in their own words, that a prime is a whole number greater than 1
+                whose only divisors are 1 and itself, or recognizes that the numbers left standing
+                are exactly those. Why the sieve stops after 7 (every composite up to 100 has a
+                prime factor of at most 7) is a bonus Trurl may draw out, not a requirement.
     - plane: combinatorics
       entry_requires: [ramsey] # placeholder
       stretches: []

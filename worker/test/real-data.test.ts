@@ -55,8 +55,16 @@ describe('grounding.json against pathways.json and graph.json', () => {
     }
   });
 
-  it('keeps the draft rubrics flagged as drafts', () => {
-    for (const m of Object.values(grounding.moments)) expect(m.rubric_reviewed).toBe(false);
+  it('carries the two approved rubrics word for word, flagged as reviewed', () => {
+    expect(grounding.moments['nt-1-road']).toMatchObject({
+      rubric: 'The visitor says, in their own words, that every whole number above 1 is built from primes in exactly one way, apart from order, for example by pointing at a stack such as 12 = 2 · 2 · 3.',
+      rubric_reviewed: true,
+    });
+    expect(grounding.moments['nt-1-sieve']).toMatchObject({
+      rubric:
+        'The visitor says, in their own words, that a prime is a whole number greater than 1 whose only divisors are 1 and itself, or recognizes that the numbers left standing are exactly those. Why the sieve stops after 7 (every composite up to 100 has a prime factor of at most 7) is a bonus Trurl may draw out, not a requirement.',
+      rubric_reviewed: true,
+    });
   });
 });
 

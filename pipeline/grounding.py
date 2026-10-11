@@ -2,11 +2,12 @@
 
 For each landmark on a pathway: set.mm's own statement and description, the display form and the
 plain-language note only once a person has reviewed them (CLAUDE.md rule 7). For each moment: the
-landmarks it covers, what it can earn, and a draft rubric for judging an explanation. The Worker
+landmarks it covers, what it can earn, and a rubric for judging an explanation. The Worker
 bundles a copy and builds Trurl's prompt from it, so Trurl asserts only mathematics found here.
 
-The rubrics are drafts by Claude (`rubric_reviewed: false`). They steer Trurl's judge and are never
-shown to the visitor.
+A rubric is a draft by Claude (`rubric_reviewed: false`) until a person approves its exact text and sets
+`rubric_reviewed: true` beside it in config.yaml; the build copies the flag and never sets it. Rubrics
+steer Trurl's judge and are never shown to the visitor.
 """
 
 from __future__ import annotations
@@ -55,6 +56,9 @@ def build(cfg: dict, nodes: dict[str, dict], comments: dict[str, str], notes: di
                 rubric = (m.get("rubric") or "").strip()
                 if not rubric:
                     raise SystemExit(f"grounding: moment {m['id']} has no rubric")
+                reviewed = m.get("rubric_reviewed", False)
+                if not isinstance(reviewed, bool):
+                    raise SystemExit(f"grounding: moment {m['id']}: rubric_reviewed must be true or false")
                 moments[m["id"]] = {
                     "plane": pw["plane"],
                     "stretch": s["id"],
@@ -62,7 +66,7 @@ def build(cfg: dict, nodes: dict[str, dict], comments: dict[str, str], notes: di
                     "landmarks": list(s["landmarks"]),
                     "earns": sorted(m["earns"]),
                     "rubric": re.sub(r"\s+", " ", rubric),
-                    "rubric_reviewed": False,
+                    "rubric_reviewed": reviewed,
                 }
     planes = {p["id"]: p["name"] for p in sorted(cfg["planes"], key=lambda p: p["id"])}
     return {"schema_version": GROUNDING_SCHEMA_VERSION, "planes": planes, "landmarks": dict(sorted(landmarks.items())), "moments": dict(sorted(moments.items()))}
