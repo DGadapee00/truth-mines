@@ -595,3 +595,34 @@ export function parsePathways(raw: unknown): PathwaysFile {
   }
   return p as PathwaysFile;
 }
+
+// ---------------------------------------------------------------- progress (player data)
+//
+// What the visitor has done, written at runtime and kept on the device and in the Worker's KV. It
+// stores nothing derivable: door states come from `earned` (core/doors.ts). JSON Schema:
+// docs/schemas/progress.schema.json. Operations: core/progress.ts.
+
+export const PROGRESS_SCHEMA_VERSION = 1;
+
+/** Where the visitor stood in a pathway, in that plane's own frame (metres, yaw about +Y) */
+export interface Resume {
+  pos: Vec3;
+  yaw: number;
+}
+
+export interface PathwayProgress {
+  /** The stretch id the visitor was in */
+  stretch: string;
+  resume: Resume;
+  /** ISO 8601 UTC, e.g. 2026-10-10T21:00:00Z */
+  updated_at: string;
+}
+
+export interface Progress {
+  schema_version: number;
+  /** set.mm ids the visitor has earned, sorted, no repeats */
+  earned: string[];
+  /** Per plane id */
+  pathways: Record<string, PathwayProgress>;
+  updated_at: string;
+}
