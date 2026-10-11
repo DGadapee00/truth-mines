@@ -39,7 +39,7 @@ jobs:
           path: pipeline/.cache
           key: sources-${{ hashFiles('pipeline/sources.lock') }}
 
-      - name: Build the data (fetch, extract, validate, curate, collapse, depth, layout, export)
+      - name: Build the data (every stage)
         run: python -m pipeline
       - name: Pipeline tests (incl. every tunnel against the full graph)
         run: python -m pytest -q pipeline/tests
@@ -56,6 +56,14 @@ jobs:
         run: npm run lint
       - name: core/ and app unit tests (incl. ancestors against the full graph)
         run: npm test
+
+      - name: Worker (typecheck and tests, with mocked Claude and xAI)
+        run: |
+          npm ci --prefix worker
+          npm run typecheck:worker
+          npm run test:worker
+      - name: No secrets in the repo
+        run: npm run secrets
 
       - name: End-to-end (desktop and phone)
         run: |

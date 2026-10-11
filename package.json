@@ -15,7 +15,12 @@
     "test:pipeline": "python3 -m pytest -q pipeline/tests",
     "test:map": "playwright test e2e/mine.spec.ts",
     "e2e": "playwright test",
-    "check": "npm run typecheck && npm run lint && npm test && npm run test:pipeline && npm run test:map"
+    "check": "npm run typecheck && npm run lint && npm test && npm run test:pipeline && npm run typecheck:worker && npm run test:worker && npm run secrets && npm run test:map",
+    "test:worker": "npm --prefix worker test",
+    "typecheck:worker": "npm --prefix worker run typecheck",
+    "grounding": "python3 -m pipeline grounding && npm --prefix worker run grounding",
+    "secrets": "node scripts/check-no-secrets.mjs",
+    "install:worker": "npm ci --prefix worker"
   },
   "dependencies": {
     "katex": "^0.16.25",

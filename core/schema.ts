@@ -626,3 +626,63 @@ export interface Progress {
   pathways: Record<string, PathwayProgress>;
   updated_at: string;
 }
+
+// ---------------------------------------------------------------- Trurl (Worker request and grounding)
+//
+// The client sends only facts about where the visitor is (docs/schemas/trurl-request.schema.json);
+// the Worker builds the prompt. grounding.json (docs/schemas/grounding.schema.json) is what Trurl
+// may assert, bundled into the Worker by pipeline/grounding.py.
+
+export const TRURL_SCHEMA_VERSION = 1;
+export const GROUNDING_SCHEMA_VERSION = 1;
+
+export interface TrurlTurn {
+  role: 'user' | 'trurl';
+  text: string;
+}
+
+export interface TrurlRequest {
+  schema_version: number;
+  plane: string | null;
+  stretch: string | null;
+  moment: string | null;
+  landmark: string | null;
+  /** What the visitor is looking at, e.g. door:number-theory or column:12 */
+  looking_at: string | null;
+  earned: string[];
+  dialogue: TrurlTurn[];
+  utterance: string;
+}
+
+export interface GroundingLandmark {
+  name: string;
+  kind: Kind;
+  /** LaTeX translated from set.mm */
+  statement: string;
+  /** The statement as set.mm writes it */
+  source: string;
+  /** set.mm's own description, without credits */
+  comment: string;
+  /** Present only once a person has reviewed the display form */
+  display?: string;
+  /** Present only once a person has reviewed the note */
+  note?: string;
+}
+
+export interface GroundingMoment {
+  plane: string;
+  stretch: string;
+  kind: MomentKind;
+  landmarks: string[];
+  earns: string[];
+  /** A draft of what a good explanation says; private to Trurl's judge */
+  rubric: string;
+  rubric_reviewed: boolean;
+}
+
+export interface GroundingFile {
+  schema_version: number;
+  planes: Record<string, string>;
+  landmarks: Record<string, GroundingLandmark>;
+  moments: Record<string, GroundingMoment>;
+}

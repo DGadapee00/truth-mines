@@ -63,6 +63,8 @@ runs.
 | `app/plane/` | The number theory plane: draws and animates its descriptors; walking, focus, the sieve, stops, headset |
 | `app/render/` | The mine in three.js: instanced nodes and tunnels, batched labels, MathJax |
 | `app/ui/` | Panel, search, desktop camera |
+| `worker/` | The Cloudflare Worker behind Trurl: auth, rate limits, progress, the streamed Claude reply and the speech-to-text proxy. Holds every provider key ([README](worker/README.md)) |
+| `scripts/check-no-secrets.mjs` | Fails if a key or the app secret is in the repo or a client build |
 | `content/` | Plain-language notes, shown only once reviewed ([README](content/README.md)) |
 | `e2e/` | Playwright tests and screenshots |
 | `data/` | Generated, gitignored. Never edited by hand |
