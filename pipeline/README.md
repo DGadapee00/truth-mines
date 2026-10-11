@@ -51,8 +51,9 @@ Tests: `python -m pytest -q pipeline/tests` (a small hand-written .mm file cover
   feeding_lemmas from both ends of the full graph, and checks each chain is a real citation path
   no longer than the depth difference allows, independently of collapse.py.
 - **The cathedral** (pipeline/cathedral.py) puts twelve doors on a circle at 30-degree slots from the
-  far wall; the visitor rises through the floor at the centre (four arcs of three use all twelve
-  slots, so no slot is left for a wall entrance). Doors carry no state: `core/doors.ts` computes
+  far wall; the visitor lands on a dais at the centre, facing Foundations, having drifted through a
+  level fractal tunnel in the vault and descended slowly (four arcs of three use all twelve slots,
+  so no slot is left for a wall entrance). Doors carry no state: `core/doors.ts` computes
   frontier, dim or sealed from what has been earned and from `pathways.json`.
 - **Pathways** (pipeline/pathways.py) validate the curation in `config.yaml` (`cathedral.pathways`)
   against the landmarks: an unknown id, a moment that earns outside its stretch, or a door without a

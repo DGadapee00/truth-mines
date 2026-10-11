@@ -142,22 +142,89 @@ def test_arrival_is_at_the_hall_centre_facing_the_far_wall(cathedral):
     assert a["dais_radius"] == CFG["arrival"]["dais_radius"]
 
 
+def test_visitor_lands_facing_foundations_with_space_and_change_behind(cathedral):
+    hx, hz = heading(cathedral["arrival"]["yaw"])
+    for arc in cathedral["arcs"]:
+        bx, bz = math.sin(math.radians(arc["centre_deg"])), math.cos(math.radians(arc["centre_deg"]))
+        dot = hx * bx + hz * bz
+        if arc["id"] == "foundations":
+            assert dot == pytest.approx(1)
+        if arc["id"] == "space-change":
+            assert dot == pytest.approx(-1)
+
+
+def arc_lengths(path):
+    out = [0.0]
+    for a, b in zip(path, path[1:]):
+        out.append(out[-1] + math.dist(a, b))
+    return out
+
+
 def test_threshold_lasts_20_to_30_seconds(cathedral):
     t = cathedral["threshold"]
-    path = t["path"]
-    length = sum(math.dist(path[i], path[i + 1]) for i in range(len(path) - 1))
-    assert t["duration_s"] == pytest.approx(length / t["speed"], abs=0.01)
+    arc = arc_lengths(t["path"])
+    seconds = sum((seg["s_to"] - seg["s_from"]) / seg["speed"] for seg in t["segments"])
+    assert t["duration_s"] == pytest.approx(seconds, abs=0.02)
     assert 20 <= t["duration_s"] <= 30
+    assert arc[-1] == pytest.approx(t["segments"][-1]["s_to"], abs=0.05)
+
+
+def test_threshold_segments_cover_the_path_without_gaps(cathedral):
+    t = cathedral["threshold"]
+    segs = t["segments"]
+    assert [s["kind"] for s in segs] == ["drift", "descent"]
+    assert segs[0]["s_from"] == 0
+    for a, b in zip(segs, segs[1:]):
+        assert b["s_from"] == a["s_to"]
 
 
 def test_threshold_path_ends_at_the_arrival_dais(cathedral):
     path = cathedral["threshold"]["path"]
     assert path[-1] == cathedral["arrival"]["pos"]
-    assert path[0][0] == 0
-    assert path[0][1] < 0 and path[0][2] < 0  # starts below the floor and behind the visitor
-    # it only ever moves forward or up: never back, never down (no sudden motion, no roll)
+
+
+def test_threshold_ends_in_the_vault_and_the_visitor_descends_onto_the_dais(cathedral):
+    t = cathedral["threshold"]
+    path, hall = t["path"], cathedral["hall"]
+    assert path[0][0] == 0 and path[0][1] == CFG["threshold"]["entry_height"]
+    assert path[0][1] > hall["wall_height"]  # it starts up in the vault, not in the hall
+    assert path[0][2] < -hall["radius"]  # behind the entrance wall, outside the ring of doors
+    assert cathedral["vault"]["tiers"][0]["y"] <= path[0][1] <= cathedral["vault"]["tiers"][1]["y"]
+    arc = arc_lengths(path)
+    descent = next(s for s in t["segments"] if s["kind"] == "descent")
+    below = [p for p, s in zip(path, arc) if s >= descent["s_from"] - 1e-6]
+    assert len(below) >= 3
+    assert all(p[0] == 0 and p[2] == 0 for p in below)  # straight down onto the dais
+    assert all(b[1] < a[1] for a, b in zip(below, below[1:]))
+
+
+def test_vertical_part_is_slow_and_short(cathedral):
+    t = cathedral["threshold"]
+    drift, descent = t["segments"]
+    length = descent["s_to"] - descent["s_from"]
+    assert descent["speed"] <= 1.3 and descent["speed"] < drift["speed"]
+    assert length <= 16
+    assert length / descent["speed"] <= 12
+
+
+def test_threshold_never_moves_back_or_up(cathedral):
+    path = cathedral["threshold"]["path"]
     for a, b in zip(path, path[1:]):
-        assert b[2] >= a[2] - 1e-9 and b[1] >= a[1] - 1e-9
+        assert b[2] >= a[2] - 1e-9 and b[1] <= a[1] + 1e-9
+
+
+def test_threshold_passes_over_the_wall_with_room_to_spare(cathedral):
+    hall = cathedral["hall"]
+    for p in cathedral["threshold"]["path"]:
+        if math.hypot(p[0], p[2]) >= hall["radius"] - 0.01:
+            assert p[1] >= hall["wall_height"] + 1
+
+
+def test_every_guided_segment_has_a_vignette_and_the_descent_a_stronger_one(cathedral):
+    t = cathedral["threshold"]
+    drift, descent = t["segments"]
+    assert 0 < drift["vignette"] < descent["vignette"] <= 1
+    assert t["ease_s"] > 0
 
 
 def test_threshold_rings_shrink_by_a_constant_ratio(cathedral):
@@ -182,11 +249,17 @@ def test_threshold_motif_is_a_sierpinski_triangle(cathedral):
     assert sum(area(t) for t in m["triangles"]) == pytest.approx(whole * (3 / 4) ** m["depth"], rel=1e-3)
 
 
-def test_rings_lie_on_the_path(cathedral):
-    path = cathedral["threshold"]["path"]
-    for ring in cathedral["threshold"]["rings"]:
-        nearest = min(math.dist(ring["pos"], p) for p in path)
-        assert nearest < 1.0
+def test_rings_line_the_tunnel_and_the_last_one_is_its_mouth(cathedral):
+    t = cathedral["threshold"]
+    path = t["path"]
+    drift_end = t["segments"][0]["s_from"] + CFG["threshold"]["straight"]
+    arc = arc_lengths(path)
+    for ring in t["rings"]:
+        assert min(math.dist(ring["pos"], p) for p in path) < 1.0
+        assert ring["pitch"] == 0  # the tunnel is level; the descent has no rings
+    last = t["rings"][-1]
+    i = min(range(len(path)), key=lambda j: math.dist(path[j], last["pos"]))
+    assert arc[i] == pytest.approx(drift_end, abs=1.0)
 
 
 def test_vault_tiers_shrink_by_the_golden_ratio_and_rise(cathedral):

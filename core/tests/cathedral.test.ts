@@ -87,6 +87,22 @@ describe('parseCathedral', () => {
     expect(() => parseCathedral(slot)).toThrow(/slot/);
   });
 
+  it('rejects threshold segments with a gap or the wrong order', () => {
+    const gap = copy(good);
+    gap.threshold.segments[1]!.s_from += 1;
+    expect(() => parseCathedral(gap)).toThrow(/gap/);
+    const order = copy(good);
+    order.threshold.segments.reverse();
+    expect(() => parseCathedral(order)).toThrow(/segments/);
+  });
+
+  it('ends the threshold straight down onto the dais, slowly', () => {
+    const [drift, descent] = good.threshold.segments;
+    expect(descent!.speed).toBeLessThan(drift!.speed);
+    const end = good.threshold.path.at(-1)!;
+    expect(end).toEqual(good.arrival.pos);
+  });
+
   it('rejects a door whose preview is unknown or whose position is not finite', () => {
     const p = copy(good);
     (p.doors[0]!.preview as { id: string }).id = 'teapot';

@@ -464,6 +464,16 @@ export interface ThresholdRing {
   pitch: number;
 }
 
+export interface ThresholdSegment {
+  kind: 'drift' | 'descent';
+  s_from: number;
+  s_to: number;
+  /** metres per second, before easing */
+  speed: number;
+  /** 0..1: how far the comfort vignette closes in */
+  vignette: number;
+}
+
 export interface CathedralFile {
   schema_version: number;
   conventions: Record<string, string>;
@@ -474,9 +484,12 @@ export interface CathedralFile {
   threshold: {
     motif: { kind: 'sierpinski'; depth: number; triangles: [number, number][][] };
     rings: ThresholdRing[];
-    /** The rails path the visitor drifts along, in order, ending at the arrival dais */
+    /** The rails path, in order: level through the tunnel in the vault, a turn, then straight down onto the arrival dais */
     path: Vec3[];
-    speed: number;
+    /** Speed and comfort vignette per stretch of the path, by arc length in metres: the drift through the tunnel, then the descent */
+    segments: ThresholdSegment[];
+    /** Seconds to ramp the speed at the start, between segments and at the dais */
+    ease_s: number;
     duration_s: number;
   };
   vault: { tiers: { i: number; radius: number; y: number; sides: number; rotation: number }[]; ratio: number; limit_y: number };
@@ -545,7 +558,10 @@ export function parseCathedral(raw: unknown): CathedralFile {
   if (new Set(c.doors.map((d) => d.slot)).size !== 12) throw new SchemaError('cathedral: two doors share a slot');
   const t = c.threshold;
   if (!t || !Array.isArray(t.rings) || t.rings.length < 2 || !Array.isArray(t.path) || t.path.length < 2 || !t.path.every(isVec3)) throw new SchemaError('cathedral: threshold');
-  if (!(t.speed > 0) || !(t.duration_s > 0) || t.motif?.kind !== 'sierpinski' || !Array.isArray(t.motif.triangles)) throw new SchemaError('cathedral: threshold motif or speed');
+  if (!(t.duration_s > 0) || !(t.ease_s > 0) || t.motif?.kind !== 'sierpinski' || !Array.isArray(t.motif.triangles)) throw new SchemaError('cathedral: threshold motif or timing');
+  if (!Array.isArray(t.segments) || t.segments.length !== 2 || t.segments[0]?.kind !== 'drift' || t.segments[1]?.kind !== 'descent') throw new SchemaError('cathedral: threshold segments');
+  for (const g of t.segments) if (!(g.speed > 0) || !(g.vignette > 0 && g.vignette <= 1) || !Number.isFinite(g.s_from) || !(g.s_to > g.s_from)) throw new SchemaError(`cathedral threshold ${g.kind} segment`);
+  if (t.segments[0].s_from !== 0 || t.segments[1].s_from !== t.segments[0].s_to) throw new SchemaError('cathedral: threshold segments leave a gap');
   for (const r of t.rings) if (!Number.isInteger(r.k) || !(r.scale > 0) || !(r.radius > 0) || !Number.isFinite(r.rotation) || !isVec3(r.pos) || !Number.isFinite(r.pitch)) throw new SchemaError(`cathedral threshold ring ${String(r?.k)}`);
   if (!c.vault || !Array.isArray(c.vault.tiers) || c.vault.tiers.length < 1 || !(c.vault.ratio > 0 && c.vault.ratio < 1)) throw new SchemaError('cathedral: vault');
   return c as CathedralFile;

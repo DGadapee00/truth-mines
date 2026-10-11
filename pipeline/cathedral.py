@@ -156,39 +156,39 @@ def sierpinski(depth: int) -> list[list[list[float]]]:
     return [[[RA(x), RA(y)] for x, y in t] for t in tris]
 
 
-def rails(t: dict) -> tuple[list[tuple[float, float, float]], list[float]]:
-    """The rails path: straight along +Z beneath the floor, then a quarter circle up through the
-    dais to the origin. Returns the polyline and the arc length at each point."""
-    rise, straight, step = t["rise"], t["straight"], t["path_step"]
+def rails(t: dict) -> tuple[list[tuple[float, float, float]], float]:
+    """The rails path: level along +Z in the vault, a quarter-circle turn down, then straight down
+    onto the dais at the origin. Returns the polyline and the arc length where the descent begins."""
+    h, straight, r, step = t["entry_height"], t["straight"], t["corner"], t["path_step"]
     pts: list[tuple[float, float, float]] = []
     n = max(1, round(straight / step))
     for i in range(n):
-        pts.append((0.0, -rise, -rise - straight + straight * i / n))
-    m = max(2, round(rise * math.pi / 2 / step))
-    for i in range(m + 1):
+        pts.append((0.0, h, -r - straight + straight * i / n))
+    m = max(2, round(r * math.pi / 2 / step))
+    cy = h - r
+    for i in range(m + 1):  # from (y, z) = (h, -r), heading +Z, to (h - r, 0), heading down
         phi = (math.pi / 2) * i / m
-        pts.append((0.0, -rise * math.cos(phi), -rise + rise * math.sin(phi)))
+        pts.append((0.0, cy + r * math.cos(phi), -r + r * math.sin(phi)))
+    descent_from = len(pts) - 1
+    k = max(1, round((h - r) / step))
+    for i in range(1, k + 1):
+        pts.append((0.0, (h - r) * (1 - i / k), 0.0))
     pts[-1] = (0.0, 0.0, 0.0)
-    arc = [0.0]
-    for a, b in zip(pts, pts[1:]):
-        arc.append(arc[-1] + math.dist(a, b))
-    return pts, arc
+    s = 0.0
+    for a, b in zip(pts[:descent_from], pts[1 : descent_from + 1]):
+        s += math.dist(a, b)
+    return pts, s
 
 
 def build_threshold(cfg: dict) -> dict:
     t = cfg["threshold"]
-    pts, arc = rails(t)
-    total = arc[-1]
+    pts, descent_s = rails(t)
+    total = sum(math.dist(a, b) for a, b in zip(pts, pts[1:]))
     n = t["rings"]
     ratio = (t["end_radius"] / t["start_radius"]) ** (1 / (n - 1))
     rings = []
-    for k in range(n):
-        s = total * k / (n - 1)
-        j = max(1, min(len(arc) - 1, next(i for i in range(1, len(arc)) if arc[i] >= s - 1e-9)))
-        f = (s - arc[j - 1]) / (arc[j] - arc[j - 1])
-        a, b = pts[j - 1], pts[j]
-        pos = tuple(a[c] + (b[c] - a[c]) * f for c in range(3))
-        pitch = math.atan2(b[1] - a[1], b[2] - a[2])  # a ring faces along the path
+    z0 = -t["corner"] - t["straight"]
+    for k in range(n):  # evenly along the level tunnel, the last ring at its mouth
         scale = ratio**k
         rings.append(
             {
@@ -196,16 +196,22 @@ def build_threshold(cfg: dict) -> dict:
                 "scale": RA(scale),
                 "radius": RA(t["start_radius"] * scale),
                 "rotation": RA(math.radians(t["rotation_deg"]) * k),
-                "pos": pt(*pos),
-                "pitch": RA(pitch),
+                "pos": pt(0.0, t["entry_height"], z0 + t["straight"] * k / (n - 1)),
+                "pitch": 0,
             }
         )
+    segments = [
+        {"kind": "drift", "s_from": 0, "s_to": R2(descent_s), "speed": t["drift_speed"], "vignette": t["vignette"]["drift"]},
+        {"kind": "descent", "s_from": R2(descent_s), "s_to": R2(total), "speed": t["descent_speed"], "vignette": t["vignette"]["descent"]},
+    ]
+    seconds = sum((g["s_to"] - g["s_from"]) / g["speed"] for g in segments)
     return {
         "motif": {"kind": "sierpinski", "depth": t["motif_depth"], "triangles": sierpinski(t["motif_depth"])},
         "rings": rings,
         "path": [pt(*p) for p in pts],
-        "speed": t["speed"],
-        "duration_s": R2(sum(math.dist(pt(*a), pt(*b)) for a, b in zip(pts, pts[1:])) / t["speed"]),
+        "segments": segments,
+        "ease_s": t["ease_s"],
+        "duration_s": R2(seconds),
     }
 
 

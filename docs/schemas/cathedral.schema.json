@@ -90,7 +90,7 @@
     "threshold": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["motif", "rings", "path", "speed", "duration_s"],
+      "required": ["motif", "rings", "path", "segments", "ease_s", "duration_s"],
       "properties": {
         "motif": {
           "type": "object",
@@ -128,7 +128,24 @@
           }
         },
         "path": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/vec3" } },
-        "speed": { "type": "number", "exclusiveMinimum": 0 },
+        "segments": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "s_from", "s_to", "speed", "vignette"],
+            "properties": {
+              "kind": { "enum": ["drift", "descent"] },
+              "s_from": { "type": "number", "minimum": 0 },
+              "s_to": { "type": "number", "exclusiveMinimum": 0 },
+              "speed": { "type": "number", "exclusiveMinimum": 0 },
+              "vignette": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 }
+            }
+          }
+        },
+        "ease_s": { "type": "number", "exclusiveMinimum": 0 },
         "duration_s": { "type": "number", "minimum": 20, "maximum": 30 }
       }
     },

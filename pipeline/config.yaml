@@ -215,7 +215,7 @@ cathedral:
     wall_height: 14
     door: { width: 3.6, height: 6.5 }
     pedestal: { inset: 5, radius: 0.6, height: 1.1, preview_lift: 0.9 }
-  # The visitor rises through the floor into the centre of the hall and faces the far wall.
+  # The visitor descends from the vault onto a dais at the centre of the hall, facing the far wall.
   # Four arcs of three doors use all twelve 30-degree slots, so no slot is free for a wall entrance.
   arrival: { dais_radius: 2.2 }
   slot_step_deg: 30
@@ -258,18 +258,25 @@ cathedral:
     ring-motif:
       rings: 5
       min_sides: 3 # sides = min_sides + slot mod 6
-  # The fractal threshold: a tunnel of rings, each a Sierpinski triangle drawn at a constant
-  # fraction of the one before, rotated a little more each time, closing round the visitor.
+  # The fractal threshold: a level tunnel of rings, each a Sierpinski triangle drawn at a constant
+  # fraction of the one before, rotated a little more each time, closing round the visitor. It
+  # ends high in the vault, over the entrance wall; the visitor drifts out of its mouth, turns
+  # down and descends slowly onto the dais, facing the far wall. Every move is guided and
+  # vignetted; the app eases the speed at the start, between segments and at the dais.
   threshold:
     motif_depth: 3
     rings: 48
     start_radius: 6.0
     end_radius: 1.8
     rotation_deg: 7.5
-    straight: 34 # metres along +Z beneath the floor
-    rise: 6 # metres: a quarter circle up through the dais
+    straight: 22 # metres of level tunnel along +Z; the rings stand on it
+    entry_height: 16 # metres above the dais: inside the vault's first tier, 2 m over the wall
+    corner: 2.5 # radius of the turn from drifting to descending
     path_step: 1 # metres between points of the rails path
-    speed: 1.6 # metres per second, the visitor's drift
+    drift_speed: 1.6 # metres per second through the tunnel
+    descent_speed: 1.2 # slower, for the vertical part
+    vignette: { drift: 0.35, descent: 0.7 } # 0..1, how far the comfort vignette closes in
+    ease_s: 1.5 # seconds to ramp the speed up, down, and between segments
   # The vault: twelve-sided rings above the wall, each a golden-ratio smaller than the last.
   vault:
     tiers: 7
