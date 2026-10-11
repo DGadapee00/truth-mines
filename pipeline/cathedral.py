@@ -31,6 +31,7 @@ CONVENTIONS = {
     "left": "left of heading(yaw) is (cos yaw, 0, -sin yaw)",
     "bearing": "the yaw of the direction from the hall centre to a door: far wall 0, left +90, right -90, entrance wall 180",
     "world": "one frame: the hall centre is the origin, the floor is y = 0, the arrival dais stands at the origin facing +Z",
+    "threshold": "the rails path is where the visitor's feet go (the origin of their rig); the rings are centred threshold.eye_height above it, at eye level",
 }
 
 
@@ -196,7 +197,7 @@ def build_threshold(cfg: dict) -> dict:
                 "scale": RA(scale),
                 "radius": RA(t["start_radius"] * scale),
                 "rotation": RA(math.radians(t["rotation_deg"]) * k),
-                "pos": pt(0.0, t["entry_height"], z0 + t["straight"] * k / (n - 1)),
+                "pos": pt(0.0, t["entry_height"] + t["eye_height"], z0 + t["straight"] * k / (n - 1)),
                 "pitch": 0,
             }
         )
@@ -209,6 +210,7 @@ def build_threshold(cfg: dict) -> dict:
         "motif": {"kind": "sierpinski", "depth": t["motif_depth"], "triangles": sierpinski(t["motif_depth"])},
         "rings": rings,
         "path": [pt(*p) for p in pts],
+        "eye_height": t["eye_height"],
         "segments": segments,
         "ease_s": t["ease_s"],
         "duration_s": R2(seconds),
@@ -244,7 +246,7 @@ def build(cfg: dict) -> dict:
         "schema_version": CATHEDRAL_SCHEMA_VERSION,
         "conventions": CONVENTIONS,
         "arcs": arcs,
-        "hall": {"radius": h["radius"], "wall_height": h["wall_height"], "door": dict(h["door"]), "slots": round(360 / cfg["slot_step_deg"])},
+        "hall": {"radius": h["radius"], "wall_height": h["wall_height"], "wall_thickness": h["wall_thickness"], "door": dict(h["door"]), "slots": round(360 / cfg["slot_step_deg"])},
         "arrival": {"pos": [0, 0, 0], "yaw": 0, "dais_radius": cfg["arrival"]["dais_radius"]},
         "doors": doors,
         "threshold": build_threshold(cfg),

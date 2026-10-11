@@ -213,6 +213,7 @@ cathedral:
   hall:
     radius: 24 # metres from the centre to the doors
     wall_height: 14
+    wall_thickness: 0.3 # metres, outward from the radius
     door: { width: 3.6, height: 6.5 }
     pedestal: { inset: 5, radius: 0.6, height: 1.1, preview_lift: 0.9 }
   # The visitor descends from the vault onto a dais at the centre of the hall, facing the far wall.
@@ -266,10 +267,11 @@ cathedral:
   threshold:
     motif_depth: 3
     rings: 48
-    start_radius: 6.0
+    start_radius: 4.5 # the first rings stand just outside the 14 m wall, so they stay narrow enough to clear it
     end_radius: 1.8
     rotation_deg: 7.5
     straight: 22 # metres of level tunnel along +Z; the rings stand on it
+    eye_height: 1.6 # metres: the path is where the visitor's feet go; rings are centred this far above it, at eye level
     entry_height: 16 # metres above the dais: inside the vault's first tier, 2 m over the wall
     corner: 2.5 # radius of the turn from drifting to descending
     path_step: 1 # metres between points of the rails path

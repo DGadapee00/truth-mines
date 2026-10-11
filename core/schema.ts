@@ -478,14 +478,15 @@ export interface CathedralFile {
   schema_version: number;
   conventions: Record<string, string>;
   arcs: CathedralArc[];
-  hall: { radius: number; wall_height: number; door: { width: number; height: number }; slots: number };
+  hall: { radius: number; wall_height: number; /** The wall stands between the radius and the radius plus this */ wall_thickness: number; door: { width: number; height: number }; slots: number };
   arrival: { pos: Vec3; yaw: number; dais_radius: number };
   doors: CathedralDoor[];
   threshold: {
     motif: { kind: 'sierpinski'; depth: number; triangles: [number, number][][] };
     rings: ThresholdRing[];
-    /** The rails path, in order: level through the tunnel in the vault, a turn, then straight down onto the arrival dais */
+    /** The rails path, in order: level through the tunnel in the vault, a turn, then straight down onto the arrival dais. It is where the visitor's feet go (the origin of their rig); the rings are centred `eye_height` above it. */
     path: Vec3[];
+    eye_height: number;
     /** Speed and comfort vignette per stretch of the path, by arc length in metres: the drift through the tunnel, then the descent */
     segments: ThresholdSegment[];
     /** Seconds to ramp the speed at the start, between segments and at the dais */
@@ -541,7 +542,7 @@ export function parseCathedral(raw: unknown): CathedralFile {
     }
   }
   const h = c.hall;
-  if (!h || !(h.radius > 0) || !(h.wall_height > 0) || h.slots !== 12 || !(h.door?.width > 0) || !(h.door?.height > 0)) throw new SchemaError('cathedral: hall');
+  if (!h || !(h.radius > 0) || !(h.wall_height > 0) || !(h.wall_thickness > 0) || h.slots !== 12 || !(h.door?.width > 0) || !(h.door?.height > 0)) throw new SchemaError('cathedral: hall');
   if (!c.arrival || !isVec3(c.arrival.pos) || !Number.isFinite(c.arrival.yaw) || !(c.arrival.dais_radius > 0)) throw new SchemaError('cathedral: arrival');
   if (!Array.isArray(c.doors) || c.doors.length !== 12) throw new SchemaError('cathedral: there must be twelve doors');
   const seen = new Set<string>();
@@ -558,7 +559,7 @@ export function parseCathedral(raw: unknown): CathedralFile {
   if (new Set(c.doors.map((d) => d.slot)).size !== 12) throw new SchemaError('cathedral: two doors share a slot');
   const t = c.threshold;
   if (!t || !Array.isArray(t.rings) || t.rings.length < 2 || !Array.isArray(t.path) || t.path.length < 2 || !t.path.every(isVec3)) throw new SchemaError('cathedral: threshold');
-  if (!(t.duration_s > 0) || !(t.ease_s > 0) || t.motif?.kind !== 'sierpinski' || !Array.isArray(t.motif.triangles)) throw new SchemaError('cathedral: threshold motif or timing');
+  if (!(t.duration_s > 0) || !(t.ease_s > 0) || !(t.eye_height > 0) || t.motif?.kind !== 'sierpinski' || !Array.isArray(t.motif.triangles)) throw new SchemaError('cathedral: threshold motif or timing');
   if (!Array.isArray(t.segments) || t.segments.length !== 2 || t.segments[0]?.kind !== 'drift' || t.segments[1]?.kind !== 'descent') throw new SchemaError('cathedral: threshold segments');
   for (const g of t.segments) if (!(g.speed > 0) || !(g.vignette > 0 && g.vignette <= 1) || !Number.isFinite(g.s_from) || !(g.s_to > g.s_from)) throw new SchemaError(`cathedral threshold ${g.kind} segment`);
   if (t.segments[0].s_from !== 0 || t.segments[1].s_from !== t.segments[0].s_to) throw new SchemaError('cathedral: threshold segments leave a gap');

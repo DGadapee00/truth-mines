@@ -29,10 +29,11 @@
     "hall": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["radius", "wall_height", "door", "slots"],
+      "required": ["radius", "wall_height", "wall_thickness", "door", "slots"],
       "properties": {
         "radius": { "type": "number", "exclusiveMinimum": 0 },
         "wall_height": { "type": "number", "exclusiveMinimum": 0 },
+        "wall_thickness": { "type": "number", "exclusiveMinimum": 0 },
         "door": {
           "type": "object",
           "additionalProperties": false,
@@ -90,7 +91,7 @@
     "threshold": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["motif", "rings", "path", "segments", "ease_s", "duration_s"],
+      "required": ["motif", "rings", "path", "eye_height", "segments", "ease_s", "duration_s"],
       "properties": {
         "motif": {
           "type": "object",
@@ -145,6 +146,7 @@
             }
           }
         },
+        "eye_height": { "type": "number", "exclusiveMinimum": 0 },
         "ease_s": { "type": "number", "exclusiveMinimum": 0 },
         "duration_s": { "type": "number", "minimum": 20, "maximum": 30 }
       }

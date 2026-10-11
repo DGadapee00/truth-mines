@@ -217,7 +217,20 @@ def test_threshold_passes_over_the_wall_with_room_to_spare(cathedral):
     hall = cathedral["hall"]
     for p in cathedral["threshold"]["path"]:
         if math.hypot(p[0], p[2]) >= hall["radius"] - 0.01:
-            assert p[1] >= hall["wall_height"] + 1
+            assert p[1] >= hall["wall_height"] + 1  # even the feet clear the wall
+
+
+def test_no_ring_of_the_tunnel_touches_the_wall(cathedral):
+    """The rings are circles in a plane across the tunnel. Sample each one and check no point of it
+    lies inside the wall: the solid between the hall radius and the radius plus the wall thickness,
+    up to the wall's height, with 10 cm to spare."""
+    hall = cathedral["hall"]
+    lo, hi, top = hall["radius"] - 0.1, hall["radius"] + hall["wall_thickness"] + 0.1, hall["wall_height"] + 0.1
+    for ring in cathedral["threshold"]["rings"]:
+        for i in range(720):
+            a = 2 * math.pi * i / 720
+            x, y, z = ring["pos"][0] + ring["radius"] * math.cos(a), ring["pos"][1] + ring["radius"] * math.sin(a), ring["pos"][2]
+            assert not (lo <= math.hypot(x, z) <= hi and y <= top), (ring["k"], x, y, z)
 
 
 def test_every_guided_segment_has_a_vignette_and_the_descent_a_stronger_one(cathedral):
@@ -254,11 +267,14 @@ def test_rings_line_the_tunnel_and_the_last_one_is_its_mouth(cathedral):
     path = t["path"]
     drift_end = t["segments"][0]["s_from"] + CFG["threshold"]["straight"]
     arc = arc_lengths(path)
+    eye = t["eye_height"]
+    assert eye == CFG["threshold"]["eye_height"]
     for ring in t["rings"]:
-        assert min(math.dist(ring["pos"], p) for p in path) < 1.0
+        # centred at eye level over the path, which is where the feet go
+        assert min(math.dist(ring["pos"], [p[0], p[1] + eye, p[2]]) for p in path) < 1.0
         assert ring["pitch"] == 0  # the tunnel is level; the descent has no rings
     last = t["rings"][-1]
-    i = min(range(len(path)), key=lambda j: math.dist(path[j], last["pos"]))
+    i = min(range(len(path)), key=lambda j: math.dist([path[j][0], path[j][1] + eye, path[j][2]], last["pos"]))
     assert arc[i] == pytest.approx(drift_end, abs=1.0)
 
 
