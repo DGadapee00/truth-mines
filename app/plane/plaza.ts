@@ -104,6 +104,10 @@ export function buildPlaza(plane: PlaneFile, colours: Map<number, THREE.Color>):
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   }
 
+  // Place the columns now, not on the first update: an engine may measure the mesh's bounds before
+  // that (IWSDK does), and bounds taken from unplaced instances would cull the whole plaza.
+  paint();
+
   const animating = () => pending.length > 0 || finishAt !== null || state.some((s, i) => s === 'crumbled' && time - (fallStart[i] ?? 0) < FALL_SECONDS);
 
   return {

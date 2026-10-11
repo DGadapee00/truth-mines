@@ -114,6 +114,8 @@ export interface Debug {
   zone: string;
   standing: number | null;
   plane: { x: number; z: number } | null;
+  /** In a plane: whether the plaza's columns pass the renderer's frustum test */
+  plazaInView: boolean | null;
   /** Which world is drawn: the hall (with its floor and previews) or the plane */
   shown: { hall: boolean; plane: boolean };
 }

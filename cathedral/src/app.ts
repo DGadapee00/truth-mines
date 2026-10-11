@@ -2,9 +2,11 @@ import {
   Color,
   EnvironmentType,
   FogExp2,
+  Frustum,
   HemisphereLight,
   LocomotionEnvironment,
   LocomotionSystem,
+  Matrix4,
   PointLight,
   Raycaster,
   SlideSystem,
@@ -825,8 +827,18 @@ export class CathedralApp {
       zone: this.lastZone,
       standing: this.flow.phase() === 'plane' ? this.plane.plaza.state().standing.length : null,
       plane: this.flow.phase() === 'plane' ? { x: this.plane.walk.x, z: this.plane.walk.z } : null,
+      plazaInView: this.flow.phase() === 'plane' ? this.plazaInView() : null,
       shown: { hall: this.hall.group.visible && this.hall.floor.visible && this.previews.group.visible, plane: this.plane.group.visible || this.plane.ground.visible },
     };
+  }
+
+  /** Whether the renderer's frustum test keeps the plaza's columns: what three.js decides before drawing them */
+  private plazaInView(): boolean {
+    const cam = this.world.camera;
+    cam.updateMatrixWorld();
+    const f = new Frustum().setFromProjectionMatrix(new Matrix4().multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse));
+    const mesh = this.plane.plaza.group.getObjectByName('plaza-columns');
+    return !!mesh && f.intersectsObject(mesh);
   }
 
   /** Test lever: face a heading and pitch */

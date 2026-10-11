@@ -154,6 +154,7 @@ test.describe('the number theory plane', () => {
     await page.keyboard.press('Digit2');
     await page.waitForTimeout(500);
     await shot(page, '6-plaza');
+    expect((await debug(page)).plazaInView, 'standing at the plaza, its columns are drawn').toBe(true);
     const primes = (await debug(page)).standing as number;
     expect(primes).toBe(99);
     // strike in a shuffled order until nothing more falls
