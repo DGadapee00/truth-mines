@@ -149,6 +149,7 @@ test.describe('the number theory plane', () => {
     await untilPhase(page, 'plane');
     await settled(page);
     await shot(page, '5-road');
+    expect((await debug(page)).shown, 'behind the door only the plane is drawn').toEqual({ hall: false, vault: false, plane: true });
     expect((await debug(page)).standing).toBe(99);
     await expect(page.locator('#pl-name')).toContainText('road');
     await page.keyboard.press('Digit2');
@@ -175,6 +176,7 @@ test.describe('the number theory plane', () => {
     await untilPhase(page, 'cathedral');
     await settled(page);
     const d = await debug(page);
+    expect(d.shown).toEqual({ hall: true, vault: true, plane: false });
     const stand = door('number-theory').stand;
     expect(d.pos[0]).toBeCloseTo(stand.pos[0], 1);
     expect(d.pos[2]).toBeCloseTo(stand.pos[2], 1);

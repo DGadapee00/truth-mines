@@ -117,7 +117,7 @@ export interface Debug {
   /** In a plane: whether the plaza's columns pass the renderer's frustum test */
   plazaInView: boolean | null;
   /** Which world is drawn: the hall (with its floor and previews) or the plane */
-  shown: { hall: boolean; plane: boolean };
+  shown: { hall: boolean; vault: boolean; plane: boolean };
 }
 export const debug = (page: Page): Promise<Debug> => page.evaluate(() => (window as unknown as { __cathedral: { debug(): unknown } }).__cathedral.debug()) as Promise<Debug>;
 

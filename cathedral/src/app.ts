@@ -64,6 +64,7 @@ export class CathedralApp {
   private readonly previews: Previews;
   private readonly ribbon = new Ribbon();
   private readonly thresholdGroup;
+  private readonly vault;
   private readonly plane: NumberTheoryPlane;
   private readonly planeGroupEntity: Entity;
   private readonly planeGroundEntity: Entity;
@@ -126,7 +127,8 @@ export class CathedralApp {
     world.createTransformEntity(this.hall.group);
     const floor = world.createTransformEntity(this.hall.floor);
     floor.addComponent(LocomotionEnvironment, { type: EnvironmentType.STATIC });
-    world.createTransformEntity(buildVault(cathedral));
+    this.vault = buildVault(cathedral);
+    world.createTransformEntity(this.vault);
     world.createTransformEntity(this.thresholdGroup);
     world.createTransformEntity(this.previews.group);
     world.createTransformEntity(this.ribbon.group);
@@ -477,6 +479,7 @@ export class CathedralApp {
     this.hall.group.visible = false;
     this.hall.floor.visible = false;
     this.previews.group.visible = false;
+    this.vault.visible = false;
     this.plane.group.visible = true;
     this.plane.ground.visible = true;
     this.planeGroundEntity.addComponent(LocomotionEnvironment, { type: EnvironmentType.STATIC });
@@ -518,6 +521,7 @@ export class CathedralApp {
     this.hall.group.visible = true;
     this.hall.floor.visible = true;
     this.previews.group.visible = true;
+    this.vault.visible = true;
     this.world.scene.fog = new FogExp2(PALETTE.night, 0.004);
   }
 
@@ -828,7 +832,7 @@ export class CathedralApp {
       standing: this.flow.phase() === 'plane' ? this.plane.plaza.state().standing.length : null,
       plane: this.flow.phase() === 'plane' ? { x: this.plane.walk.x, z: this.plane.walk.z } : null,
       plazaInView: this.flow.phase() === 'plane' ? this.plazaInView() : null,
-      shown: { hall: this.hall.group.visible && this.hall.floor.visible && this.previews.group.visible, plane: this.plane.group.visible || this.plane.ground.visible },
+      shown: { hall: this.hall.group.visible && this.hall.floor.visible && this.previews.group.visible, vault: this.vault.visible, plane: this.plane.group.visible || this.plane.ground.visible },
     };
   }
 

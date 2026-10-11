@@ -139,7 +139,7 @@ test.describe('headset', () => {
     await page.evaluate('window.__cathedral.world.renderer.xr.getSession()?.end()');
     await expect.poll(async () => (await debug(page)).xr, { timeout: 30_000 }).toBe(false);
     await untilPhase(page, 'ready');
-    expect((await debug(page)).shown).toEqual({ hall: true, plane: false });
+    expect((await debug(page)).shown).toEqual({ hall: true, vault: true, plane: false });
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('truth-mines.progress') ?? '{}').pathways?.['number-theory']?.stretch)).toBe('nt-1');
     // and on the screen the visitor crosses again into a whole cathedral
     await page.click('#begin');
@@ -147,7 +147,7 @@ test.describe('headset', () => {
     await page.click('#skip');
     await untilPhase(page, 'cathedral');
     await settled(page);
-    expect((await debug(page)).shown).toEqual({ hall: true, plane: false });
+    expect((await debug(page)).shown).toEqual({ hall: true, vault: true, plane: false });
   });
 
   test('hold A to talk: the speech goes to the Worker and Trurl’s words reach the panel', async ({ page }) => {
