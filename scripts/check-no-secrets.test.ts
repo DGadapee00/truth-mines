@@ -22,7 +22,8 @@ function tree(files: Record<string, string>): string {
 
 describe('secret scan', () => {
   it('finds a planted Anthropic key, xAI key and literal secret assignment, by place and not by value', () => {
-    const text = [`const a = "${anthropicKey}";`, `const b = '${xaiKey}';`, `TRURL_APP_SECRET = "correct-horse-battery-staple"`, `ANTHROPIC_API_KEY: 'literal-value-12345'`].join('\n');
+    // The secret names are split so this file does not itself contain the pattern it tests for.
+    const text = [`const a = "${anthropicKey}";`, `const b = '${xaiKey}';`, `${'TRURL_APP_' + 'SECRET'} = "correct-horse-battery-staple"`, `${'ANTHROPIC_API_' + 'KEY'}: 'literal-value-12345'`].join('\n');
     const found = scanText(text, 'x.ts', KEY_SHAPES) as Finding[];
     expect(found.map((f) => f.line)).toEqual([1, 2, 3, 4]);
     for (const f of found) expect(JSON.stringify(f)).not.toContain('aaaa');

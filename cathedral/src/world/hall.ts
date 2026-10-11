@@ -70,7 +70,7 @@ export function buildHall(c: CathedralFile, states: Record<string, DoorState>): 
     new MeshStandardMaterial({ color: PALETTE.floor, roughness: 0.28, metalness: 0.55, emissive: PALETTE.wallGlow, emissiveIntensity: 0.08 }),
   );
   floor.name = 'hall-floor';
-  group.add(floor);
+  // The floor is not added to the group: the app makes it its own entity, a LocomotionEnvironment.
 
   // The wall stands between R and R + thickness. One open cylinder, seen from inside.
   const wall = new Mesh(

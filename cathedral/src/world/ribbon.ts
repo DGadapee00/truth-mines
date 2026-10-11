@@ -51,9 +51,9 @@ export class Ribbon {
   /** Float near `head`, to the right of and ahead of where `yaw` faces (world yaw: 0 looks toward -Z). */
   update(dt: number, head: Vector3, yaw: number): void {
     this.t += dt;
-    const side = 0.55;
-    const ahead = 0.9;
-    this.target.set(head.x + Math.cos(yaw) * side - Math.sin(yaw) * ahead, head.y - 0.2, head.z - Math.sin(yaw) * side - Math.cos(yaw) * ahead);
+    const side = 0.6;
+    const ahead = 1.3;
+    this.target.set(head.x + Math.cos(yaw) * side - Math.sin(yaw) * ahead, head.y - 0.12, head.z - Math.sin(yaw) * side - Math.cos(yaw) * ahead);
     const k = 1 - Math.exp(-dt * 2.5);
     this.group.position.lerp(this.target, k);
     const bob = this.mood === 'talking' ? 0.035 : 0.012;

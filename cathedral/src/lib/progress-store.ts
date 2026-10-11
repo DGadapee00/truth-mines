@@ -48,8 +48,9 @@ export type SyncStatus = 'local' | 'synced' | 'syncing' | 'offline' | 'unauthori
  * change; a 401 stops syncing until the secret is changed.
  */
 export function createProgressStore(deps: { device: DeviceStore; api: ProgressApi | null; now(): string }) {
+  let api = deps.api;
   let progress = deps.device.progress.read() ?? emptyProgress();
-  let status: SyncStatus = deps.api ? 'offline' : 'local';
+  let status: SyncStatus = api ? 'offline' : 'local';
   let stopped = false;
   let chain: Promise<void> = Promise.resolve();
   const listeners = new Set<(p: Progress) => void>();
@@ -60,12 +61,12 @@ export function createProgressStore(deps: { device: DeviceStore; api: ProgressAp
   };
 
   const doSync = async (): Promise<void> => {
-    if (!deps.api) return;
+    if (!api) return;
     if (stopped) return;
     status = 'syncing';
     try {
-      progress = mergeProgress(progress, await deps.api.get());
-      const merged = mergeProgress(progress, await deps.api.put(progress));
+      progress = mergeProgress(progress, await api.get());
+      const merged = mergeProgress(progress, await api.put(progress));
       const changed = JSON.stringify(merged) !== JSON.stringify(progress);
       progress = merged;
       status = 'synced';
@@ -106,7 +107,13 @@ export function createProgressStore(deps: { device: DeviceStore; api: ProgressAp
     /** The secret was changed: syncing may be tried again */
     resumeSync(): void {
       stopped = false;
-      if (deps.api) status = 'offline';
+      if (api) status = 'offline';
+    },
+    /** The Worker address or secret changed (or was forgotten): use this API from now on, or none */
+    setApi(next: ProgressApi | null): void {
+      api = next;
+      stopped = false;
+      status = next ? 'offline' : 'local';
     },
   };
 }

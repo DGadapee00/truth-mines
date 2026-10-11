@@ -292,7 +292,7 @@ def test_rings_line_the_tunnel_and_the_last_one_is_its_mouth(cathedral):
     assert arc[i] == pytest.approx(drift_end, abs=1.0)
 
 
-def test_vault_tiers_shrink_by_the_golden_ratio_and_rise(cathedral):
+def test_vault_tiers_shrink_by_a_constant_ratio_and_rise(cathedral):
     v = CFG["vault"]
     tiers = cathedral["vault"]["tiers"]
     assert len(tiers) == v["tiers"]

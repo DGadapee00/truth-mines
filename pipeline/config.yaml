@@ -215,7 +215,7 @@ cathedral:
     wall_height: 14
     wall_thickness: 0.3 # metres, outward from the radius
     door: { width: 3.6, height: 6.5 }
-    pedestal: { inset: 5, radius: 0.6, height: 1.1, preview_lift: 0.9 }
+    pedestal: { inset: 5, radius: 0.7, height: 1.1, preview_lift: 0.5 }
     stand: 2.2 # metres in front of the pedestal where the visitor stands when they step back out of a plane
   # The visitor descends from the vault onto a dais at the centre of the hall, facing the far wall.
   # Four arcs of three doors use all twelve 30-degree slots, so no slot is free for a wall entrance.
@@ -245,8 +245,8 @@ cathedral:
   previews:
     prime-stacks:
       numbers: [6, 8, 12, 18, 24, 30] # towers; their blocks are the prime factors, computed
-      block: 0.12 # metres per block
-      ring_radius: 0.4 # towers stand on a circle this big
+      block: 0.22 # metres per block
+      ring_radius: 0.75 # towers stand on a circle this big
       period_s: 9 # one assembling cycle
       stagger_s: 0.6 # between one tower starting and the next
     limit-curve:
@@ -280,13 +280,14 @@ cathedral:
     descent_speed: 1.2 # slower, for the vertical part
     vignette: { drift: 0.35, descent: 0.7 } # 0..1, how far the comfort vignette closes in
     ease_s: 1.5 # seconds to ramp the speed up, down, and between segments
-  # The vault: twelve-sided rings above the wall, each a golden-ratio smaller than the last.
+  # The vault: twelve-sided rings above the wall, each a fixed fraction of the one below and turned a
+  # little more, converging on a point far overhead: the geometry keeps going up and up.
   vault:
-    tiers: 7
-    ratio: 0.618
+    tiers: 28
+    ratio: 0.82
     sides: 12
     rotation_deg: 15
-    rise_per_tier: 0.5 # of the hall radius, shrinking by the ratio each tier
+    rise_per_tier: 0.35 # of the hall radius, shrinking by the ratio each tier
 
   # The pathway behind each door (pipeline/pathways.py). `entry_requires` are set.mm ids that must
   # all be earned for the door to glow; a door with none starts as frontier, and in the prototype

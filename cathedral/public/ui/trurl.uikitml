@@ -1,0 +1,36 @@
+<!--
+  Trurl's words and the visitor's prompts, in the world beside the ribbon. Text sizes are UIKit
+  units (centimetres at scale 1); the app scales the whole panel to about a metre wide.
+-->
+<style>
+  .root {
+    flex-direction: column;
+    width: 380px;
+    padding: 14px;
+    gap: 8px;
+    background-color: rgba(8, 11, 24, 0.86);
+    border-radius: 18px;
+    border-width: 1px;
+    border-color: rgba(255, 210, 122, 0.55);
+  }
+  .place {
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffd27a;
+  }
+  .caption {
+    font-size: 20px;
+    line-height: 1.3;
+    color: #fff6dd;
+  }
+  .hint {
+    font-size: 13px;
+    line-height: 1.3;
+    color: #9db8ff;
+  }
+</style>
+<div class="root">
+  <div id="place" class="place"></div>
+  <div id="caption" class="caption"></div>
+  <div id="hint" class="hint"></div>
+</div>

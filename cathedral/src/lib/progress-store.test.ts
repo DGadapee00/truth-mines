@@ -163,6 +163,27 @@ describe('the progress store', () => {
     expect(api.server().pathways['number-theory']!.resume.pos).toEqual([0, 0, 7]);
   });
 
+  it('switches Worker credentials at runtime: none means local only, a new API syncs again, even after a 401', async () => {
+    const { api } = fakeApi();
+    const { store } = setup(null);
+    store.earn(['1arith']);
+    expect(store.syncStatus()).toBe('local');
+    store.setApi(api);
+    expect(store.syncStatus()).toBe('offline');
+    await store.sync();
+    expect(api.server().earned).toEqual(['1arith']);
+    const bad = fakeApi();
+    bad.api.fail = new ApiError(401);
+    store.setApi(bad.api);
+    await store.sync();
+    expect(store.syncStatus()).toBe('unauthorized');
+    store.setApi(api);
+    await store.sync();
+    expect(store.syncStatus()).toBe('synced');
+    store.setApi(null);
+    expect(store.syncStatus()).toBe('local');
+  });
+
   it('survives blocked device storage', () => {
     const { store } = setup(null, { getItem() { throw new Error('x'); }, setItem() { throw new Error('x'); }, removeItem() { throw new Error('x'); } } as unknown as Mem);
     expect(() => store.earn(['1arith'])).not.toThrow();

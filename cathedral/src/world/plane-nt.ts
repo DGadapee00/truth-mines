@@ -51,7 +51,8 @@ export class NumberTheoryPlane {
     this.ground = buildGround(data) as unknown as Mesh;
     const size = data.road.labels.sign_size;
     this.sign = new Sign(size[0], size[1] + 0.2);
-    this.group.add(this.ground as never, this.road.group as never, this.plaza.group as never, this.overlook.group as never, this.sign.mesh as never);
+    // The ground is not added to the group: the app makes it its own entity, a LocomotionEnvironment.
+    this.group.add(this.road.group as never, this.plaza.group as never, this.overlook.group as never, this.sign.mesh as never);
     const blockers: Blocker[] = data.road.columns.map((c) => ({ x: c.pos[0], z: c.pos[2], r: c.radius }));
     this.walk = new PlaneWalk(data.ground, [...blockers, ...this.plaza.blockers]);
     this.targets = data.road.columns
