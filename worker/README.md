@@ -6,7 +6,7 @@ One Cloudflare Worker holds every provider key. The static app talks only to it.
 | Endpoint | Method | What |
 | --- | --- | --- |
 | `/api/trurl` | POST | Trurl's reply, streamed as server-sent events: `text` (`{delta}`) as Claude writes, then `verdict` (`{earned}`) and `done`, or one generic `error`. |
-| `/api/stt` | WebSocket | Speech to text. Binary audio frames up (16 kHz 16-bit mono PCM), a text frame `{"type":"end"}` on release; `{"type":"interim"\|"final","text"}` back. |
+| `/api/stt` | WebSocket | Speech to text, proxied to xAI (`grok-voice-transcribe-2.0`). Binary audio frames up (16 kHz 16-bit mono PCM), a text frame `{"type":"end"}` on release; `{"type":"interim"\|"final","text"}` back. |
 | `/api/progress` | GET, PUT | The visitor's progress in KV. PUT merges into what is stored (earned ideas union, newest pathway wins). |
 
 Every request must present the app secret: `Authorization: Bearer <secret>`, or for the WebSocket
@@ -50,8 +50,11 @@ For local development put the same three names in `worker/.dev.vars` (gitignored
 
 ## Not verified without real keys and a deployed Worker
 
-- **xAI's wire protocol** (`src/stt.ts`): the config frame, the end marker and the transcript field
-  names are assumptions, isolated in that file. The first real key may need a small fix there.
+- **xAI's streaming speech-to-text protocol** (`src/stt.ts`): written from Vercel's `@ai-sdk/xai`
+  5.0.20, the independent client for xAI's page
+  https://docs.x.ai/developers/model-capabilities/audio/speech-to-text, because that page was not
+  reachable from the development sandbox. Still to confirm with a real key: that `keyterm` is
+  accepted on the streaming endpoint, and 16 kHz PCM from the Quest's microphone capture.
 - **Cloudflare's WebSocket plumbing** (`src/worker-ws.ts`): a few lines that cannot run under Node.
 - **The verdict contract**: Claude is told to end with `<verdict>{"earned":[...]}</verdict>`; the
   Worker never trusts it beyond what the moment can earn, but how reliably Haiku writes it, and how
