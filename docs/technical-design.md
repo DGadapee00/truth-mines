@@ -115,10 +115,11 @@ A pathway is the ordered route behind a door. Its landmarks are real set.mm ids 
 
 ```json
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "pathways": [
     {
       "plane": "number-theory",
+      "gated_on": "df-prm",
       "entry_requires": [],
       "stretches": [
         {
@@ -135,7 +136,7 @@ A pathway is the ordered route behind a door. Its landmarks are real set.mm ids 
 }
 ```
 
-- `entry_requires`: set.mm ids that must all be earned before the door can be a frontier door.
+- `entry_requires`: set.mm ids that must all be earned before the door can be a frontier door. **Derived by the pipeline, never written by hand:** the ideas on the map (the landmarks of any stretch) that `gated_on` truly rests on in set.mm. `gated_on` is the first landmark of a built pathway, or the idea an unbuilt pathway will reach if that idea truly rests on something on the map. `null` for both means no true gate exists yet (config says why) and the door is sealed. `pipeline/tests/test_gates.py` re-derives every gate from the raw set.mm text.
 - `earns`: the set.mm ids a moment can grant when Dalton explains it to Trurl.
 - Landmark ids above are illustrative; the pipeline chooses and validates the real ones (every id must exist in `graph.json`, and a test checks it).
 
@@ -163,6 +164,7 @@ Progress stores only what Dalton has done. Nothing derivable is stored.
 A pure function in `core/` derives each door's state from `earned`, `pathways.json` and the dependency graph:
 
 - **frontier:** every id in `entry_requires` is earned (a door with none starts as frontier; for the prototype, only number theory).
+- **sealed** also for every door whose `entry_requires` is `null`: no idea on the map leads to it.
 - **dim:** not a frontier, but every unmet requirement is itself one step from the earned set (its own dependencies are all earned).
 - **sealed:** everything else.
 

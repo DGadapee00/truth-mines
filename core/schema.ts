@@ -409,7 +409,7 @@ export function parsePlane(raw: unknown): PlaneFile {
 // docs/schemas/. Doors carry no state: core/doors.ts computes it from what has been earned.
 
 export const CATHEDRAL_SCHEMA_VERSION = 1;
-export const PATHWAYS_SCHEMA_VERSION = 1;
+export const PATHWAYS_SCHEMA_VERSION = 2;
 
 export const PLANE_IDS = [
   'logic',
@@ -517,8 +517,14 @@ export interface PathwayStretch {
 
 export interface Pathway {
   plane: PlaneId;
-  /** set.mm ids that must all be earned before the door can be a frontier door */
-  entry_requires: string[];
+  /** The idea the gate was derived from: the first landmark of a built pathway, or the idea an unbuilt one will reach. null: no gate */
+  gated_on: string | null;
+  /**
+   * Derived by the pipeline, never written by hand: the ideas on the map (landmarks of any stretch)
+   * that `gated_on` truly rests on in set.mm. They must all be earned before the door can be a
+   * frontier door. null means no true gate exists in the prototype and the door is sealed.
+   */
+  entry_requires: string[] | null;
   stretches: PathwayStretch[];
 }
 
@@ -585,7 +591,8 @@ export function parsePathways(raw: unknown): PathwaysFile {
     const where = `pathway ${String(w?.plane)}`;
     if (!isPlaneId(w.plane) || planes.has(w.plane)) throw new SchemaError(`${where}: plane`);
     planes.add(w.plane);
-    if (!isStringArray(w.entry_requires) || !Array.isArray(w.stretches)) throw new SchemaError(`${where}: entry_requires or stretches`);
+    if (!(w.entry_requires === null || isStringArray(w.entry_requires)) || !Array.isArray(w.stretches)) throw new SchemaError(`${where}: entry_requires or stretches`);
+    if (!(w.gated_on === null || (typeof w.gated_on === 'string' && w.gated_on.length > 0)) || (w.gated_on === null) !== (w.entry_requires === null)) throw new SchemaError(`${where}: gated_on and entry_requires must both be set, or both be null`);
     for (const s of w.stretches) {
       if (typeof s.id !== 'string' || !s.id || typeof s.plane_data !== 'string' || !isStringArray(s.landmarks) || s.landmarks.length < 1 || !Array.isArray(s.moments)) throw new SchemaError(`${where}: stretch ${String(s?.id)}`);
       if (ids.has(s.id)) throw new SchemaError(`${where}: stretch id ${s.id} repeats`);

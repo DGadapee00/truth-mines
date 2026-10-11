@@ -109,8 +109,8 @@ test.describe('headset', () => {
     await settled(page);
     const door = (await page.evaluate("window.__cathedral.cathedral.doors.map((d) => ({ plane: d.plane, pos: d.pos }))")) as { plane: string; pos: [number, number, number] }[];
     const nt = door.find((d) => d.plane === 'number-theory')!;
-    const sets = door.find((d) => d.plane === 'sets')!;
-    await aimAt(page, [sets.pos[0], 2, sets.pos[2]]);
+    const dim = door.find((d) => d.plane === 'algebra-symmetry')!; // dim: it rests on the definition of a prime
+    await aimAt(page, [dim.pos[0], 2, dim.pos[2]]);
     await expect.poll(async () => (await debug(page)).xrPanel?.hint, { timeout: 20_000 }).toContain('dim');
     await pull(page, 'right', 'trigger', async () => {
       await page.waitForTimeout(1500);

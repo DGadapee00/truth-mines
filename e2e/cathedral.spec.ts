@@ -93,15 +93,15 @@ test.describe('the cathedral', () => {
     expect(Object.keys(d.states)).toHaveLength(12);
     expect(Object.entries(d.states).filter(([, s]) => s === 'frontier').map(([p]) => p)).toEqual(['number-theory']);
     await app(page, 'stand(0, -3)');
-    await app(page, "lookAtDoor('sets')");
-    await expect(page.locator('#door-label')).toContainText('dim');
+    await app(page, "lookAtDoor('algebra-symmetry')");
+    await expect(page.locator('#door-label')).toContainText('dim. It rests on ideas you have not reached yet');
     await app(page, "lookAtDoor('topology')");
-    await expect(page.locator('#door-label')).toContainText('sealed');
+    await expect(page.locator('#door-label')).toContainText('sealed. Nothing on your map leads here yet');
     await app(page, "lookAtDoor('number-theory')");
     await expect(page.locator('#door-label')).toContainText('open');
     await shot(page, '4-number-theory-door');
-    await app(page, "lookAtDoor('sets')");
-    await expect(page.locator('#door-label')).toContainText('Sets'); // the visitor sees what they face before they press
+    await app(page, "lookAtDoor('algebra-symmetry')");
+    await expect(page.locator('#door-label')).toContainText('Algebra and symmetry'); // the visitor sees what they face before they press
     await page.keyboard.press('Enter');
     await expect(page.locator('#toast')).toContainText('not open to you yet');
     expect((await debug(page)).phase).toBe('cathedral');
@@ -126,7 +126,7 @@ test.describe('the cathedral', () => {
     await open(page, { seen: true });
     await page.click('#gate-nosecret');
     await toCathedral(page);
-    await page.evaluate(() => (window as unknown as { __cathedral: { store: { earn(ids: string[]): void } } }).__cathedral.store.earn(['1arith']));
+    await page.evaluate(() => (window as unknown as { __cathedral: { store: { earn(ids: string[]): void } } }).__cathedral.store.earn(['df-prm']));
     expect((await debug(page)).states['algebra-symmetry']).toBe('frontier');
     await app(page, 'stand(0, -3)');
     await app(page, "lookAtDoor('algebra-symmetry')");
@@ -216,7 +216,7 @@ test.describe('the number theory plane', () => {
 });
 
 test.describe('Trurl and the Worker', () => {
-  test('the secret is entered once and kept off the page; Trurl answers in captions and the verdict lights the next door, through a reload', async ({ page }) => {
+  test('the secret is entered once and kept off the page; Trurl answers in captions and the verdict brightens a door, through a reload', async ({ page }) => {
     const urls: string[] = [];
     page.on('request', (r) => urls.push(r.url()));
     const worker = await mockWorker(page, {
@@ -243,18 +243,18 @@ test.describe('Trurl and the Worker', () => {
     await shot(page, '9-trurl');
     await page.click('#leave-plane');
     await untilPhase(page, 'cathedral');
-    await expect.poll(async () => (await debug(page)).states['algebra-symmetry']).toBe('frontier');
+    await expect.poll(async () => (await debug(page)).states['complex-numbers']).toBe('dim'); // 1arith brightens the door that also rests on it
     await expect.poll(() => worker.progress.earned).toEqual(['1arith']);
     expect(worker.unauthorized).toBe(0);
     // the secret is never in a URL or on the page
     expect(urls.filter((u) => u.includes(SECRET))).toEqual([]);
     expect(await page.content()).not.toContain(SECRET);
-    // and it all survives a reload: nothing is typed again, the lit door is still lit
+    // and it all survives a reload: nothing is typed again, the brightened door is still brighter
     await page.reload();
     await page.waitForFunction(() => !!(window as unknown as { __cathedral?: unknown }).__cathedral, null, { timeout: 60_000 });
     await expect(page.locator('#ready')).toBeVisible();
     await toCathedral(page);
-    expect((await debug(page)).states['algebra-symmetry']).toBe('frontier');
+    expect((await debug(page)).states['complex-numbers']).toBe('dim');
     expect((await debug(page)).earned).toEqual(['1arith']);
   });
 

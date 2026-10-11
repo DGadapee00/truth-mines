@@ -7,7 +7,10 @@ import { SchemaError, type CathedralFile, type GraphFile, type PathwaysFile } fr
  *   frontier  every id in the pathway's `entry_requires` is earned (a door with none starts here)
  *   dim       not a frontier, but every unmet requirement is one step from the earned set: all of
  *             its own dependencies in the graph are earned (an axiom or definition has none)
- *   sealed    everything else
+ *   sealed    everything else, and every door whose pathway has no true gate (`entry_requires` null):
+ *             no idea on the map leads to it
+ *
+ * `entry_requires` is derived by the pipeline from the real dependencies (pipeline/pathways.py).
  *
  * A door only ever moves sealed to dim to frontier as ideas are earned.
  */
@@ -29,6 +32,10 @@ export function doorStates(earned: Iterable<string>, cathedral: CathedralFile, p
   for (const door of cathedral.doors) {
     const pathway = byPlane.get(door.plane);
     if (!pathway) throw new SchemaError(`door ${door.plane} has no pathway`);
+    if (pathway.entry_requires === null) {
+      out[door.plane] = 'sealed';
+      continue;
+    }
     let state: DoorState = 'frontier';
     for (const id of pathway.entry_requires) {
       const d = deps.get(id);

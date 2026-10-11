@@ -702,7 +702,7 @@ export class CathedralApp {
     const state = this.states[d.plane] ?? 'sealed';
     if (state === 'frontier') return `${d.name}: open. ${this.xr() ? 'Pull the trigger' : 'Click, or press Enter,'} to go through.`;
     if (state === 'dim') return `${d.name}: dim. It rests on ideas you have not reached yet.`;
-    return `${d.name}: sealed. It lies far beyond your map.`;
+    return `${d.name}: sealed. Nothing on your map leads here yet.`;
   }
 
   private updatePlane(dt: number): void {

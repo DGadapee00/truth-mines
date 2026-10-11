@@ -32,7 +32,7 @@ describe('built cathedral and pathways', () => {
   it('names only landmarks that exist in graph.json', () => {
     const missing: string[] = [];
     for (const p of pathways.pathways) {
-      for (const id of p.entry_requires) if (!ids.has(id)) missing.push(`${p.plane} requires ${id}`);
+      for (const id of p.entry_requires ?? []) if (!ids.has(id)) missing.push(`${p.plane} requires ${id}`);
       for (const s of p.stretches) {
         for (const id of s.landmarks) if (!ids.has(id)) missing.push(`${s.id} landmark ${id}`);
         for (const m of s.moments) for (const id of m.earns) if (!ids.has(id)) missing.push(`${m.id} earns ${id}`);
@@ -117,10 +117,29 @@ describe('parsePathways', () => {
   const good = read('data/pathways.json') as PathwaysFile;
 
   it('rejects a wrong schema version and a missing pathway', () => {
-    expect(() => parsePathways({ ...copy(good), schema_version: 2 })).toThrow(/schema version 2/);
+    expect(() => parsePathways({ ...copy(good), schema_version: 1 })).toThrow(/schema version 1/);
+    expect(() => parsePathways({ ...copy(good), schema_version: 99 })).toThrow(/schema version 99/);
     const eleven = copy(good);
     eleven.pathways.pop();
     expect(() => parsePathways(eleven)).toThrow(/twelve/);
+  });
+
+  it('rejects a gate and the idea it was derived from that do not go together', () => {
+    const noIdea = copy(good);
+    noIdea.pathways.find((p) => p.plane === 'algebra-symmetry')!.gated_on = null;
+    expect(() => parsePathways(noIdea)).toThrow(/both be null/);
+    const noGate = copy(good);
+    noGate.pathways.find((p) => p.plane === 'logic')!.gated_on = 'ax-mp';
+    expect(() => parsePathways(noGate)).toThrow(/both be null/);
+    const notAList = copy(good);
+    (notAList.pathways[0] as { entry_requires: unknown }).entry_requires = 'df-prm';
+    expect(() => parsePathways(notAList)).toThrow(/entry_requires/);
+  });
+
+  it('accepts a door with no gate: gated_on and entry_requires both null', () => {
+    const logic = good.pathways.find((p) => p.plane === 'logic')!;
+    expect([logic.gated_on, logic.entry_requires]).toEqual([null, null]);
+    expect(() => parsePathways(copy(good))).not.toThrow();
   });
 
   it('rejects a moment that earns a landmark outside its stretch', () => {

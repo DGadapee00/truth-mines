@@ -2,12 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://truth-mines/schemas/pathways.schema.json",
   "title": "pathways.json",
-  "description": "Built by pipeline/pathways.py. Mirrors core/schema.ts (PathwaysFile). Every id is a set.mm label that exists in graph.json (checked by the build and by core/tests/data.test.ts). Rubrics are not here: they are Trurl's private judging notes, in grounding.json.",
+  "description": "Built by pipeline/pathways.py. Mirrors core/schema.ts (PathwaysFile). entry_requires is derived by the pipeline from graph.json, never written by hand, and pipeline/tests/test_gates.py re-derives it from set.mm itself. Every id is a set.mm label that exists in graph.json (checked by the build and by core/tests/data.test.ts). Rubrics are not here: they are Trurl's private judging notes, in grounding.json.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "pathways"],
   "properties": {
-    "schema_version": { "const": 1 },
+    "schema_version": { "const": 2 },
     "pathways": {
       "type": "array",
       "minItems": 12,
@@ -15,10 +15,11 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["plane", "entry_requires", "stretches"],
+        "required": ["plane", "gated_on", "entry_requires", "stretches"],
         "properties": {
           "plane": { "type": "string" },
-          "entry_requires": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+          "gated_on": { "type": ["string", "null"], "minLength": 1, "description": "The idea the gate was derived from; null when no true gate exists yet" },
+          "entry_requires": { "type": ["array", "null"], "uniqueItems": true, "items": { "type": "string", "minLength": 1 }, "description": "Derived: the ideas on the map that gated_on truly rests on. null: no gate, the door is sealed" },
           "stretches": {
             "type": "array",
             "items": {

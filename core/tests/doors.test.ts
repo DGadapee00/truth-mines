@@ -26,7 +26,7 @@ const graph = {
 function world(plane: PlaneId, requires: string[]): { cathedral: CathedralFile; pathways: PathwaysFile } {
   return {
     cathedral: { doors: PLANE_IDS.map((p) => ({ plane: p })) } as unknown as CathedralFile,
-    pathways: { pathways: PLANE_IDS.map((p) => ({ plane: p, entry_requires: p === plane ? requires : [], stretches: [] })) } as unknown as PathwaysFile,
+    pathways: { pathways: PLANE_IDS.map((p) => ({ plane: p, gated_on: 'x', entry_requires: p === plane ? requires : [], stretches: [] })) } as unknown as PathwaysFile,
   };
 }
 
@@ -80,6 +80,18 @@ describe('doorStates on a small graph', () => {
     expect(Object.keys(out).sort()).toEqual([...PLANE_IDS].sort());
     expect(out.logic).toBe('dim');
     expect(out.sets).toBe('frontier');
+  });
+
+  it('a door with no true gate (entry_requires null) is sealed, whatever is earned', () => {
+    const w = world('logic', []);
+    const logic = w.pathways.pathways.find((p) => p.plane === 'logic')!;
+    logic.entry_requires = null;
+    logic.gated_on = null;
+    for (const earned of [[], ['root'], ['root', 'a', 'b', 'c', 'd']]) {
+      const out = doorStates(earned, w.cathedral, w.pathways, graph);
+      expect(out.logic, earned.join()).toBe('sealed');
+      expect(out.sets, 'the other doors are unaffected').toBe('frontier');
+    }
   });
 
   it('accepts any iterable of earned ids and does not change it', () => {
@@ -146,22 +158,31 @@ describe('doorStates on the built data', () => {
     expect(PLANE_IDS.filter((p) => s[p] === 'frontier')).toEqual(['number-theory']);
   });
 
-  it('with nothing earned, a door gated on a definition or axiom is dim and one gated on a theorem is sealed', () => {
+  it('with nothing earned, algebra is dim (it rests on the definition of a prime), complex numbers is sealed (it rests on the theorem too) and every other door is sealed: no idea on the map leads there', () => {
     const s = states([]);
-    expect(PLANE_IDS.filter((p) => s[p] === 'dim').sort()).toEqual(['geometry', 'infinity', 'linear-algebra', 'logic', 'sets']);
-    expect(PLANE_IDS.filter((p) => s[p] === 'sealed').sort()).toEqual(['algebra-symmetry', 'calculus-analysis', 'combinatorics', 'complex-numbers', 'graph-theory', 'topology']);
+    expect(PLANE_IDS.filter((p) => s[p] === 'dim')).toEqual(['algebra-symmetry']);
+    expect(PLANE_IDS.filter((p) => s[p] === 'sealed').sort()).toEqual(PLANE_IDS.filter((p) => p !== 'number-theory' && p !== 'algebra-symmetry').sort());
   });
 
-  it('earning 1arith, the road moment, lights algebra and symmetry and nothing else', () => {
+  it('earning df-prm, the sieve moment, lights algebra and symmetry and nothing else', () => {
     const before = states([]);
-    const after = states(['1arith']);
+    const after = states(['df-prm']);
+    expect(before['algebra-symmetry']).toBe('dim');
     expect(after['algebra-symmetry']).toBe('frontier');
-    expect(before['algebra-symmetry']).toBe('sealed');
     for (const p of PLANE_IDS) if (p !== 'algebra-symmetry') expect(after[p], p).toBe(before[p]);
   });
 
-  it('earning df-prm, the sieve moment, changes no door yet', () => {
-    expect(states(['df-prm'])).toEqual(states([]));
+  it('earning 1arith, the road moment, is not what lights algebra (ablfac does not rest on it); it brightens complex numbers to dim', () => {
+    const before = states([]);
+    const after = states(['1arith']);
+    expect(after['algebra-symmetry']).toBe(before['algebra-symmetry']);
+    expect(after['complex-numbers']).toBe('dim');
+    for (const p of PLANE_IDS) if (p !== 'complex-numbers') expect(after[p], p).toBe(before[p]);
+  });
+
+  it('with both earned, algebra and complex numbers are both open', () => {
+    const s = states(['df-prm', '1arith']);
+    expect(PLANE_IDS.filter((p) => s[p] === 'frontier').sort()).toEqual(['algebra-symmetry', 'complex-numbers', 'number-theory']);
   });
 
   it('never lets a door sink, whatever order the prototype ideas are earned in', () => {

@@ -12,7 +12,6 @@ from jsonschema import Draft202012Validator
 
 from pipeline.files import ROOT, config
 from pipeline.grounding import build, clean_comment
-from pipeline.pathways import build as build_pathways
 
 CFG = config()["cathedral"]
 
@@ -87,9 +86,7 @@ def configured_moments(cfg):
 
 
 def test_every_moment_of_the_pathways_is_here_with_a_rubric(grounding):
-    nodes, _, _ = world()
-    pw = build_pathways(CFG, set(nodes), sorted(p["id"] for p in CFG["planes"]))
-    want = {m["id"]: (p["plane"], s["id"], m["earns"]) for p in pw["pathways"] for s in p["stretches"] for m in s["moments"]}
+    want = {m["id"]: (p["plane"], s["id"], sorted(m["earns"])) for p in CFG["pathways"] for s in p["stretches"] for m in s["moments"]}
     assert set(grounding["moments"]) == set(want)
     for mid, (plane, stretch, earns) in want.items():
         m = grounding["moments"][mid]

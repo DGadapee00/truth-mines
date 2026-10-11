@@ -213,8 +213,8 @@ describe('mergeProgress', () => {
 
 describe('validResume', () => {
   const pathways = {
-    schema_version: 1,
-    pathways: [{ plane: 'number-theory', entry_requires: [], stretches: [{ id: 'nt-1', plane_data: 'plane-number-theory.json', landmarks: ['1arith'], moments: [] }] }],
+    schema_version: 2,
+    pathways: [{ plane: 'number-theory', gated_on: 'df-prm', entry_requires: [], stretches: [{ id: 'nt-1', plane_data: 'plane-number-theory.json', landmarks: ['1arith'], moments: [] }] }],
   } as unknown as PathwaysFile;
 
   it('returns the saved stretch and position when the stretch still exists', () => {

@@ -289,24 +289,44 @@ cathedral:
     rotation_deg: 15
     rise_per_tier: 0.35 # of the hall radius, shrinking by the ratio each tier
 
-  # The pathway behind each door (pipeline/pathways.py). `entry_requires` are set.mm ids that must
-  # all be earned for the door to glow; a door with none starts as frontier, and in the prototype
-  # that is number theory only. Gates for planes without a stretch yet are placeholders (marked)
-  # until those planes are built; each id must exist in the graph or the build fails.
+  # The pathway behind each door (pipeline/pathways.py).
+  #
+  # A door's gate is NOT written here. Each pathway names `gated_on`, the idea its door is gated on,
+  # and the build derives `entry_requires` from the dependency graph: the ideas ON THE MAP (the
+  # landmarks of any stretch, the ideas a visitor can earn somewhere in the cathedral) that
+  # `gated_on` truly rests on, found by following its proof dependencies in set.mm. The door glows
+  # when all of them are earned (core/doors.ts). Nothing is chosen by hand but `gated_on`.
+  # pipeline/tests/test_gates.py re-derives every gate from the raw set.mm text, independently of the
+  # pipeline, and checks it both ways (nothing missing, nothing extra).
+  #
+  # A built pathway is gated on the first landmark of its first stretch. An unbuilt one (no stretch yet)
+  # may be gated on an idea it will reach only if that idea truly rests on something on the map, so
+  # that the gate is real. Otherwise `gated_on: null`, `first_idea` names where the pathway would
+  # begin (the build checks that it rests on no idea on the map) and `no_gate` says why there is no
+  # gate. A door with no gate is sealed: no idea on the map leads to it. Gating it on anything would be
+  # inventing a dependency.
+  # As pathways are built their landmarks join the map and every gate is re-derived.
+  #
   # `rubric` is what a good explanation says, used only by Trurl's judge, never shown. It stays a
   # draft (`rubric_reviewed` absent or false) until a person approves the exact text and sets it true.
   pathways:
     - plane: logic
-      entry_requires: [ax-mp] # placeholder
+      gated_on: null
+      first_idea: ax-mp # checked: it rests on no idea on the map
+      no_gate: Not built, and nothing on the map leads to it. A gate derived from its first idea would be empty, so the door would glow with nothing behind it.
       stretches: []
     - plane: sets
-      entry_requires: [ax-ext] # placeholder
+      gated_on: null
+      first_idea: ax-ext # checked: it rests on no idea on the map
+      no_gate: Not built, and nothing on the map leads to it. A gate derived from its first idea would be empty, so the door would glow with nothing behind it.
       stretches: []
     - plane: infinity
-      entry_requires: [ax-inf] # placeholder
+      gated_on: null
+      first_idea: ax-inf # checked: it rests on no idea on the map
+      no_gate: Not built, and nothing on the map leads to it. A gate derived from its first idea would be empty, so the door would glow with nothing behind it.
       stretches: []
     - plane: number-theory
-      entry_requires: []
+      gated_on: df-prm # the first landmark of nt-1; nothing on the map lies beneath it, so this door starts open
       stretches:
         - id: nt-1
           plane_data: plane-number-theory.json
@@ -330,26 +350,38 @@ cathedral:
                 are exactly those. Why the sieve stops after 7 (every composite up to 100 has a
                 prime factor of at most 7) is a bonus Trurl may draw out, not a requirement.
     - plane: combinatorics
-      entry_requires: [ramsey] # placeholder
+      gated_on: null
+      first_idea: ramsey # checked: it rests on no idea on the map
+      no_gate: Not built, and nothing on the map leads to it. A gate derived from its first idea would be empty, so the door would glow with nothing behind it.
       stretches: []
     - plane: graph-theory
-      entry_requires: [konigsberg] # placeholder
+      gated_on: null
+      first_idea: konigsberg # checked: it rests on no idea on the map
+      no_gate: Not built, and nothing on the map leads to it. A gate derived from its first idea would be empty, so the door would glow with nothing behind it.
       stretches: []
     - plane: algebra-symmetry
-      entry_requires: [1arith] # dirith rests on both 1arith and ablfac, so this pathway meets number theory
+      gated_on: ablfac # not built. The fundamental theorem of finite abelian groups rests on df-prm (through Sylow's first theorem and Euclid's lemma) and NOT on 1arith: checked in set.mm
       stretches: []
     - plane: linear-algebra
-      entry_requires: [df-lmod] # placeholder
+      gated_on: null
+      first_idea: df-lmod # checked: it rests on no idea on the map
+      no_gate: Not built, and nothing on the map leads to it. A gate derived from its first idea would be empty, so the door would glow with nothing behind it.
       stretches: []
     - plane: complex-numbers
-      entry_requires: [efipi] # placeholder
+      gated_on: pnt # not built. The experience design has this pathway and number theory both reach the prime number theorem, which rests on df-prm and 1arith
       stretches: []
     - plane: geometry
-      entry_requires: [df-trkg] # placeholder
+      gated_on: null
+      first_idea: df-trkg # checked: it rests on no idea on the map
+      no_gate: Not built, and nothing on the map leads to it. A gate derived from its first idea would be empty, so the door would glow with nothing behind it.
       stretches: []
     - plane: topology
-      entry_requires: [bwth] # placeholder
+      gated_on: null
+      first_idea: bwth # checked: it rests on no idea on the map
+      no_gate: Not built, and nothing on the map leads to it. A gate derived from its first idea would be empty, so the door would glow with nothing behind it.
       stretches: []
     - plane: calculus-analysis
-      entry_requires: [evth] # placeholder
+      gated_on: null
+      first_idea: evth # checked: it rests on no idea on the map
+      no_gate: Not built, and nothing on the map leads to it. A gate derived from its first idea would be empty, so the door would glow with nothing behind it.
       stretches: []
