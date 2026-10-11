@@ -8,6 +8,7 @@ import { createCameraRig } from './ui/camera';
 import { createPanel, fitStatement } from './ui/panel';
 import { createSearch } from './ui/search';
 import { createInside } from './inside/inside';
+import { createPlane } from './plane/plane';
 import 'katex/dist/katex.min.css';
 import './style.css';
 
@@ -53,6 +54,23 @@ async function main() {
     $('intro').hidden = true;
     start().catch((err: unknown) => console.error('Inside view:', err));
   };
+  // ---- the number theory plane: entered from the header or #/plane/number-theory, left by its Map button
+  const PLANE_HASH = '#/plane/number-theory';
+  const plane = createPlane({
+    renderer,
+    base: BASE,
+    onExit() {
+      if (location.hash === PLANE_HASH) history.pushState(null, '', location.pathname);
+      store.select(null);
+    },
+  });
+  const goPlane = () => {
+    $('intro').hidden = true;
+    $('panel').hidden = true;
+    if (location.hash !== PLANE_HASH) history.pushState(null, '', PLANE_HASH);
+    plane.enter().catch((err: unknown) => console.error('Number theory plane:', err));
+  };
+  $('btn-plane').addEventListener('click', goPlane);
   createPanel($('panel'), graph, meta, store, (p) => fetch(`${BASE}${p}`).then((r) => r.text()), {
     enter: (id) => goInside(() => inside.enter(id)),
     journey: (id) => goInside(() => inside.journey(id)),
@@ -84,7 +102,7 @@ async function main() {
   };
   canvas.addEventListener('pointerdown', (e) => (down = { x: e.clientX, y: e.clientY }));
   canvas.addEventListener('pointerup', (e) => {
-    if (inside.active) return;
+    if (inside.active || plane.active) return;
     if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) return;
     down = null;
     const p = at(e);
@@ -93,7 +111,7 @@ async function main() {
   });
   const tip = $('tip');
   canvas.addEventListener('pointermove', (e) => {
-    if (e.buttons || inside.active) return;
+    if (e.buttons || inside.active || plane.active) return;
     const p = at(e);
     const id = mine.pickScreen(p.x, p.y, camera, p.w, p.h, 12);
     mine.setHover(id);
@@ -108,7 +126,7 @@ async function main() {
 
   // ---- keys
   window.addEventListener('keydown', (e) => {
-    if ((e.target as HTMLElement).tagName === 'INPUT' || inside.active) return;
+    if ((e.target as HTMLElement).tagName === 'INPUT' || inside.active || plane.active) return;
     if (e.key === '/') {
       e.preventDefault();
       $('search').focus();
@@ -169,6 +187,11 @@ async function main() {
 
   // ---- the address names the selected node: open it on load, and follow back/forward and edits
   const followHash = () => {
+    if (location.hash === PLANE_HASH) {
+      if (!plane.active) goPlane();
+      return;
+    }
+    if (plane.active) plane.exit();
     const id = decodeURIComponent(location.hash.match(/^#\/n\/(.+)$/)?.[1] ?? '');
     if (id && graph.get(id)) {
       intro.hidden = true;
@@ -188,6 +211,11 @@ async function main() {
       renderer.render(inside.scene, inside.camera);
       return;
     }
+    if (plane.active) {
+      plane.update(dt);
+      renderer.render(plane.scene, plane.camera);
+      return;
+    }
     rig.update(dt);
     frameBesidePanel();
     mine.update(camera, time);
@@ -196,7 +224,7 @@ async function main() {
 
   document.body.classList.add('ready');
   // For the end-to-end tests.
-  Object.assign(window, { __mines: { graph, store, mine, camera, renderer, rig, inside } });
+  Object.assign(window, { __mines: { graph, store, mine, camera, renderer, rig, inside, plane } });
 }
 
 main().catch((err: unknown) => {

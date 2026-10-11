@@ -243,3 +243,162 @@ export function parseScene(raw: unknown): SceneFile {
   }
   return s as SceneFile;
 }
+
+// ---------------------------------------------------------------- plane-number-theory.json
+//
+// The number theory plane, written by pipeline/plane_nt.py. It has its own version, so adding a
+// plane leaves the mine's files alone. As with scene.json, the app draws and animates this and
+// decides no geometry (CLAUDE.md rule 9). Conventions travel with the file.
+
+export const PLANE_SCHEMA_VERSION = 1;
+
+export interface PlaneText {
+  id: string;
+  text: string;
+  /** Drafts stay false until a person approves the line */
+  reviewed: boolean;
+}
+
+export interface PlaneStop {
+  id: string;
+  name: string;
+  pos: Vec3;
+  yaw: number;
+  pitch: number;
+}
+
+export interface PrimeColour {
+  p: number;
+  hue: number;
+  saturation: number;
+  lightness: number;
+  color: string;
+}
+
+export interface ColumnPart {
+  prime: number;
+  y: number;
+  h: number;
+  form: 'block' | 'monolith';
+}
+
+export interface RoadColumn {
+  n: number;
+  kind: 'unit' | 'prime' | 'composite';
+  pos: Vec3;
+  yaw: number;
+  /** Prime factors with multiplicity, smallest first */
+  factors: number[];
+  /** "12 = 2² · 3" */
+  label: string;
+  parts: ColumnPart[];
+  height: number;
+  radius: number;
+  /** One arc per block, from the block to its prime's monolith */
+  threads: Vec3[][];
+}
+
+export interface PlazaCell {
+  n: number;
+  row: number;
+  col: number;
+  pos: Vec3;
+}
+
+export interface Plaza {
+  centre: Vec3;
+  yaw: number;
+  cell: number;
+  seed_cell: { row: number; col: number; pos: Vec3 };
+  grid: PlazaCell[];
+  column: { width: number; height: number; rubble_height: number };
+  labels: { number_height: number; number_offset: number };
+  footprint: number;
+  stone: string;
+  glow: string;
+  crumble_step_s: number;
+  /** For each number, the multiples after itself that crumble when it is struck */
+  multiples: Record<string, number[]>;
+  survivors: number[];
+  bound: number;
+  sufficient_primes: number[];
+}
+
+export interface OverlookSample {
+  x: number;
+  pi: number;
+  estimate: number;
+  ratio: number;
+  /** Metres along the overlook road */
+  s: number;
+  at: Vec3;
+  pi_at: Vec3;
+  est_at: Vec3;
+  /** On the ratio curve: base + ratio_scale * (ratio - 1) */
+  ratio_at: Vec3;
+  /** Where the marker's sign stands, beside the road */
+  sign_at: Vec3;
+}
+
+export interface OverlookWindow {
+  x0: number;
+  span: number;
+  label: string;
+  count: number;
+  label_at: Vec3;
+  primes: { p: number; pos: Vec3 }[];
+}
+
+export interface Overlook {
+  scale: { x0: number; x1: number; decades: number; metres_per_decade: number; origin: Vec3; yaw: number };
+  road: { length: number; half_width: number };
+  panel: { cell: number; base: number };
+  decades: { x: number; label: string; pos: Vec3 }[];
+  windows: OverlookWindow[];
+  samples: OverlookSample[];
+  marker: { sign_size: [number, number] };
+  labels: { height: number };
+  curve: { offset: number; base: number; height: number; width: number; ratio_scale: number; baseline: [Vec3, Vec3] };
+}
+
+export interface PlaneFile {
+  schema_version: number;
+  plane: string;
+  conventions: Record<string, string>;
+  texts: PlaneText[];
+  stops: PlaneStop[];
+  ground: { spine: Vec3[]; half_width: number; square: { centre: Vec3; yaw: number; half: number } };
+  primes: PrimeColour[];
+  road: {
+    spacing: number;
+    block: { size: number; gap: number };
+    thread_radius: number;
+    labels: { number_height: number; number_offset: number; sign_offset: number; sign_size: [number, number] };
+    monolith: { width: number; height: number };
+    seed: { pos: Vec3; size: [number, number] };
+    columns: RoadColumn[];
+  };
+  plaza: Plaza;
+  overlook: Overlook;
+}
+
+/** Check a parsed plane-number-theory.json before anything draws it. Throws SchemaError. */
+export function parsePlane(raw: unknown): PlaneFile {
+  const p = raw as Partial<PlaneFile> | null;
+  if (!p || p.schema_version !== PLANE_SCHEMA_VERSION) throw new SchemaError(`plane-number-theory.json has schema version ${String(p?.schema_version)}; this app reads ${PLANE_SCHEMA_VERSION}`);
+  for (const k of ['texts', 'stops', 'primes'] as const) if (!Array.isArray(p[k])) throw new SchemaError(`plane: ${k}`);
+  if (!p.ground || !Array.isArray(p.ground.spine) || p.ground.spine.length < 2 || !p.ground.spine.every(isVec3)) throw new SchemaError('plane: ground');
+  if (!p.road || !Array.isArray(p.road.columns)) throw new SchemaError('plane: road');
+  for (const c of p.road.columns) {
+    const w = `plane column ${String(c?.n)}`;
+    if (!Number.isInteger(c.n) || !isVec3(c.pos) || typeof c.label !== 'string' || !Array.isArray(c.parts) || !Array.isArray(c.threads)) throw new SchemaError(w);
+    if (!c.threads.every((t) => Array.isArray(t) && t.every(isVec3))) throw new SchemaError(`${w}: threads`);
+  }
+  const pl = p.plaza;
+  if (!pl || !Array.isArray(pl.grid) || !pl.multiples || !Array.isArray(pl.survivors)) throw new SchemaError('plane: plaza');
+  for (const c of pl.grid) if (!Number.isInteger(c.n) || !isVec3(c.pos) || !pl.multiples[String(c.n)]) throw new SchemaError(`plane plaza cell ${String(c?.n)}`);
+  const ov = p.overlook;
+  if (!ov || !Array.isArray(ov.samples) || ov.samples.length < 2 || !Array.isArray(ov.windows)) throw new SchemaError('plane: overlook');
+  for (const s of ov.samples) if (!(s.x > 0) || !isVec3(s.at) || !isVec3(s.pi_at) || !isVec3(s.est_at) || !isVec3(s.ratio_at) || !isVec3(s.sign_at) || !Number.isFinite(s.s)) throw new SchemaError(`plane overlook sample ${String(s?.x)}`);
+  return p as PlaneFile;
+}

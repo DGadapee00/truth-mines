@@ -10,6 +10,9 @@ from dataclasses import asdict, dataclass, field
 
 SCHEMA_VERSION = 6
 
+# plane-number-theory.json has its own version, so adding a plane leaves the mine's files alone.
+PLANE_SCHEMA_VERSION = 1
+
 KINDS = ("axiom", "definition", "theorem")
 
 

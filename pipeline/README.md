@@ -14,6 +14,8 @@ stage reads the previous stage's file in `pipeline/build/` and can be rerun alon
 | depth | extract, curate | `build/depth` | Longest path from the roots, in the full graph |
 | layout | curate, collapse, depth | `build/layout` | Positions in metres: y by depth, a wedge per subject |
 | export | all of the above | `data/` | graph.json, meta.json, reviewed notes, the label font |
+| scene | curate, collapse, depth | `data/scene.json` | The Inside view's chambers, tunnels, markers: engine-neutral descriptors |
+| plane | `config.yaml` (needs no set.mm) | `data/plane-number-theory.json` | The number theory plane: road, stacks, threads, hues, sieve plaza, overlook |
 
 `python -m pipeline show LABEL` prints a statement and set.mm's own description of it. Read it
 before naming a landmark.
@@ -38,6 +40,11 @@ Tests: `python -m pytest -q pipeline/tests` (a small hand-written .mm file cover
   latexdefs are overridden in config.yaml where they rely on LaTeX packages a web renderer lacks.
 - **Display forms.** Hand-written readable statements in landmarks.yaml, exported alongside the
   formal one with their `reviewed` flag.
+- **The number theory plane** (pipeline/numtheory.py, pipeline/plane_nt.py) computes every number
+  it shows and tests it against independent code: factorizations against trial division, the
+  sieve against a naive simulation in hundreds of strike orders, π(x) against known values and
+  direct counting. It has its own schema version (`PLANE_SCHEMA_VERSION`) and no randomness, so
+  the same build gives the same bytes. Its captions are drafts with `reviewed: false`.
 - **Tunnels are checked twice.** tests/test_tunnels.py recomputes every tunnel and its
   feeding_lemmas from both ends of the full graph, and checks each chain is a real citation path
   no longer than the depth difference allows, independently of collapse.py.
