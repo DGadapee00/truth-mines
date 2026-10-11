@@ -125,6 +125,31 @@ test.describe('headset', () => {
     await pull(page, 'right', 'b-button', () => untilPhase(page, 'cathedral', 60_000));
   });
 
+  test('leaving VR from inside the plane brings back the cathedral, and the place in the plane is kept', async ({ page }) => {
+    await inHeadset(page, { seen: true });
+    await pull(page, 'right', 'trigger', () => untilPhase(page, 'threshold', 30_000));
+    await pull(page, 'right', 'trigger', () => untilPhase(page, 'cathedral', 60_000));
+    await settled(page);
+    const nt = ((await page.evaluate("window.__cathedral.cathedral.doors.map((d) => ({ plane: d.plane, pos: d.pos }))")) as { plane: string; pos: [number, number, number] }[]).find((d) => d.plane === 'number-theory')!;
+    await aimAt(page, [nt.pos[0], 2, nt.pos[2]]);
+    await expect.poll(async () => (await debug(page)).xrPanel?.hint, { timeout: 20_000 }).toContain('open');
+    await pull(page, 'right', 'trigger', () => untilPhase(page, 'plane', 60_000));
+    await settled(page);
+    // the Quest's own menu ends the session while the visitor is on the road
+    await page.evaluate('window.__cathedral.world.renderer.xr.getSession()?.end()');
+    await expect.poll(async () => (await debug(page)).xr, { timeout: 30_000 }).toBe(false);
+    await untilPhase(page, 'ready');
+    expect((await debug(page)).shown).toEqual({ hall: true, plane: false });
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('truth-mines.progress') ?? '{}').pathways?.['number-theory']?.stretch)).toBe('nt-1');
+    // and on the screen the visitor crosses again into a whole cathedral
+    await page.click('#begin');
+    await page.waitForSelector('#skip:not([hidden])', { timeout: 20_000 });
+    await page.click('#skip');
+    await untilPhase(page, 'cathedral');
+    await settled(page);
+    expect((await debug(page)).shown).toEqual({ hall: true, plane: false });
+  });
+
   test('hold A to talk: the speech goes to the Worker and Trurl’s words reach the panel', async ({ page }) => {
     const worker = await mockWorker(page, { heard: 'why did nothing fall after seven', reply: () => ({ text: ['Because ten squared is a hundred.'] }) });
     await open(page, { seen: true });

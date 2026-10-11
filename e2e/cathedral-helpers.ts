@@ -114,6 +114,8 @@ export interface Debug {
   zone: string;
   standing: number | null;
   plane: { x: number; z: number } | null;
+  /** Which world is drawn: the hall (with its floor and previews) or the plane */
+  shown: { hall: boolean; plane: boolean };
 }
 export const debug = (page: Page): Promise<Debug> => page.evaluate(() => (window as unknown as { __cathedral: { debug(): unknown } }).__cathedral.debug()) as Promise<Debug>;
 

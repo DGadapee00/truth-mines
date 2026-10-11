@@ -286,7 +286,17 @@ export class CathedralApp {
 
   private sessionChanged(): void {
     const immersive = this.xr();
-    if (this.wasImmersive && !immersive) this.flow.send('session-ended');
+    if (this.wasImmersive && !immersive) {
+      // The headset left (its own menu, or taken off) wherever the visitor was: keep their place in a
+      // plane and put the hall back, so the next crossing arrives in a whole cathedral.
+      if (this.flow.phase() === 'plane') {
+        this.saveResume();
+        this.showHall();
+      }
+      this.transition = null;
+      this.comfort.setFade(0);
+      this.flow.send('session-ended');
+    }
     if (immersive && !this.wasImmersive) {
       this.eye(this.tmp);
       this.xrPanel?.snap(this.tmp, this.viewYaw());
@@ -493,6 +503,13 @@ export class CathedralApp {
   }
 
   private exitPlane(door: CathedralDoor): void {
+    this.showHall();
+    this.flow.send('leave-plane');
+    this.setView(door.stand.pos, door.stand.yaw, 0);
+  }
+
+  /** Hide the plane and show the hall again, as it was before the door */
+  private showHall(): void {
     this.plane.group.visible = false;
     this.plane.ground.visible = false;
     this.planeGroundEntity.removeComponent(LocomotionEnvironment);
@@ -500,8 +517,6 @@ export class CathedralApp {
     this.hall.floor.visible = true;
     this.previews.group.visible = true;
     this.world.scene.fog = new FogExp2(PALETTE.night, 0.004);
-    this.flow.send('leave-plane');
-    this.setView(door.stand.pos, door.stand.yaw, 0);
   }
 
   private goToStop(id: string): void {
@@ -810,6 +825,7 @@ export class CathedralApp {
       zone: this.lastZone,
       standing: this.flow.phase() === 'plane' ? this.plane.plaza.state().standing.length : null,
       plane: this.flow.phase() === 'plane' ? { x: this.plane.walk.x, z: this.plane.walk.z } : null,
+      shown: { hall: this.hall.group.visible && this.hall.floor.visible && this.previews.group.visible, plane: this.plane.group.visible || this.plane.ground.visible },
     };
   }
 
