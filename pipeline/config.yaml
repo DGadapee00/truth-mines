@@ -216,6 +216,7 @@ cathedral:
     wall_thickness: 0.3 # metres, outward from the radius
     door: { width: 3.6, height: 6.5 }
     pedestal: { inset: 5, radius: 0.6, height: 1.1, preview_lift: 0.9 }
+    stand: 2.2 # metres in front of the pedestal where the visitor stands when they step back out of a plane
   # The visitor descends from the vault onto a dais at the centre of the hall, facing the far wall.
   # Four arcs of three doors use all twelve 30-degree slots, so no slot is free for a wall entrance.
   arrival: { dais_radius: 2.2 }

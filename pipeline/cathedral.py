@@ -127,6 +127,7 @@ def build_doors(cfg: dict) -> list[dict]:
                 "bearing_deg": b,
                 "pos": pt(r * math.sin(a), 0, r * math.cos(a)),
                 "yaw": RA(yaw),
+                "stand": {"pos": pt((pr - h["stand"]) * math.sin(a), 0, (pr - h["stand"]) * math.cos(a)), "yaw": RA(math.radians(b))},
                 "pedestal": {
                     "pos": pt(pr * math.sin(a), 0, pr * math.cos(a)),
                     "radius": h["pedestal"]["radius"],

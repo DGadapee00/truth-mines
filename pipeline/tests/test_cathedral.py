@@ -135,6 +135,20 @@ def test_pedestal_stands_in_front_of_its_door(cathedral):
         assert math.atan2(p[0], p[2]) == pytest.approx(math.atan2(d["pos"][0], d["pos"][2]), abs=0.001)
 
 
+def test_each_door_has_a_place_to_stand_in_front_of_its_pedestal_facing_the_door(cathedral):
+    inset = CFG["hall"]["pedestal"]["inset"]
+    stand = CFG["hall"]["stand"]
+    for d in cathedral["doors"]:
+        x, _, z = d["stand"]["pos"]
+        # on the same bearing as the door, `stand` metres nearer the middle than the pedestal
+        assert math.hypot(x, z) == pytest.approx(cathedral["hall"]["radius"] - inset - stand, abs=0.02)
+        assert math.atan2(x, z) == pytest.approx(math.atan2(d["pos"][0], d["pos"][2]), abs=0.001)
+        # and faces the door: heading(yaw) points outward, at the door
+        hx, hz = heading(d["stand"]["yaw"])
+        assert x + hx * (math.hypot(d["pos"][0], d["pos"][2]) - math.hypot(x, z)) == pytest.approx(d["pos"][0], abs=0.02)
+        assert z + hz * (math.hypot(d["pos"][0], d["pos"][2]) - math.hypot(x, z)) == pytest.approx(d["pos"][2], abs=0.02)
+
+
 def test_arrival_is_at_the_hall_centre_facing_the_far_wall(cathedral):
     a = cathedral["arrival"]
     assert a["pos"] == [0, 0, 0]

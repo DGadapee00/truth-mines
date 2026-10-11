@@ -450,6 +450,8 @@ export interface CathedralDoor {
   pos: Vec3;
   /** The way the door faces: toward the hall centre */
   yaw: number;
+  /** Where the visitor stands, facing the door, when they step back out of its plane */
+  stand: { pos: Vec3; yaw: number };
   pedestal: { pos: Vec3; radius: number; height: number; preview_pos: Vec3 };
   preview: { id: PreviewId; params: Record<string, unknown> };
 }
@@ -552,6 +554,7 @@ export function parseCathedral(raw: unknown): CathedralFile {
     seen.add(d.plane);
     if (!Number.isInteger(d.slot) || d.slot < 0 || d.slot > 11 || !Number.isInteger(d.bearing_deg)) throw new SchemaError(`${w}: slot`);
     if (!isVec3(d.pos) || !Number.isFinite(d.yaw)) throw new SchemaError(`${w}: pos`);
+    if (!d.stand || !isVec3(d.stand.pos) || !Number.isFinite(d.stand.yaw)) throw new SchemaError(`${w}: stand`);
     if (!d.pedestal || !isVec3(d.pedestal.pos) || !isVec3(d.pedestal.preview_pos) || !(d.pedestal.radius > 0) || !(d.pedestal.height > 0)) throw new SchemaError(`${w}: pedestal`);
     if (!d.preview || !PREVIEW_IDS.includes(d.preview.id) || typeof d.preview.params !== 'object') throw new SchemaError(`${w}: preview`);
     if (!c.arcs.some((a) => a.id === d.arc && a.planes.includes(d.plane))) throw new SchemaError(`${w}: arc`);
