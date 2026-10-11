@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.iwsdk/
+*.tsbuildinfo
+.mcp.json
+.cursor/mcp.json
+.vscode/mcp.json
+.codex/config.toml
+.env
+.env.*
