@@ -332,6 +332,11 @@ cathedral:
           plane_data: plane-number-theory.json
           landmarks: [df-prm, 1arith]
           moments:
+            # What the two moments earn is chosen so that each one moves the map, using only true
+            # dependencies (core/tests/doors.test.ts tries every earn from every earlier state):
+            #   sieve earns df-prm: algebra and symmetry (ablfac rests on it) goes from dim to open.
+            #   road earns 1arith: complex numbers (pnt rests on it and on df-prm) goes from sealed to dim,
+            #   and to open once df-prm is held too.
             - id: nt-1-road
               kind: road
               earns: [1arith]

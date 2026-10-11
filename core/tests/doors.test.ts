@@ -198,4 +198,37 @@ describe('doorStates on the built data', () => {
       }
     }
   });
+
+  it('every earn moves the map: whatever has been earned before, earning what a moment grants changes at least one door', () => {
+    // The ideas the prototype can grant are the landmarks of its stretches; try every combination of them as "earned before".
+    const ideas = [...new Set(pathways.pathways.flatMap((p) => p.stretches.flatMap((s) => s.landmarks)))].sort();
+    expect(ideas.length).toBeGreaterThanOrEqual(2);
+    let tried = 0;
+    for (const p of pathways.pathways) {
+      for (const s of p.stretches) {
+        for (const m of s.moments) {
+          for (let mask = 0; mask < 1 << ideas.length; mask++) {
+            const before = ideas.filter((_, i) => mask & (1 << i));
+            if (m.earns.every((e) => before.includes(e))) continue; // nothing new to earn
+            const after = [...new Set([...before, ...m.earns])];
+            const was = states(before);
+            const now = states(after);
+            const changed = PLANE_IDS.filter((plane) => was[plane] !== now[plane]);
+            expect(changed.length, `${m.id} after ${before.join(', ') || 'nothing'} changed no door`).toBeGreaterThan(0);
+            tried++;
+          }
+        }
+      }
+    }
+    expect(tried).toBe(4); // two moments, each from the two states that do not already include it
+  });
+
+  it('and what changes is a door that truly rests on the idea: sieve lights algebra, road brightens complex numbers', () => {
+    const changed = (before: string[], after: string[]) => PLANE_IDS.filter((p) => states(before)[p] !== states(after)[p]);
+    expect(changed([], ['df-prm'])).toEqual(['algebra-symmetry']);
+    expect(changed(['1arith'], ['1arith', 'df-prm'])).toEqual(['algebra-symmetry', 'complex-numbers']); // with 1arith already held, df-prm completes complex numbers' gate too
+    expect(changed([], ['1arith'])).toEqual(['complex-numbers']);
+    expect(changed(['df-prm'], ['df-prm', '1arith'])).toEqual(['complex-numbers']);
+    expect(states(['df-prm', '1arith'])['complex-numbers']).toBe('frontier');
+  });
 });
