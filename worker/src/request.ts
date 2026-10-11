@@ -13,6 +13,8 @@ export class RequestError extends Error {
 
 const KEYS = new Set(['schema_version', 'plane', 'stretch', 'moment', 'landmark', 'looking_at', 'earned', 'dialogue', 'utterance']);
 const LOOKING = /^[a-z]{2,12}:[A-Za-z0-9._-]{1,40}$/;
+/** A set.mm label. Earned ids are written into the system prompt, so they may be nothing else. */
+const LABEL = /^[A-Za-z0-9._-]{1,80}$/;
 export const MAX_TEXT = 600;
 export const MAX_TURNS = 12;
 const MAX_EARNED = 500;
@@ -62,7 +64,7 @@ export function parseTrurlRequest(raw: unknown, grounding: GroundingFile): Trurl
   const lookingAt = r.looking_at === null || r.looking_at === undefined ? null : r.looking_at;
   if (lookingAt !== null && (typeof lookingAt !== 'string' || !LOOKING.test(lookingAt))) return bad('looking_at is malformed');
 
-  if (!Array.isArray(r.earned) || r.earned.length > MAX_EARNED || !r.earned.every((x) => typeof x === 'string' && x.length > 0 && x.length <= 80)) return bad('earned is malformed');
+  if (!Array.isArray(r.earned) || r.earned.length > MAX_EARNED || !r.earned.every((x) => typeof x === 'string' && LABEL.test(x))) return bad('earned is malformed');
 
   if (!Array.isArray(r.dialogue)) return bad('dialogue must be a list');
   const turns: TrurlTurn[] = r.dialogue.map((t: unknown) => {

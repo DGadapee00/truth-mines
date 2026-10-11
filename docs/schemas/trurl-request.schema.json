@@ -13,7 +13,7 @@
     "moment": { "type": ["string", "null"], "minLength": 1 },
     "landmark": { "type": ["string", "null"], "minLength": 1 },
     "looking_at": { "type": ["string", "null"], "pattern": "^[a-z]{2,12}:[A-Za-z0-9._-]{1,40}$" },
-    "earned": { "type": "array", "maxItems": 500, "items": { "type": "string", "minLength": 1, "maxLength": 80 } },
+    "earned": { "type": "array", "maxItems": 500, "items": { "type": "string", "pattern": "^[A-Za-z0-9._-]{1,80}$" } },
     "dialogue": {
       "type": "array",
       "items": {
