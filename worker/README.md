@@ -18,6 +18,16 @@ The client chooses nothing about the model. The Worker fixes `claude-haiku-5-5`,
 the prompt (`src/trurl.ts`, `src/prompt.ts`), and builds Trurl's grounding from `data/grounding.json`,
 which the pipeline writes (`python -m pipeline grounding`) and `npm run grounding` copies here.
 
+## KV writes
+
+Cloudflare KV refuses a second write to a key within a second, and a free account has 1,000 writes a
+day. So: a rate-limit counter is written at most once a second (the requests between writes are
+counted in memory and go out with the next), a PUT to `/api/progress` that changes nothing writes
+nothing, and one within a second of the last write is answered `429` with `Retry-After`. The app sends
+one PUT per sync (it returns the merge, so no GET first), gathers changes (an earned idea after 1 s, a
+walked position after 15 s) and never sends two within a second. The tests use a fake KV that enforces
+the one-second rule and records every attempt.
+
 ## Tests
 
 ```sh

@@ -70,7 +70,7 @@ export function createHandler(deps: Deps): (req: Request, env: Env) => Promise<R
       return respond(fail(503, 'rate limiting is unavailable'));
     }
 
-    if (bucket === 'progress') return respond(await handleProgress(req, env));
+    if (bucket === 'progress') return respond(await handleProgress(req, env, deps.now));
     if (bucket === 'stt') return respond(await handleStt(req, env, deps.stt));
     return respond(await trurl(req, env, deps));
   };

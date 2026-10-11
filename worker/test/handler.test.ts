@@ -3,7 +3,8 @@ import { createHandler, type Deps } from '../src/handler';
 import { LIMITS } from '../src/ratelimit';
 import { stubFetch, readEvents, type Script } from './anthropic-stub';
 import { grounding, request } from './fixtures';
-import { FAKE_ANTHROPIC_KEY, FAKE_XAI_KEY, SECRET, makeEnv, req } from './helpers';
+import { FAKE_ANTHROPIC_KEY, FAKE_XAI_KEY, SECRET, StrictKV, makeEnv, req } from './helpers';
+import { earn, emptyProgress } from '../../core/progress';
 import { FakeSocket } from './fake-socket';
 
 function world(script: Script = { chunks: ['Hello.', '<verdict>{"earned":[]}</verdict>'] }) {
@@ -175,5 +176,45 @@ describe('/api/stt and /api/progress through the front door', () => {
     const body = { schema_version: 1, earned: ['1arith'], pathways: {}, updated_at: '2026-10-11T08:00:00Z' };
     expect((await w.handle(req('/api/progress', { method: 'PUT', body: JSON.stringify(body) }), w.env)).status).toBe(200);
     expect(await (await w.handle(req('/api/progress'), w.env)).json()).toEqual(body);
+  });
+});
+
+describe('writes to KV through the front door', () => {
+  const T = '2026-10-11T12:00:00Z';
+  const sync = (w: ReturnType<typeof world>, p: unknown) => w.handle(req('/api/progress', { method: 'PUT', body: JSON.stringify(p) }), w.env);
+
+  it('no key is written twice within a second, whatever the traffic, and no request fails for it', async () => {
+    const w = world({ chunks: ['Hi.', '<verdict>{"earned":[]}</verdict>'] });
+    const kv = new StrictKV(() => w.clock.t);
+    w.env.PROGRESS = kv;
+    const statuses: number[] = [];
+    // a minute of someone using it hard: a save every 300 ms and a Trurl question every 700 ms
+    for (let i = 0; i < 200; i++) {
+      w.clock.t += 300;
+      statuses.push((await sync(w, earn(emptyProgress(), [i % 2 ? '1arith' : 'df-prm'], T))).status);
+      if (i % 2 === 0) statuses.push((await w.handle(post('/api/trurl', request()), w.env)).status);
+    }
+    // a 429 is the Worker asking the client to wait; anything else would be KV refusing a write
+    expect(statuses.filter((s) => s !== 200 && s !== 429)).toEqual([]);
+    expect(kv.refused).toEqual([]); // the Worker never even tried
+    const byKey = new Map<string, number[]>();
+    for (const wr of kv.writes) byKey.set(wr.key, [...(byKey.get(wr.key) ?? []), wr.at]);
+    for (const [key, times] of byKey) for (let i = 1; i < times.length; i++) expect(times[i]! - times[i - 1]!, key).toBeGreaterThanOrEqual(1000);
+  });
+
+  it('a request that is only read, or only counted, makes at most one write: its counter', async () => {
+    const w = world();
+    const kv = new StrictKV(() => w.clock.t);
+    w.env.PROGRESS = kv;
+    await w.handle(req('/api/progress'), w.env);
+    expect(kv.writes.map((x) => x.key)).toEqual([expect.stringMatching(/^rl:progress:/)]);
+  });
+
+  it('one sync from a new device is one write to the record plus one to the counter', async () => {
+    const w = world();
+    const kv = new StrictKV(() => w.clock.t);
+    w.env.PROGRESS = kv;
+    expect((await sync(w, earn(emptyProgress(), ['1arith'], T))).status).toBe(200);
+    expect(kv.writes.map((x) => x.key.replace(/\d+$/, '#')).sort()).toEqual(['progress', 'rl:progress:#']);
   });
 });
