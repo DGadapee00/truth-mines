@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://truth-mines/schemas/cathedral.schema.json",
+  "title": "cathedral.json",
+  "description": "Built by pipeline/cathedral.py. Mirrors core/schema.ts (CathedralFile). Doors carry no state: states are computed in core/doors.ts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "conventions", "arcs", "hall", "arrival", "doors", "threshold", "vault"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "conventions": { "type": "object", "additionalProperties": { "type": "string" } },
+    "arcs": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "placement", "centre_deg", "planes"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "placement": { "enum": ["far-wall", "left", "right", "entrance"] },
+          "centre_deg": { "type": "integer", "minimum": -180, "maximum": 180 },
+          "planes": { "type": "array", "minItems": 3, "maxItems": 3, "items": { "$ref": "#/$defs/plane" } }
+        }
+      }
+    },
+    "hall": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["radius", "wall_height", "door", "slots"],
+      "properties": {
+        "radius": { "type": "number", "exclusiveMinimum": 0 },
+        "wall_height": { "type": "number", "exclusiveMinimum": 0 },
+        "door": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["width", "height"],
+          "properties": { "width": { "type": "number" }, "height": { "type": "number" } }
+        },
+        "slots": { "const": 12 }
+      }
+    },
+    "arrival": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pos", "yaw", "dais_radius"],
+      "properties": { "pos": { "$ref": "#/$defs/vec3" }, "yaw": { "type": "number" }, "dais_radius": { "type": "number", "exclusiveMinimum": 0 } }
+    },
+    "doors": {
+      "type": "array",
+      "minItems": 12,
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["plane", "name", "arc", "slot", "bearing_deg", "pos", "yaw", "pedestal", "preview"],
+        "properties": {
+          "plane": { "$ref": "#/$defs/plane" },
+          "name": { "type": "string" },
+          "arc": { "type": "string" },
+          "slot": { "type": "integer", "minimum": 0, "maximum": 11 },
+          "bearing_deg": { "type": "integer", "exclusiveMinimum": -180, "maximum": 180 },
+          "pos": { "$ref": "#/$defs/vec3" },
+          "yaw": { "type": "number", "exclusiveMinimum": -3.14160, "maximum": 3.14160 },
+          "pedestal": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["pos", "radius", "height", "preview_pos"],
+            "properties": {
+              "pos": { "$ref": "#/$defs/vec3" },
+              "radius": { "type": "number" },
+              "height": { "type": "number" },
+              "preview_pos": { "$ref": "#/$defs/vec3" }
+            }
+          },
+          "preview": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "params"],
+            "properties": {
+              "id": { "enum": ["prime-stacks", "limit-curve", "torus-cup", "ring-motif"] },
+              "params": { "type": "object" }
+            }
+          }
+        }
+      }
+    },
+    "threshold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["motif", "rings", "path", "speed", "duration_s"],
+      "properties": {
+        "motif": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "depth", "triangles"],
+          "properties": {
+            "kind": { "const": "sierpinski" },
+            "depth": { "type": "integer", "minimum": 0 },
+            "triangles": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "minItems": 3,
+                "maxItems": 3,
+                "items": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" } }
+              }
+            }
+          }
+        },
+        "rings": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["k", "scale", "radius", "rotation", "pos", "pitch"],
+            "properties": {
+              "k": { "type": "integer", "minimum": 0 },
+              "scale": { "type": "number", "exclusiveMinimum": 0 },
+              "radius": { "type": "number", "exclusiveMinimum": 0 },
+              "rotation": { "type": "number" },
+              "pos": { "$ref": "#/$defs/vec3" },
+              "pitch": { "type": "number" }
+            }
+          }
+        },
+        "path": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/vec3" } },
+        "speed": { "type": "number", "exclusiveMinimum": 0 },
+        "duration_s": { "type": "number", "minimum": 20, "maximum": 30 }
+      }
+    },
+    "vault": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tiers", "ratio", "limit_y"],
+      "properties": {
+        "tiers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["i", "radius", "y", "sides", "rotation"],
+            "properties": {
+              "i": { "type": "integer", "minimum": 0 },
+              "radius": { "type": "number", "exclusiveMinimum": 0 },
+              "y": { "type": "number" },
+              "sides": { "type": "integer", "minimum": 3 },
+              "rotation": { "type": "number" }
+            }
+          }
+        },
+        "ratio": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1 },
+        "limit_y": { "type": "number" }
+      }
+    }
+  },
+  "$defs": {
+    "plane": {
+      "enum": [
+        "logic", "sets", "infinity",
+        "number-theory", "combinatorics", "graph-theory",
+        "algebra-symmetry", "linear-algebra", "complex-numbers",
+        "geometry", "topology", "calculus-analysis"
+      ]
+    },
+    "vec3": { "type": "array", "minItems": 3, "maxItems": 3, "items": { "type": "number" } }
+  }
+}

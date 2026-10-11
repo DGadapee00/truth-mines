@@ -203,3 +203,137 @@ number_theory_plane:
       text: "After {small_primes}, striking anything else knocks nothing down: every composite up to {limit} has a prime factor no larger than {bound}, the square root of {limit}. The {survivors} that survive are the primes."
     - id: overlook
       text: "Past {limit} the road is drawn on a logarithmic scale out to {x_max}. Each patch of lights shows which of {window_span} consecutive whole numbers are prime. The curves count the primes up to x, written π(x), and compare it with x / ln x. At x = {x_max} there are {pi_max} primes against an estimate of about {est_max}: a ratio of {ratio_max}, still slowly falling toward 1."
+
+# The cathedral prototype (pipeline/cathedral.py -> data/cathedral.json, pipeline/pathways.py ->
+# data/pathways.json). Layout lives here and in the code; the app only renders it (CLAUDE.md rule 9).
+# Yaw about +Y, heading(yaw) = (sin yaw, 0, cos yaw); a door's bearing b is the yaw of the
+# direction from the hall centre to the door, so the far wall is 0, the left side is +90 (+X),
+# the right side -90 and the entrance wall 180.
+cathedral:
+  hall:
+    radius: 24 # metres from the centre to the doors
+    wall_height: 14
+    door: { width: 3.6, height: 6.5 }
+    pedestal: { inset: 5, radius: 0.6, height: 1.1, preview_lift: 0.9 }
+  # The visitor rises through the floor into the centre of the hall and faces the far wall.
+  # Four arcs of three doors use all twelve 30-degree slots, so no slot is free for a wall entrance.
+  arrival: { dais_radius: 2.2 }
+  slot_step_deg: 30
+  # Each arc's doors sit at its centre bearing +30, 0 and -30 degrees: the first plane is leftmost
+  # as the visitor looks at that arc from the middle of the hall.
+  arcs:
+    - { id: foundations, name: Foundations, placement: far-wall, centre_deg: 0 }
+    - { id: discrete, name: Discrete, placement: left, centre_deg: 90 }
+    - { id: structure, name: Structure, placement: right, centre_deg: -90 }
+    - { id: space-change, name: Space and change, placement: entrance, centre_deg: 180 }
+  planes:
+    - { id: logic, name: Logic, arc: foundations, order: 0, preview: ring-motif }
+    - { id: sets, name: Sets, arc: foundations, order: 1, preview: ring-motif }
+    - { id: infinity, name: Infinity, arc: foundations, order: 2, preview: ring-motif }
+    - { id: number-theory, name: Number theory, arc: discrete, order: 0, preview: prime-stacks }
+    - { id: combinatorics, name: Combinatorics, arc: discrete, order: 1, preview: ring-motif }
+    - { id: graph-theory, name: Graph theory, arc: discrete, order: 2, preview: ring-motif }
+    - { id: algebra-symmetry, name: Algebra and symmetry, arc: structure, order: 0, preview: ring-motif }
+    - { id: linear-algebra, name: Linear algebra, arc: structure, order: 1, preview: ring-motif }
+    - { id: complex-numbers, name: Complex numbers, arc: structure, order: 2, preview: ring-motif }
+    - { id: geometry, name: Geometry, arc: space-change, order: 0, preview: ring-motif }
+    - { id: topology, name: Topology, arc: space-change, order: 1, preview: torus-cup }
+    - { id: calculus-analysis, name: Calculus and analysis, arc: space-change, order: 2, preview: limit-curve }
+  # Living previews on the pedestals. Only prime-stacks is drawn in the prototype.
+  previews:
+    prime-stacks:
+      numbers: [6, 8, 12, 18, 24, 30] # towers; their blocks are the prime factors, computed
+      block: 0.12 # metres per block
+      ring_radius: 0.4 # towers stand on a circle this big
+      period_s: 9 # one assembling cycle
+      stagger_s: 0.6 # between one tower starting and the next
+    limit-curve:
+      samples: 48
+      t_max: 12 # the curve y = 1 - 1/(1 + t) creeps toward the line y = 1
+      width: 0.9
+      height: 0.6
+    torus-cup:
+      torus: { major: 0.3, minor: 0.12 }
+      steps: 5
+    ring-motif:
+      rings: 5
+      min_sides: 3 # sides = min_sides + slot mod 6
+  # The fractal threshold: a tunnel of rings, each a Sierpinski triangle drawn at a constant
+  # fraction of the one before, rotated a little more each time, closing round the visitor.
+  threshold:
+    motif_depth: 3
+    rings: 48
+    start_radius: 6.0
+    end_radius: 1.8
+    rotation_deg: 7.5
+    straight: 34 # metres along +Z beneath the floor
+    rise: 6 # metres: a quarter circle up through the dais
+    path_step: 1 # metres between points of the rails path
+    speed: 1.6 # metres per second, the visitor's drift
+  # The vault: twelve-sided rings above the wall, each a golden-ratio smaller than the last.
+  vault:
+    tiers: 7
+    ratio: 0.618
+    sides: 12
+    rotation_deg: 15
+    rise_per_tier: 0.5 # of the hall radius, shrinking by the ratio each tier
+
+  # The pathway behind each door (pipeline/pathways.py). `entry_requires` are set.mm ids that must
+  # all be earned for the door to glow; a door with none starts as frontier, and in the prototype
+  # that is number theory only. Gates for planes without a stretch yet are placeholders (marked)
+  # until those planes are built; each id must exist in the graph or the build fails.
+  # `rubric` is a draft of what a good explanation says, used only by Trurl's judge, never shown.
+  pathways:
+    - plane: logic
+      entry_requires: [ax-mp] # placeholder
+      stretches: []
+    - plane: sets
+      entry_requires: [ax-ext] # placeholder
+      stretches: []
+    - plane: infinity
+      entry_requires: [ax-inf] # placeholder
+      stretches: []
+    - plane: number-theory
+      entry_requires: []
+      stretches:
+        - id: nt-1
+          plane_data: plane-number-theory.json
+          landmarks: [df-prm, 1arith]
+          moments:
+            - id: nt-1-road
+              kind: road
+              earns: [1arith]
+              rubric: >-
+                The visitor says that every whole number above 1 splits into primes in exactly one
+                way, apart from the order, and can point at a number such as 12 or 60 to show it.
+            - id: nt-1-sieve
+              kind: sieve
+              earns: [df-prm]
+              rubric: >-
+                The visitor says that a prime is a number whose only divisors are 1 and itself, and
+                that after striking 2, 3, 5 and 7 nothing else falls because every composite up to
+                100 has a prime factor of at most 10, which is the square root of 100.
+    - plane: combinatorics
+      entry_requires: [ramsey] # placeholder
+      stretches: []
+    - plane: graph-theory
+      entry_requires: [konigsberg] # placeholder
+      stretches: []
+    - plane: algebra-symmetry
+      entry_requires: [1arith] # dirith rests on both 1arith and ablfac, so this pathway meets number theory
+      stretches: []
+    - plane: linear-algebra
+      entry_requires: [df-lmod] # placeholder
+      stretches: []
+    - plane: complex-numbers
+      entry_requires: [efipi] # placeholder
+      stretches: []
+    - plane: geometry
+      entry_requires: [df-trkg] # placeholder
+      stretches: []
+    - plane: topology
+      entry_requires: [bwth] # placeholder
+      stretches: []
+    - plane: calculus-analysis
+      entry_requires: [evth] # placeholder
+      stretches: []

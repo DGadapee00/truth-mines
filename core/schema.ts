@@ -402,3 +402,180 @@ export function parsePlane(raw: unknown): PlaneFile {
   for (const s of ov.samples) if (!(s.x > 0) || !isVec3(s.at) || !isVec3(s.pi_at) || !isVec3(s.est_at) || !isVec3(s.ratio_at) || !isVec3(s.sign_at) || !Number.isFinite(s.s)) throw new SchemaError(`plane overlook sample ${String(s?.x)}`);
   return p as PlaneFile;
 }
+
+// ---------------------------------------------------------------- cathedral.json and pathways.json
+//
+// Written by pipeline/cathedral.py and pipeline/pathways.py; JSON Schema for both lives in
+// docs/schemas/. Doors carry no state: core/doors.ts computes it from what has been earned.
+
+export const CATHEDRAL_SCHEMA_VERSION = 1;
+export const PATHWAYS_SCHEMA_VERSION = 1;
+
+export const PLANE_IDS = [
+  'logic',
+  'sets',
+  'infinity',
+  'number-theory',
+  'combinatorics',
+  'graph-theory',
+  'algebra-symmetry',
+  'linear-algebra',
+  'complex-numbers',
+  'geometry',
+  'topology',
+  'calculus-analysis',
+] as const;
+export type PlaneId = (typeof PLANE_IDS)[number];
+
+export type PreviewId = 'prime-stacks' | 'limit-curve' | 'torus-cup' | 'ring-motif';
+const PREVIEW_IDS: readonly string[] = ['prime-stacks', 'limit-curve', 'torus-cup', 'ring-motif'];
+const PLACEMENTS: readonly string[] = ['far-wall', 'left', 'right', 'entrance'];
+
+export interface CathedralArc {
+  id: string;
+  name: string;
+  placement: 'far-wall' | 'left' | 'right' | 'entrance';
+  centre_deg: number;
+  /** Plane ids, leftmost first as seen from the middle of the hall */
+  planes: PlaneId[];
+}
+
+export interface CathedralDoor {
+  plane: PlaneId;
+  name: string;
+  arc: string;
+  /** 0..11, one per 30 degrees from the far wall, counted toward the left */
+  slot: number;
+  bearing_deg: number;
+  pos: Vec3;
+  /** The way the door faces: toward the hall centre */
+  yaw: number;
+  pedestal: { pos: Vec3; radius: number; height: number; preview_pos: Vec3 };
+  preview: { id: PreviewId; params: Record<string, unknown> };
+}
+
+export interface ThresholdRing {
+  k: number;
+  scale: number;
+  radius: number;
+  rotation: number;
+  pos: Vec3;
+  /** Elevation of the path where the ring stands: the ring faces along the path */
+  pitch: number;
+}
+
+export interface CathedralFile {
+  schema_version: number;
+  conventions: Record<string, string>;
+  arcs: CathedralArc[];
+  hall: { radius: number; wall_height: number; door: { width: number; height: number }; slots: number };
+  arrival: { pos: Vec3; yaw: number; dais_radius: number };
+  doors: CathedralDoor[];
+  threshold: {
+    motif: { kind: 'sierpinski'; depth: number; triangles: [number, number][][] };
+    rings: ThresholdRing[];
+    /** The rails path the visitor drifts along, in order, ending at the arrival dais */
+    path: Vec3[];
+    speed: number;
+    duration_s: number;
+  };
+  vault: { tiers: { i: number; radius: number; y: number; sides: number; rotation: number }[]; ratio: number; limit_y: number };
+}
+
+export type MomentKind = 'road' | 'sieve' | 'overlook';
+
+export interface PathwayMoment {
+  id: string;
+  kind: MomentKind;
+  /** set.mm ids this moment can grant when the visitor explains it to Trurl */
+  earns: string[];
+}
+
+export interface PathwayStretch {
+  id: string;
+  /** The plane file this stretch draws, next to the other data files */
+  plane_data: string;
+  landmarks: string[];
+  moments: PathwayMoment[];
+}
+
+export interface Pathway {
+  plane: PlaneId;
+  /** set.mm ids that must all be earned before the door can be a frontier door */
+  entry_requires: string[];
+  stretches: PathwayStretch[];
+}
+
+export interface PathwaysFile {
+  schema_version: number;
+  pathways: Pathway[];
+}
+
+const isStringArray = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === 'string' && x.length > 0);
+const isPlaneId = (v: unknown): v is PlaneId => (PLANE_IDS as readonly string[]).includes(v as string);
+
+/** Check a parsed cathedral.json before anything draws it. Throws SchemaError. */
+export function parseCathedral(raw: unknown): CathedralFile {
+  const c = raw as Partial<CathedralFile> | null;
+  if (!c || typeof c !== 'object') throw new SchemaError('cathedral.json is not an object');
+  if (c.schema_version !== CATHEDRAL_SCHEMA_VERSION) {
+    throw new SchemaError(`cathedral.json has schema version ${String(c.schema_version)}; this app reads ${CATHEDRAL_SCHEMA_VERSION}`);
+  }
+  if (!Array.isArray(c.arcs) || c.arcs.length !== 4) throw new SchemaError('cathedral: arcs');
+  for (const a of c.arcs) {
+    if (typeof a.id !== 'string' || !PLACEMENTS.includes(a.placement) || !Number.isInteger(a.centre_deg) || !Array.isArray(a.planes) || a.planes.length !== 3 || !a.planes.every(isPlaneId)) {
+      throw new SchemaError(`cathedral arc ${String(a?.id)}`);
+    }
+  }
+  const h = c.hall;
+  if (!h || !(h.radius > 0) || !(h.wall_height > 0) || h.slots !== 12 || !(h.door?.width > 0) || !(h.door?.height > 0)) throw new SchemaError('cathedral: hall');
+  if (!c.arrival || !isVec3(c.arrival.pos) || !Number.isFinite(c.arrival.yaw) || !(c.arrival.dais_radius > 0)) throw new SchemaError('cathedral: arrival');
+  if (!Array.isArray(c.doors) || c.doors.length !== 12) throw new SchemaError('cathedral: there must be twelve doors');
+  const seen = new Set<string>();
+  for (const d of c.doors) {
+    const w = `cathedral door ${String(d?.plane)}`;
+    if (!isPlaneId(d.plane) || seen.has(d.plane)) throw new SchemaError(`${w}: plane`);
+    seen.add(d.plane);
+    if (!Number.isInteger(d.slot) || d.slot < 0 || d.slot > 11 || !Number.isInteger(d.bearing_deg)) throw new SchemaError(`${w}: slot`);
+    if (!isVec3(d.pos) || !Number.isFinite(d.yaw)) throw new SchemaError(`${w}: pos`);
+    if (!d.pedestal || !isVec3(d.pedestal.pos) || !isVec3(d.pedestal.preview_pos) || !(d.pedestal.radius > 0) || !(d.pedestal.height > 0)) throw new SchemaError(`${w}: pedestal`);
+    if (!d.preview || !PREVIEW_IDS.includes(d.preview.id) || typeof d.preview.params !== 'object') throw new SchemaError(`${w}: preview`);
+    if (!c.arcs.some((a) => a.id === d.arc && a.planes.includes(d.plane))) throw new SchemaError(`${w}: arc`);
+  }
+  if (new Set(c.doors.map((d) => d.slot)).size !== 12) throw new SchemaError('cathedral: two doors share a slot');
+  const t = c.threshold;
+  if (!t || !Array.isArray(t.rings) || t.rings.length < 2 || !Array.isArray(t.path) || t.path.length < 2 || !t.path.every(isVec3)) throw new SchemaError('cathedral: threshold');
+  if (!(t.speed > 0) || !(t.duration_s > 0) || t.motif?.kind !== 'sierpinski' || !Array.isArray(t.motif.triangles)) throw new SchemaError('cathedral: threshold motif or speed');
+  for (const r of t.rings) if (!Number.isInteger(r.k) || !(r.scale > 0) || !(r.radius > 0) || !Number.isFinite(r.rotation) || !isVec3(r.pos) || !Number.isFinite(r.pitch)) throw new SchemaError(`cathedral threshold ring ${String(r?.k)}`);
+  if (!c.vault || !Array.isArray(c.vault.tiers) || c.vault.tiers.length < 1 || !(c.vault.ratio > 0 && c.vault.ratio < 1)) throw new SchemaError('cathedral: vault');
+  return c as CathedralFile;
+}
+
+/** Check a parsed pathways.json before anything uses it. Throws SchemaError. */
+export function parsePathways(raw: unknown): PathwaysFile {
+  const p = raw as Partial<PathwaysFile> | null;
+  if (!p || typeof p !== 'object') throw new SchemaError('pathways.json is not an object');
+  if (p.schema_version !== PATHWAYS_SCHEMA_VERSION) {
+    throw new SchemaError(`pathways.json has schema version ${String(p.schema_version)}; this app reads ${PATHWAYS_SCHEMA_VERSION}`);
+  }
+  if (!Array.isArray(p.pathways) || p.pathways.length !== 12) throw new SchemaError('pathways: there must be twelve');
+  const planes = new Set<string>();
+  const ids = new Set<string>();
+  for (const w of p.pathways) {
+    const where = `pathway ${String(w?.plane)}`;
+    if (!isPlaneId(w.plane) || planes.has(w.plane)) throw new SchemaError(`${where}: plane`);
+    planes.add(w.plane);
+    if (!isStringArray(w.entry_requires) || !Array.isArray(w.stretches)) throw new SchemaError(`${where}: entry_requires or stretches`);
+    for (const s of w.stretches) {
+      if (typeof s.id !== 'string' || !s.id || typeof s.plane_data !== 'string' || !isStringArray(s.landmarks) || s.landmarks.length < 1 || !Array.isArray(s.moments)) throw new SchemaError(`${where}: stretch ${String(s?.id)}`);
+      if (ids.has(s.id)) throw new SchemaError(`${where}: stretch id ${s.id} repeats`);
+      ids.add(s.id);
+      for (const m of s.moments) {
+        if (typeof m.id !== 'string' || !m.id || ids.has(m.id) || !['road', 'sieve', 'overlook'].includes(m.kind) || !isStringArray(m.earns) || m.earns.length < 1) throw new SchemaError(`${where}: moment ${String(m?.id)}`);
+        ids.add(m.id);
+        if (!m.earns.every((e) => s.landmarks.includes(e))) throw new SchemaError(`${where}: moment ${m.id} earns a landmark outside its stretch`);
+      }
+    }
+  }
+  return p as PathwaysFile;
+}

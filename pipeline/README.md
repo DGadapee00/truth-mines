@@ -16,6 +16,8 @@ stage reads the previous stage's file in `pipeline/build/` and can be rerun alon
 | export | all of the above | `data/` | graph.json, meta.json, reviewed notes, the label font |
 | scene | curate, collapse, depth | `data/scene.json` | The Inside view's chambers, tunnels, markers: engine-neutral descriptors |
 | plane | `config.yaml` (needs no set.mm) | `data/plane-number-theory.json` | The number theory plane: road, stacks, threads, hues, sieve plaza, overlook |
+| cathedral | `config.yaml` (needs no set.mm) | `data/cathedral.json` | The hub: hall, twelve doors with pedestals and previews, the fractal threshold, the vault |
+| pathways | `config.yaml`, curate | `data/pathways.json` | The route behind each door: entry requirements, stretches, moments; every id checked against the landmarks |
 
 `python -m pipeline show LABEL` prints a statement and set.mm's own description of it. Read it
 before naming a landmark.
@@ -48,3 +50,10 @@ Tests: `python -m pytest -q pipeline/tests` (a small hand-written .mm file cover
 - **Tunnels are checked twice.** tests/test_tunnels.py recomputes every tunnel and its
   feeding_lemmas from both ends of the full graph, and checks each chain is a real citation path
   no longer than the depth difference allows, independently of collapse.py.
+- **The cathedral** (pipeline/cathedral.py) puts twelve doors on a circle at 30-degree slots from the
+  far wall; the visitor rises through the floor at the centre (four arcs of three use all twelve
+  slots, so no slot is left for a wall entrance). Doors carry no state: `core/doors.ts` computes
+  frontier, dim or sealed from what has been earned and from `pathways.json`.
+- **Pathways** (pipeline/pathways.py) validate the curation in `config.yaml` (`cathedral.pathways`)
+  against the landmarks: an unknown id, a moment that earns outside its stretch, or a door without a
+  pathway fails the build. Gates for planes with no stretch yet are marked placeholders.

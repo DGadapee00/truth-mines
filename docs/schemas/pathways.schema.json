@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://truth-mines/schemas/pathways.schema.json",
+  "title": "pathways.json",
+  "description": "Built by pipeline/pathways.py. Mirrors core/schema.ts (PathwaysFile). Every id is a set.mm label that exists in graph.json (checked by the build and by core/tests/data.test.ts). Rubrics are not here: they are Trurl's private judging notes, in grounding.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "pathways"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "pathways": {
+      "type": "array",
+      "minItems": 12,
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["plane", "entry_requires", "stretches"],
+        "properties": {
+          "plane": { "type": "string" },
+          "entry_requires": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+          "stretches": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "plane_data", "landmarks", "moments"],
+              "properties": {
+                "id": { "type": "string", "minLength": 1 },
+                "plane_data": { "type": "string", "pattern": "^[a-z0-9-]+\\.json$" },
+                "landmarks": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+                "moments": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["id", "kind", "earns"],
+                    "properties": {
+                      "id": { "type": "string", "minLength": 1 },
+                      "kind": { "enum": ["road", "sieve", "overlook"] },
+                      "earns": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
