@@ -95,6 +95,9 @@ export async function open(page: Page, opts: { seen?: boolean } = {}): Promise<v
 /** What the app's debug() reports (cathedral/src/app.ts). Written out here so this suite does not compile the app against the root's older three typings. */
 export interface Debug {
   phase: 'gate' | 'ready' | 'threshold' | 'cathedral' | 'plane';
+  xr: boolean;
+  rigYaw: number;
+  xrPanel: { visible: boolean; place: string; caption: string; hint: string } | null;
   states: Record<string, 'frontier' | 'dim' | 'sealed'>;
   earned: string[];
   sync: 'local' | 'synced' | 'syncing' | 'offline' | 'unauthorized';

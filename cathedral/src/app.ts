@@ -679,7 +679,7 @@ export class CathedralApp {
 
   private doorSentence(d: CathedralDoor): string {
     const state = this.states[d.plane] ?? 'sealed';
-    if (state === 'frontier') return `${d.name}: open. Click, or press Enter, to go through.`;
+    if (state === 'frontier') return `${d.name}: open. ${this.xr() ? 'Pull the trigger' : 'Click, or press Enter,'} to go through.`;
     if (state === 'dim') return `${d.name}: dim. It rests on ideas you have not reached yet.`;
     return `${d.name}: sealed. It lies far beyond your map.`;
   }
@@ -777,11 +777,20 @@ export class CathedralApp {
 
   // ---------------------------------------------------------------- for tests
 
+  /** The rig's heading about +Y, read from its quaternion (Euler y flips once a turn passes 90 degrees). */
+  private rigHeading(): number {
+    const q = this.world.player.quaternion;
+    return Math.atan2(2 * (q.x * q.z + q.w * q.y), 1 - 2 * (q.x * q.x + q.y * q.y));
+  }
+
   /** A read-only view of the app and a few levers for the end-to-end tests. */
   debug() {
     const p = this.world.player.position;
     return {
       phase: this.flow.phase(),
+      xr: this.xr(),
+      rigYaw: this.rigHeading(),
+      xrPanel: this.xrPanel?.snapshot() ?? null,
       states: { ...this.states },
       earned: [...this.store.get().earned],
       sync: this.store.syncStatus(),

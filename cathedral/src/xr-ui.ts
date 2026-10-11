@@ -34,6 +34,11 @@ export class XrPanel {
     if (this.shown.hint !== t.hint) this.hint?.setProperties({ text: (this.shown.hint = t.hint) });
   }
 
+  /** What the panel shows, for tests */
+  snapshot(): { visible: boolean; place: string; caption: string; hint: string } {
+    return { visible: this.panel.visible, ...this.shown };
+  }
+
   setVisible(on: boolean): void {
     this.panel.visible = on;
   }

@@ -16,13 +16,13 @@ export default defineConfig({
   projects: [
     // XR runs only after the other WebGL tests have released SwiftShader. It passes alone and
     // fails when a parallel laptop test keeps the software GPU from producing a frame in time.
-    { name: 'laptop', testIgnore: /(xr|cathedral)\.spec\.ts/, use: { ...devices['Desktop Chrome'], viewport: { width: 1400, height: 860 } } },
+    { name: 'laptop', testIgnore: /(xr|cathedral[\w-]*)\.spec\.ts/, use: { ...devices['Desktop Chrome'], viewport: { width: 1400, height: 860 } } },
     // The phone covers the map; the Inside view and the headset are desktop and XR modes.
     { name: 'phone', use: { ...devices['Pixel 7'] }, testMatch: /mine\.spec\.ts/ },
     // The cathedral prototype (cathedral/, an IWSDK app): desktop mode, with a mocked Worker.
     {
       name: 'cathedral',
-      testMatch: /cathedral\.spec\.ts/,
+      testMatch: /cathedral[\w-]*\.spec\.ts/,
       timeout: 180_000,
       use: {
         ...devices['Desktop Chrome'],

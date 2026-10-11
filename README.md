@@ -24,6 +24,11 @@ Three ways to look:
   header or `#/plane/number-theory`; desktop and headset. The brief is
   [docs/plane-number-theory.md](docs/plane-number-theory.md).
 
+- **The cathedral** (prototype, branch `prototype/cathedral`): a WebXR app in `cathedral/`. A
+  threshold you drift down onto the dais of a round hall with twelve doors (lit, dim or sealed by what
+  you have understood), the number theory stretch behind one of them, and Trurl, a voice you talk to,
+  answering in captions. See [cathedral/README.md](cathedral/README.md).
+
 ## Run it
 
 ```bash
@@ -47,6 +52,8 @@ runs.
 | `npm test` | core/ queries, and every landmark's ancestors against the full set.mm graph; every statement typesets |
 | `npm run typecheck`, `npm run lint` | TypeScript strict; core/ imports no rendering code |
 | `npm run check` | typecheck, lint, unit tests, pipeline tests, and the map e2e. The fast local gate |
+| `npm run test:worker`, `npm run test:cathedral` | The Worker's tests (mocked Claude and xAI) and the cathedral app's unit tests |
+| `npm run secrets` | No provider key or app secret in the repo or in a client build |
 | `npm run e2e` | Full Playwright suite, which CI runs: the map on laptop and phone; the Inside view; the headset on an emulated Quest 3 |
 
 ## Layout of the code
@@ -59,6 +66,8 @@ runs.
 | `core/` | TypeScript graph model and queries (ancestors, descendants, critical path, search), the sieve's rules, door states (`doors.ts`), progress merge (`progress.ts`), and the schema of every data file. No rendering |
 | `pipeline/scene.py` | The Inside view's chambers and tunnels, as engine-neutral scene descriptors (data/scene.json) |
 | `pipeline/numtheory.py`, `pipeline/plane_nt.py` | The number theory plane: arithmetic (tested against trial division) and its descriptors (data/plane-number-theory.json) |
+| `cathedral/` | The IWSDK app for the cathedral prototype: threshold, hall, doors, number theory stretch, Trurl, push-to-talk, progress. Its own package ([README](cathedral/README.md)) |
+| `pipeline/cathedral.py`, `pathways.py`, `grounding.py` | The cathedral's layout (data/cathedral.json), the pathways and their gates (data/pathways.json) and Trurl's grounding (data/grounding.json) |
 | `app/inside/` | The Inside view: renders the descriptors for the local subgraph; desktop walking, Journey, headset |
 | `app/plane/` | The number theory plane: draws and animates its descriptors; walking, focus, the sieve, stops, headset |
 | `app/render/` | The mine in three.js: instanced nodes and tunnels, batched labels, MathJax |
