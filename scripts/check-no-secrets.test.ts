@@ -55,6 +55,19 @@ describe('secret scan', () => {
     expect(scanText('fetch(workerUrl + "/api/trurl", {headers: {Authorization: "Bearer " + localStorage.getItem("secret")}})', 'dist/a.js', rules)).toEqual([]);
   });
 
+  it('finds a client build from where the command was run, so `--client dist` in cathedral/ scans cathedral/dist', () => {
+    const root = new URL('..', import.meta.url).pathname;
+    const app = tree({ 'dist/assets/index.js': `const k = "${anthropicKey}";` });
+    const found = check(root, ['dist'], app) as Finding[];
+    expect(found.map((f) => f.file.endsWith('dist/assets/index.js'))).toEqual([true]);
+  });
+
+  it('refuses a client build that is not there, naming it, rather than passing or crashing', () => {
+    const root = new URL('..', import.meta.url).pathname;
+    const empty = tree({ 'a.txt': 'hello' });
+    expect(() => check(root, ['dist'], empty)).toThrow(/no client build at .*dist/);
+  });
+
   it('this repository is clean', () => {
     const root = new URL('..', import.meta.url).pathname;
     expect(check(root)).toEqual([]);

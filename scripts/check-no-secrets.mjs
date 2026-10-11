@@ -3,12 +3,14 @@
 //   node scripts/check-no-secrets.mjs                  scan every tracked file
 //   node scripts/check-no-secrets.mjs --client dist    also scan a client build directory, where
 //                                                      the provider key names and hosts may not
-//                                                      appear at all: the client only talks to the Worker
+//                                                      appear at all: the client only talks to the Worker.
+//                                                      The directory is taken from where the command was
+//                                                      run (from the repo root: --client cathedral/dist)
 //
 // Findings name the rule and the place, never the secret itself.
 import { execFileSync } from 'node:child_process';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const KEY_SHAPES = [
@@ -69,9 +71,14 @@ export function trackedFiles(root) {
     .map((f) => join(root, f));
 }
 
-export function check(root, clientDirs = []) {
+/** Scan the tracked files of `root`, and each client build in `clientDirs`, found from `base` (where the command was run). */
+export function check(root, clientDirs = [], base = root) {
   const found = scanFiles(root, trackedFiles(root), KEY_SHAPES);
-  for (const d of clientDirs) found.push(...scanFiles(root, walk(join(root, d)), [...KEY_SHAPES, ...CLIENT_FORBIDDEN]));
+  for (const d of clientDirs) {
+    const dir = resolve(base, d);
+    if (!existsSync(dir) || !statSync(dir).isDirectory()) throw new Error(`no client build at ${dir}; build it first`);
+    found.push(...scanFiles(root, walk(dir), [...KEY_SHAPES, ...CLIENT_FORBIDDEN]));
+  }
   return found;
 }
 
@@ -82,7 +89,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   const dirs = [];
   for (let i = 0; i < args.length; i++) if (args[i] === '--client' && args[i + 1]) dirs.push(args[++i]);
-  const found = check(root, dirs);
+  let found;
+  try {
+    found = check(root, dirs, process.env.INIT_CWD ?? process.cwd());
+  } catch (e) {
+    console.error(`secret scan: ${e.message}`);
+    process.exit(1);
+  }
   for (const f of found) console.error(`secret scan: ${f.file}${f.line ? `:${f.line}` : ''}: ${f.rule}`);
   if (found.length) process.exit(1);
   console.log(`secret scan: clean (${dirs.length ? `repo and ${dirs.join(', ')}` : 'repo'})`);
