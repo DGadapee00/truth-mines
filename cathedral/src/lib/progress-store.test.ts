@@ -50,6 +50,27 @@ function setup(api: ProgressApi | null, mem = new Mem()) {
 }
 
 describe('the progress store', () => {
+  it('recording the same place again changes nothing and sends nothing, so standing still in a plane costs no writes', async () => {
+    const { api, calls } = fakeApi();
+    const { store } = setup(api);
+    await store.sync();
+    store.resume('number-theory', 'nt-1', { pos: [1, 0, 2], yaw: 0.5 });
+    await store.settled();
+    const saved = store.get();
+    const before = calls.length;
+    let published = 0;
+    store.subscribe(() => published++);
+    for (let i = 0; i < 5; i++) store.resume('number-theory', 'nt-1', { pos: [1, 0, 2], yaw: 0.5 });
+    await store.settled();
+    expect(calls.length).toBe(before);
+    expect(published).toBe(0);
+    expect(store.get()).toEqual(saved);
+    store.resume('number-theory', 'nt-1', { pos: [1, 0, 2.5], yaw: 0.5 });
+    await store.settled();
+    expect(calls.length).toBeGreaterThan(before);
+    expect(store.get().pathways['number-theory']?.resume.pos).toEqual([1, 0, 2.5]);
+  });
+
   it('starts from the device cache at once, before any network', () => {
     const mem = new Mem();
     createDeviceStore(() => mem).progress.write(earn(emptyProgress(), ['1arith'], T(1)));

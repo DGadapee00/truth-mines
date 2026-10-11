@@ -95,7 +95,10 @@ export function createProgressStore(deps: { device: DeviceStore; api: ProgressAp
       publish();
       void queue();
     },
+    /** Record where the visitor stands in a plane. The same place again is not a change: nothing is saved or sent. */
     resume(plane: string, stretch: string, r: Resume): void {
+      const was = progress.pathways[plane];
+      if (was && was.stretch === stretch && was.resume.yaw === r.yaw && was.resume.pos.every((v, i) => v === r.pos[i])) return;
       progress = setResume(progress, plane, stretch, r, deps.now());
       publish();
       void queue();
