@@ -68,7 +68,7 @@ test('arrive at 1: the seed stone, the road ahead, and the budget', async ({ pag
   await expect(page.locator('#plane-hud')).toBeVisible();
   await expect(page.locator('#pl-name')).toHaveText('The road of integers');
   await expect(page.locator('#pl-text')).toContainText('built from primes in exactly one way');
-  await expect(page.locator('#pl-draft')).toBeVisible();
+  await expect(page.locator('#pl-draft')).toBeHidden();
   expect((await st(page)).stop).toBe('road');
   await shot(page, 'plane-1-arrive');
   const info = await page.evaluate(() => ({ ...(window as unknown as W).__mines.renderer.info.render }));
@@ -162,7 +162,7 @@ test('the sieve plaza: strike, crumble, survive, reset', async ({ page }) => {
   await expect(page.locator('#pl-note')).toBeVisible();
   await expect(page.locator('#pl-note-text')).toContainText('2, 3, 5 and 7');
   await expect(page.locator('#pl-note-text')).toContainText('square root of 100');
-  await expect(page.locator('#pl-note-draft')).toBeVisible();
+  await expect(page.locator('#pl-note-draft')).toBeHidden();
   expect(await call(page, 'strike', 11)).toEqual([]);
   await page.waitForTimeout(1000);
   await shot(page, 'plane-6-survivors');

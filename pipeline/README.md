@@ -46,7 +46,7 @@ Tests: `python -m pytest -q pipeline/tests` (a small hand-written .mm file cover
   it shows and tests it against independent code: factorizations against trial division, the
   sieve against a naive simulation in hundreds of strike orders, π(x) against known values and
   direct counting. It has its own schema version (`PLANE_SCHEMA_VERSION`) and no randomness, so
-  the same build gives the same bytes. Its captions are drafts with `reviewed: false`.
+  the same build gives the same bytes. Each caption's `reviewed` flag is copied from config.yaml.
 - **Tunnels are checked twice.** tests/test_tunnels.py recomputes every tunnel and its
   feeding_lemmas from both ends of the full graph, and checks each chain is a real citation path
   no longer than the depth difference allows, independently of collapse.py.

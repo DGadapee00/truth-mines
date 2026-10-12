@@ -1,7 +1,7 @@
 """Stage 7, export: write data/graph.json and data/meta.json for the app.
 
 Statements are turned into LaTeX by pipeline/latex.py, on set.mm's own `latexdef`s. A landmark
-may also carry a hand-written `display` form from landmarks.yaml, flagged until reviewed.
+may also carry a hand-written `display` form from landmarks.yaml, with its `reviewed` flag.
 
 A note in content/<label>.md is exported only when its front matter says `reviewed: true`
 (CLAUDE.md rule 7). Reviewed notes are copied to data/notes/.

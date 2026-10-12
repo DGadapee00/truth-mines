@@ -173,7 +173,7 @@ test.describe('earning by doing', () => {
     await lookAt(page, 'road', 8);
     await typeLine(page, '2 2 2');
     await expect(page.locator('#captions')).toContainText(moments['nt-1-road']!.question);
-    await expect(page.locator('#captions')).toHaveAttribute('data-draft', 'true'); // an unreviewed line is marked as a draft
+    await expect(page.locator('#captions')).toHaveAttribute('data-draft', 'false'); // the question is approved, so the caption is not a draft
     expect(await page.locator('#captions').textContent()).not.toMatch(/draft/i); // by the style, never in the words
     await scan('the road question');
     expect(worker.trurl).toEqual([]);
@@ -269,6 +269,7 @@ test.describe('earning by doing', () => {
     await expect(page.locator('#captions')).toContainText(moments['nt-1-road']!.question);
     await expect.poll(async () => (await debug(page)).earned).toEqual(['1arith']);
     expect((await debug(page)).states['complex-numbers']).toBe('dim');
+    expect((await debug(page)).states['algebra-symmetry']).toBe('dim');
     expect((await debug(page)).sync).toBe('local');
 
     await page.keyboard.press('Digit2');
@@ -277,11 +278,17 @@ test.describe('earning by doing', () => {
     await typeLine(page, 'done');
     await expect(page.locator('#captions')).toContainText(moments['nt-1-sieve']!.question);
     await expect.poll(async () => [...(await debug(page)).earned].sort()).toEqual(['1arith', 'df-prm']);
+    expect((await debug(page)).states['algebra-symmetry']).toBe('frontier');
+    expect((await debug(page)).states['complex-numbers']).toBe('frontier');
     await expect(page.locator('#pl-note')).toContainText('square root');
     await page.screenshot({ path: 'e2e/output/cathedral-doing-4-without-trurl.png' });
 
     await page.reload();
     await page.waitForFunction(() => !!(window as unknown as { __cathedral?: unknown }).__cathedral, null, { timeout: 60_000 });
-    expect([...(await debug(page)).earned].sort()).toEqual(['1arith', 'df-prm']);
+    const kept = await debug(page);
+    expect([...kept.earned].sort()).toEqual(['1arith', 'df-prm']);
+    expect(kept.states['number-theory']).toBe('frontier');
+    expect(kept.states['algebra-symmetry']).toBe('frontier');
+    expect(kept.states['complex-numbers']).toBe('frontier');
   });
 });

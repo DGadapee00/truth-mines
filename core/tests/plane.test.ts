@@ -85,9 +85,9 @@ describe('the road', () => {
     expect(plane.primes.map((p) => p.p)).toEqual(PRIMES);
     expect(new Set(plane.primes.map((p) => p.color)).size).toBe(25);
   });
-  it('has drafts for text, none of them reviewed', () => {
+  it('carries the review flag copied from the captions, which are approved', () => {
     expect(plane.texts.length).toBeGreaterThan(0);
-    for (const t of plane.texts) expect(t.reviewed).toBe(false);
+    for (const t of plane.texts) expect(t.reviewed).toBe(true);
   });
 });
 

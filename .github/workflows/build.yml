@@ -1,4 +1,5 @@
-# Build the data, run every gate, and on main deploy the site to GitHub Pages.
+# Build the data, run every gate, and on main deploy the cathedral to GitHub Pages.
+# The artifact is cathedral/dist: the walkable loop. The surface mine is built and tested above, and is not what the published URL shows.
 #
 # Pages needs switching on once: Settings → Pages → Build and deployment → Source: GitHub Actions.
 # On a free GitHub plan the repository must be public for Pages to serve it.
@@ -88,7 +89,7 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main'
         with:
-          path: dist
+          path: cathedral/dist
 
   deploy:
     if: github.ref == 'refs/heads/main'

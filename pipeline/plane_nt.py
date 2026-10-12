@@ -320,8 +320,14 @@ def fill_texts(cfg: dict, plaza: dict, overlook: dict) -> list[dict]:
         "ratio_max": f"{end['ratio']:.3f}",
         "window_span": cfg["overlook"]["window_span"],
     }
-    # Drafts: a person approves each line before it ships (CLAUDE.md rule 7's spirit).
-    return [{"id": t["id"], "text": t["text"].format(**values), "reviewed": False} for t in cfg["texts"]]
+    # The build copies each caption's reviewed flag and never sets it. A missing flag is a draft.
+    out = []
+    for t in cfg["texts"]:
+        reviewed = t.get("reviewed", False)
+        if not isinstance(reviewed, bool):
+            raise SystemExit(f"plane: text {t['id']}: reviewed must be true or false")
+        out.append({"id": t["id"], "text": t["text"].format(**values), "reviewed": reviewed})
+    return out
 
 
 # ---------------------------------------------------------------- the whole plane

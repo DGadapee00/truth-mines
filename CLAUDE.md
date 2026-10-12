@@ -72,15 +72,18 @@ Quest 3 must be measured on the device (chrome://inspect over USB); the emulator
 - Headset comfort: teleport, 30-degree snap turn, guided tunnel moves with ease in and out and a
   vignette. A guided move never turns the view.
 
-## The cathedral prototype (branch `prototype/cathedral`)
+## The cathedral
 
 `cathedral/` is a separate IWSDK app (own `package.json`, npm) and `worker/` the Cloudflare Worker behind
-Trurl (own package). Rules 1, 2, 3 and 9 apply to them: the layout of the hall, doors and threshold is in
+Trurl (own package). GitHub Pages publishes `cathedral/dist`. The surface mine is still `npm run dev`.
+Rules 1, 2, 3 and 9 apply: the layout of the hall, doors and threshold is in
 `pipeline/cathedral.py` (data/cathedral.json), the pathways and their gates in `pipeline/pathways.py`,
 Trurl's grounding in `pipeline/grounding.py`. The app only renders. No provider key or app secret is in
 the repo or a client build (`npm run secrets`); the app secret is typed once per device. Comfort is
 teleport and a 30 degree snap turn only. A pathway's moment rubric stays `rubric_reviewed: false` until a
-person approves it. See `cathedral/README.md` and `worker/README.md`.
+person approves it. Dalton Gadapee approved the number-theory rubrics, questions, plane captions, app
+lines, and display forms on Oct 11, 2026. The Worker is not deployed; without it, finishing the doing
+earns that moment's ideas on the device. See `cathedral/README.md`, `HANDOFF.md`, and `worker/README.md`.
 
 ## Checks before a commit
 

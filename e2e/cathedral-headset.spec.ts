@@ -7,7 +7,9 @@
 import { expect, test, type Page } from '@playwright/test';
 import { app, debug, enterSecret, mockWorker, open, settled, untilPhase } from './cathedral-helpers';
 
-type Controller = { position: { set(x: number, y: number, z: number): void }; quaternion: { set(x: number, y: number, z: number, w: number): void }; updateButtonValue(id: string, v: number): void; updateAxes(id: string, x: number, y: number): void };
+type Controller = { connected: boolean; position: { set(x: number, y: number, z: number): void }; quaternion: { set(x: number, y: number, z: number, w: number): void }; updateButtonValue(id: string, v: number): void; updateAxes(id: string, x: number, y: number): void };
+type IwerSource = { handedness: string; hand: object | null; profiles: string[] };
+type Iwer = { controlMode: string; primaryInputMode: string; controllers: { left?: Controller; right?: Controller }; inputSources: IwerSource[] };
 const ctl = (hand: 'left' | 'right') => `window.IWER_DEVICE.controllers.${hand}`;
 /** The emulator's own on-page controls write the controllers' poses every frame; a test that sets a pose takes the controls over, as IWSDK's agent tooling does. */
 const takeControl = (page: Page) => page.evaluate("window.IWER_DEVICE.controlMode = 'programmatic'");
@@ -56,7 +58,8 @@ test.describe('headset', () => {
   test('the panel tells you to pull the trigger; the trigger begins; on a return visit it skips to the dais', async ({ page }) => {
     await inHeadset(page, { seen: true });
     await expect.poll(async () => (await debug(page)).xrPanel?.hint, { timeout: 20_000 }).toContain('trigger');
-    expect((await debug(page)).xrPanel?.draft, 'the hint is a draft line, and the panel says so apart from its words').toBe(true);
+    // The ready hint is approved. The caption is Trurl's sleeping hint, which is still a draft, so the panel says so apart from the words.
+    expect((await debug(page)).xrPanel?.draft, 'the sleeping hint is still a draft, so the panel says so apart from its words').toBe(true);
     expect((await debug(page)).xrPanel?.hint).not.toMatch(/draft/i);
     expect((await debug(page)).xrPanel?.visible).toBe(true);
     await page.screenshot({ path: 'e2e/output/cathedral-headset-1-ready.png' });
@@ -170,5 +173,45 @@ test.describe('headset', () => {
     await expect.poll(async () => (await debug(page)).xrPanel?.caption, { timeout: 30_000 }).toContain('ten squared');
     expect(worker.trurl).toHaveLength(1);
     expect(worker.stt.audioFrames).toBeGreaterThan(0);
+  });
+
+  test('putting the controllers down switches to hands and the session keeps going', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await inHeadset(page, { seen: true });
+    await pull(page, 'right', 'trigger', () => untilPhase(page, 'threshold', 30_000));
+    await pull(page, 'right', 'trigger', () => untilPhase(page, 'cathedral', 60_000));
+    await settled(page);
+    const before = await page.evaluate(() => {
+      const d = (window as unknown as { IWER_DEVICE: Iwer }).IWER_DEVICE;
+      return d.inputSources.map((s) => s.handedness);
+    });
+    expect(before.sort()).toEqual(['left', 'right']);
+
+    // Quest puts the controllers down and hand tracking takes over. Gameplay stays on the controllers; this only checks the switch does not throw.
+    const after = await page.evaluate(() => {
+      const d = (window as unknown as { IWER_DEVICE: Iwer }).IWER_DEVICE;
+      d.controlMode = 'programmatic';
+      d.controllers.left?.position.set(-0.25, 0.08, 0.15);
+      d.controllers.right?.position.set(0.25, 0.08, 0.15);
+      d.controllers.left!.connected = false;
+      d.controllers.right!.connected = false;
+      d.primaryInputMode = 'hand';
+      return {
+        mode: d.primaryInputMode,
+        sources: d.inputSources.map((s) => ({ handedness: s.handedness, hand: s.hand != null, profiles: [...s.profiles] })),
+      };
+    });
+    expect(after.mode).toBe('hand');
+    expect(after.sources.map((s) => s.handedness).sort()).toEqual(['left', 'right']);
+    expect(after.sources.every((s) => s.hand)).toBe(true);
+    expect(after.sources.every((s) => s.profiles.includes('oculus-hand'))).toBe(true);
+
+    await page.waitForTimeout(2000);
+    const d = await debug(page);
+    expect(d.xr).toBe(true);
+    expect(d.phase).toBe('cathedral');
+    expect(d.pos.every((n) => Number.isFinite(n))).toBe(true);
+    expect(errors).toEqual([]);
   });
 });

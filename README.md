@@ -24,10 +24,13 @@ Three ways to look:
   header or `#/plane/number-theory`; desktop and headset. The brief is
   [docs/plane-number-theory.md](docs/plane-number-theory.md).
 
-- **The cathedral** (prototype, branch `prototype/cathedral`): a WebXR app in `cathedral/`. A
-  threshold you drift down onto the dais of a round hall with twelve doors (lit, dim or sealed by what
-  you have understood), the number theory stretch behind one of them, and Trurl, a voice you talk to,
-  answering in captions. See [cathedral/README.md](cathedral/README.md).
+- **The cathedral**, which is what [the published site](https://dgadapee00.github.io/truth-mines/)
+  serves: a WebXR app in `cathedral/`. A threshold you drift down onto the dais of a round hall with
+  twelve doors (lit, dim or sealed by what you have understood), the number theory stretch behind one
+  of them, and questions in captions. Trurl's live voice needs a Worker that is not deployed; without
+  it, finishing the road or the sieve still earns that moment's idea on the device. See
+  [cathedral/README.md](cathedral/README.md) and [HANDOFF.md](HANDOFF.md). The map and the Inside view
+  above are still in this repo (`npm run dev`); they are not the published page.
 
 ## Run it
 

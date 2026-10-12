@@ -15,8 +15,18 @@ export interface Line {
   draft: boolean;
 }
 
-/** Ids a person has approved. Empty: every line below is Claude's draft. */
-export const REVIEWED_LINES: ReadonlySet<string> = new Set<string>();
+/**
+ * Ids Dalton Gadapee approved on Oct 11, 2026. A line whose id is not here is still a draft.
+ * Trurl's sleeping hint and the lost-thread line are not in this file, and stay drafts.
+ */
+export const REVIEWED_LINES: ReadonlySet<string> = new Set<string>([
+  'road-look-first', 'road-right', 'road-again', 'road-not-prime', 'road-product', 'road-nothing',
+  'sieve-gone', 'sieve-not-next', 'sieve-range', 'sieve-struck', 'sieve-early', 'sieve-stop', 'sieve-start',
+  'place-threshold', 'place-cathedral', 'place-plane',
+  'door-open', 'door-dim', 'door-sealed', 'door-not-open', 'door-unbuilt',
+  'xr-ready', 'xr-skip', 'xr-look', 'xr-point', 'xr-road', 'xr-plaza', 'xr-overlook', 'xr-talk',
+  'intro-gate', 'intro-ready',
+]);
 
 /** For tests only: pretend a person approved these ids, as editing the set above would */
 export const approveForTest = (...ids: string[]): void => ids.forEach((id) => (REVIEWED_LINES as Set<string>).add(id));

@@ -57,6 +57,10 @@ a draft until a person approves it, and a draft carries a small tag drawn by the
 an app line add its id to `REVIEWED_LINES`; a plane text or a question, set its `reviewed` flag in the data's
 source. Interface text (buttons, status, plain errors) is not content and has no tag.
 
+Dalton Gadapee approved the app's lines, the plane's captions, Trurl's two questions, the readable statement
+forms, and the two moment rubrics on Oct 11, 2026. Trurl's sleeping hint and the lost-thread line are not in
+that set, and stay drafts.
+
 ## Checks
 
 ```bash

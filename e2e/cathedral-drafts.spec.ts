@@ -1,8 +1,9 @@
 /**
- * Unreviewed wording is never shown as if it were finished content. Every line of prose the app
- * writes ahead of time is a draft until a person approves it; on screen a draft carries a small tag
- * drawn by the style (data-draft), never in its words. Interface text (buttons, status, plain errors)
- * is not content and carries no tag.
+ * Wording a person has not approved is never shown as if it were finished content. On screen a draft
+ * carries a small tag drawn by the style (data-draft), never in its words. Dalton Gadapee approved the
+ * app's own lines, the plane's captions and Trurl's questions on Oct 11, 2026, so those carry no tag.
+ * Trurl's sleeping hint and the lost-thread line are still drafts. Interface text (buttons, status,
+ * plain errors) is not content and carries no tag.
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { app, enterSecret, intoNumberTheory, mockWorker, open, toCathedral, typeLine } from './cathedral-helpers';
@@ -26,25 +27,25 @@ test.describe('drafts are marked apart from the words', () => {
   test('the first screens, the cathedral, a door and the plane', async ({ page }) => {
     await mockWorker(page);
     await open(page, { seen: true });
-    await isDraft(page.locator('#gate-intro'));
+    await notDraft(page.locator('#gate-intro'));
     await expect(page.locator('#gate-save')).toBeVisible();
     await notDraft(page.locator('#gate-save')); // interface is not content
     await enterSecret(page);
-    await isDraft(page.locator('#ready-text'));
+    await notDraft(page.locator('#ready-text'));
     await toCathedral(page);
-    await isDraft(page.locator('#place-text'));
+    await notDraft(page.locator('#place-text'));
     await app(page, 'stand(0, -3)');
     await app(page, "lookAtDoor('algebra-symmetry')");
     await expect(page.locator('#door-label')).toContainText('dim');
-    await isDraft(page.locator('#door-label'));
+    await notDraft(page.locator('#door-label'));
     await page.keyboard.press('Enter');
     await expect(page.locator('#toast')).toContainText('not open to you yet');
-    await isDraft(page.locator('#toast'));
+    await notDraft(page.locator('#toast'));
     await noDraftInWords(page);
 
     await intoNumberTheory(page);
     await expect(page.locator('#pl-text')).toContainText('A prime stands alone');
-    await isDraft(page.locator('#pl-text')); // the plane's own lines are unreviewed in the data
+    await notDraft(page.locator('#pl-text'));
     await expect(page.locator('#pl-text')).not.toContainText('(draft)');
     await noDraftInWords(page);
   });
@@ -82,17 +83,16 @@ test.describe('drafts are marked apart from the words', () => {
     expect(worker.trurl).toHaveLength(2);
   });
 
-  test('once a person approves a line its tag goes, and no other line’s does', async ({ page }) => {
+  test('approved door lines carry no tag', async ({ page }) => {
     await open(page, { seen: true });
     await page.click('#gate-nosecret');
     await toCathedral(page);
-    await app(page, "approveLines('door-dim')");
     await app(page, 'stand(0, -3)');
     await app(page, "lookAtDoor('algebra-symmetry')");
     await expect(page.locator('#door-label')).toContainText('dim');
     await notDraft(page.locator('#door-label'));
     await app(page, "lookAtDoor('topology')");
     await expect(page.locator('#door-label')).toContainText('sealed');
-    await isDraft(page.locator('#door-label'));
+    await notDraft(page.locator('#door-label'));
   });
 });

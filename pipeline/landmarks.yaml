@@ -13,99 +13,100 @@
 #     subject: optional; overrides the subject that set.mm's part would give it
 #     display: optional readable form of the statement
 #       tex: LaTeX, written by hand from set.mm's statement (python -m pipeline show LABEL)
-#       reviewed: false until a person has checked it against set.mm; the app flags drafts
+#       reviewed: true once a person has checked the tex against set.mm. Dalton Gadapee
+#       approved every display form in this file on Oct 11, 2026.
 
 landmarks:
   - label: 'id'
     name: 'Identity: $\varphi$ implies $\varphi$'
     display:
       tex: '\varphi \to \varphi'
-      reviewed: false
+      reviewed: true
   - label: 'syl'
     name: 'Syllogism (chaining implications)'
     display:
       tex: '\varphi \to \psi,\ \ \psi \to \chi \;\vdash\; \varphi \to \chi'
-      reviewed: false
+      reviewed: true
   - label: 'mpd'
     name: 'Modus ponens, deduction form'
     display:
       tex: '\varphi \to \psi,\ \ \varphi \to (\psi \to \chi) \;\vdash\; \varphi \to \chi'
-      reviewed: false
+      reviewed: true
   - label: 'con3'
     name: 'Contraposition'
     display:
       tex: '(\varphi \to \psi) \to (\neg\psi \to \neg\varphi)'
-      reviewed: false
+      reviewed: true
   - label: 'notnot'
     name: 'Double negation introduction'
     display:
       tex: '\varphi \to \neg\neg\varphi'
-      reviewed: false
+      reviewed: true
   - label: 'notnotr'
     name: 'Double negation elimination'
     display:
       tex: '\neg\neg\varphi \to \varphi'
-      reviewed: false
+      reviewed: true
   - label: 'pm2.21'
     name: 'Ex falso: a falsehood implies anything'
     display:
       tex: '\neg\varphi \to (\varphi \to \psi)'
-      reviewed: false
+      reviewed: true
   - label: 'exmid'
     name: 'Law of excluded middle'
     display:
       tex: '\varphi \lor \neg\varphi'
-      reviewed: false
+      reviewed: true
   - label: 'pm3.24'
     name: 'Law of noncontradiction'
     display:
       tex: '\neg(\varphi \land \neg\varphi)'
-      reviewed: false
+      reviewed: true
   - label: 'peirce'
     name: 'Peirce''s law'
     display:
       tex: '((\varphi \to \psi) \to \varphi) \to \varphi'
-      reviewed: false
+      reviewed: true
   - label: 'pm2.18'
     name: 'Clavius''s law'
     display:
       tex: '(\neg\varphi \to \varphi) \to \varphi'
-      reviewed: false
+      reviewed: true
   - label: 'mto'
     name: 'Modus tollens'
     display:
       tex: '\neg\psi,\ \ \varphi \to \psi \;\vdash\; \neg\varphi'
-      reviewed: false
+      reviewed: true
   - label: 'impexp'
     name: 'Import–export'
     display:
       tex: '((\varphi \land \psi) \to \chi) \leftrightarrow (\varphi \to (\psi \to \chi))'
-      reviewed: false
+      reviewed: true
   - label: 'ioran'
     name: 'De Morgan''s law (negated or)'
     display:
       tex: '\neg(\varphi \lor \psi) \leftrightarrow (\neg\varphi \land \neg\psi)'
-      reviewed: false
+      reviewed: true
   - label: 'anor'
     name: 'De Morgan''s law (and as or)'
     display:
       tex: '(\varphi \land \psi) \leftrightarrow \neg(\neg\varphi \lor \neg\psi)'
-      reviewed: false
+      reviewed: true
   - label: 'pm4.71'
     name: 'Implication as conjunction'
     display:
       tex: '(\varphi \to \psi) \leftrightarrow (\varphi \leftrightarrow (\varphi \land \psi))'
-      reviewed: false
+      reviewed: true
   - label: 'orcom'
     name: 'Disjunction is commutative'
     display:
       tex: '(\varphi \lor \psi) \leftrightarrow (\psi \lor \varphi)'
-      reviewed: false
+      reviewed: true
   - label: 'ancom'
     name: 'Conjunction is commutative'
     display:
       tex: '(\varphi \land \psi) \leftrightarrow (\psi \land \varphi)'
-      reviewed: false
+      reviewed: true
   - label: 'df-bi'
     name: 'Definition of the biconditional ↔'
   - label: 'df-an'
@@ -126,42 +127,42 @@ landmarks:
     name: 'Specialization: $\forall x\,\varphi$ implies $\varphi$'
     display:
       tex: '\forall x\, \varphi \to \varphi'
-      reviewed: false
+      reviewed: true
   - label: '19.8a'
     name: 'Existential introduction: $\varphi$ implies $\exists x\,\varphi$'
     display:
       tex: '\varphi \to \exists x\, \varphi'
-      reviewed: false
+      reviewed: true
   - label: 'alcom'
     name: 'Universal quantifiers commute'
     display:
       tex: '\forall x\, \forall y\, \varphi \leftrightarrow \forall y\, \forall x\, \varphi'
-      reviewed: false
+      reviewed: true
   - label: 'excom'
     name: 'Existential quantifiers commute'
     display:
       tex: '\exists x\, \exists y\, \varphi \leftrightarrow \exists y\, \exists x\, \varphi'
-      reviewed: false
+      reviewed: true
   - label: '19.12'
     name: '$\exists\forall$ implies $\forall\exists$'
     display:
       tex: '\exists x\, \forall y\, \varphi \to \forall y\, \exists x\, \varphi'
-      reviewed: false
+      reviewed: true
   - label: 'equid'
     name: 'Every set equals itself'
     display:
       tex: 'x = x'
-      reviewed: false
+      reviewed: true
   - label: 'equcom'
     name: 'Equality is symmetric'
     display:
       tex: 'x = y \leftrightarrow y = x'
-      reviewed: false
+      reviewed: true
   - label: 'equtr'
     name: 'Equality is transitive'
     display:
       tex: 'x = y \to (y = z \to x = z)'
-      reviewed: false
+      reviewed: true
   - label: 'df-clab'
     name: 'Definition of class abstraction {x | φ}'
   - label: 'df-cleq'
@@ -286,152 +287,152 @@ landmarks:
     name: 'Russell''s paradox'
     display:
       tex: '\{x \mid x \notin x\} \notin V'
-      reviewed: false
+      reviewed: true
   - label: 'vex'
     name: 'Every set variable is a set'
     display:
       tex: 'x \in V'
-      reviewed: false
+      reviewed: true
   - label: '0ex'
     name: 'The empty set exists'
     display:
       tex: '\emptyset \in V'
-      reviewed: false
+      reviewed: true
   - label: 'prex'
     name: 'An unordered pair of sets exists'
     display:
       tex: '\{A, B\} \in V'
-      reviewed: false
+      reviewed: true
   - label: 'opth'
     name: 'The ordered pair theorem'
     display:
       tex: 'A, B \in V \;\vdash\; \langle A, B \rangle = \langle C, D \rangle \leftrightarrow (A = C \land B = D)'
-      reviewed: false
+      reviewed: true
   - label: 'pwex'
     name: 'The power set of a set exists'
     display:
       tex: 'A \in V \;\vdash\; \mathcal{P}(A) \in V'
-      reviewed: false
+      reviewed: true
   - label: 'uniex'
     name: 'The union of a set exists'
     display:
       tex: 'A \in V \;\vdash\; \textstyle\bigcup A \in V'
-      reviewed: false
+      reviewed: true
   - label: 'zfrep6'
     name: 'Replacement, a classical form'
     display:
       tex: '\forall x \in z\; \exists! y\, \varphi \to \exists w\, \forall x \in z\; \exists y \in w\; \varphi'
-      reviewed: false
+      reviewed: true
   - label: 'ordon'
     name: 'The ordinals form an ordinal'
     display:
       tex: '\mathrm{On} \text{ is an ordinal}'
-      reviewed: false
+      reviewed: true
   - label: 'onprc'
     name: 'Burali-Forti paradox: the ordinals are a proper class'
     display:
       tex: '\mathrm{On} \notin V'
-      reviewed: false
+      reviewed: true
   - label: 'omex'
     name: '$\omega$ exists (axiom of infinity)'
     display:
       tex: '\omega \in V'
-      reviewed: false
+      reviewed: true
   - label: 'peano1'
     name: 'Peano postulate: zero is a natural number'
     display:
       tex: '\emptyset \in \omega'
-      reviewed: false
+      reviewed: true
   - label: 'peano2'
     name: 'Peano postulate: successors are natural numbers'
     display:
       tex: 'A \in \omega \to \operatorname{suc} A \in \omega'
-      reviewed: false
+      reviewed: true
   - label: 'peano3'
     name: 'Peano postulate: zero is not a successor'
     display:
       tex: 'A \in \omega \to \operatorname{suc} A \neq \emptyset'
-      reviewed: false
+      reviewed: true
   - label: 'peano4'
     name: 'Peano postulate: the successor is one-to-one'
     display:
       tex: 'A, B \in \omega \to (\operatorname{suc} A = \operatorname{suc} B \leftrightarrow A = B)'
-      reviewed: false
+      reviewed: true
   - label: 'peano5'
     name: 'Peano postulate: induction'
     display:
       tex: '\bigl(\emptyset \in A \land \forall x \in \omega\,(x \in A \to \operatorname{suc} x \in A)\bigr) \to \omega \subseteq A'
-      reviewed: false
+      reviewed: true
   - label: 'findes'
     name: 'Finite induction'
     display:
       tex: '\varphi(\emptyset),\ \ x \in \omega \to (\varphi(x) \to \varphi(\operatorname{suc} x)) \;\vdash\; x \in \omega \to \varphi(x)'
-      reviewed: false
+      reviewed: true
   - label: 'tfis'
     name: 'Transfinite induction'
     display:
       tex: 'x \in \mathrm{On} \to \bigl(\forall y \in x\; \varphi(y) \to \varphi(x)\bigr) \;\vdash\; x \in \mathrm{On} \to \varphi(x)'
-      reviewed: false
+      reviewed: true
   - label: 'tfr1'
     name: 'Transfinite recursion'
     display:
       tex: 'F = \operatorname{recs}(G) \;\vdash\; F \text{ is a function with domain } \mathrm{On}'
-      reviewed: false
+      reviewed: true
   - label: 'canth'
     name: 'Cantor''s theorem: no set maps onto its power set'
     display:
       tex: 'A \in V \;\vdash\; \text{no } F \text{ maps } A \text{ onto } \mathcal{P}(A)'
-      reviewed: false
+      reviewed: true
   - label: 'sbth'
     name: 'Schröder–Bernstein theorem'
     display:
       tex: '(A \preccurlyeq B \land B \preccurlyeq A) \to A \approx B'
-      reviewed: false
+      reviewed: true
   - label: 'php'
     name: 'Pigeonhole principle'
     display:
       tex: '(A \in \omega \land B \subsetneq A) \to A \not\approx B'
-      reviewed: false
+      reviewed: true
   - label: 'weth'
     name: 'Well-ordering theorem'
     display:
       tex: 'A \in V \to \exists x\; (x \text{ well-orders } A)'
-      reviewed: false
+      reviewed: true
   - label: 'zorn'
     name: 'Zorn''s lemma'
     display:
       tex: 'A \in V \;\vdash\; \forall z \bigl((z \subseteq A \land \subsetneq \text{ totally orders } z) \to \textstyle\bigcup z \in A\bigr) \to \exists x \in A\; \forall y \in A\; \neg(x \subsetneq y)'
-      reviewed: false
+      reviewed: true
   - label: 'ttukey'
     name: 'Teichmüller–Tukey lemma'
     display:
       tex: 'A \in V \;\vdash\; \bigl(A \neq \emptyset \land \forall x\,(x \in A \leftrightarrow \mathcal{P}(x) \cap \mathrm{Fin} \subseteq A)\bigr) \to \exists x \in A\; \forall y \in A\; \neg(x \subsetneq y)'
-      reviewed: false
+      reviewed: true
   - label: 'ac2'
     name: 'Axiom of choice, equivalent form'
     display:
       tex: '\exists y\; \forall z \in x\; \forall w \in z\; \exists! v \in z\; \exists u \in y\; (z \in u \land v \in u)'
-      reviewed: false
+      reviewed: true
   - label: 'cardon'
     name: 'Every cardinal is an ordinal'
     display:
       tex: '\operatorname{card}(A) \in \mathrm{On}'
-      reviewed: false
+      reviewed: true
   - label: 'alephon'
     name: 'Every aleph is an ordinal'
     display:
       tex: '\aleph(A) \in \mathrm{On}'
-      reviewed: false
+      reviewed: true
   - label: 'hashpw'
     name: 'A set with $n$ elements has $2^n$ subsets'
     display:
       tex: 'A \text{ finite} \to |\mathcal{P}(A)| = 2^{|A|}'
-      reviewed: false
+      reviewed: true
   - label: 'hashbc'
     name: 'Number of combinations'
     display:
       tex: '(A \text{ finite} \land K \in \mathbb{Z}) \to \binom{|A|}{K} = \bigl|\{x \subseteq A : |x| = K\}\bigr|'
-      reviewed: false
+      reviewed: true
   - label: 'df-c'
     name: 'Definition of the complex numbers ℂ'
   - label: 'df-r'
@@ -522,202 +523,202 @@ landmarks:
     name: 'Completeness: a bounded set of reals has a supremum'
     display:
       tex: '\bigl(A \subseteq \mathbb{R},\ A \neq \emptyset,\ A \text{ bounded above}\bigr) \to \exists x \in \mathbb{R}\,\bigl(\forall y \in A\; y \le x \;\land\; \forall y \in \mathbb{R}\,(y < x \to \exists z \in A\; y < z)\bigr)'
-      reviewed: false
+      reviewed: true
   - label: 'arch'
     name: 'Archimedean property of the reals'
     display:
       tex: 'A \in \mathbb{R} \to \exists n \in \mathbb{N}\; A < n'
-      reviewed: false
+      reviewed: true
   - label: 'nnind'
     name: 'Principle of mathematical induction'
     display:
       tex: '\varphi(1),\ \ \forall y \in \mathbb{N}\,(\varphi(y) \to \varphi(y+1)) \;\vdash\; A \in \mathbb{N} \to \varphi(A)'
-      reviewed: false
+      reviewed: true
   - label: 'qbtwnre'
     name: 'Between any two reals lies a rational'
     display:
       tex: '(A, B \in \mathbb{R} \land A < B) \to \exists x \in \mathbb{Q}\; A < x < B'
-      reviewed: false
+      reviewed: true
   - label: 'sqrt2irr'
     name: 'The square root of 2 is irrational'
     display:
       tex: '\sqrt{2} \notin \mathbb{Q}'
-      reviewed: false
+      reviewed: true
   - label: 'ruc'
     name: 'The reals are uncountable'
     display:
       tex: '\mathbb{N} \prec \mathbb{R}'
-      reviewed: false
+      reviewed: true
   - label: 'qnnen'
     name: 'The rationals are countable'
     display:
       tex: '\mathbb{Q} \approx \mathbb{N}'
-      reviewed: false
+      reviewed: true
   - label: 'rpnnen'
     name: 'The reals have the cardinality of the power set of $\mathbb{N}$'
     display:
       tex: '\mathbb{R} \approx \mathcal{P}(\mathbb{N})'
-      reviewed: false
+      reviewed: true
   - label: 'binom'
     name: 'The binomial theorem'
     display:
       tex: '(A + B)^N = \sum_{k=0}^{N} \binom{N}{k} A^{N-k} B^{k}'
-      reviewed: false
+      reviewed: true
   - label: 'geoser'
     name: 'Sum of a finite geometric series'
     display:
       tex: 'A \neq 1 \to \sum_{k=0}^{N-1} A^k = \frac{1 - A^N}{1 - A}'
-      reviewed: false
+      reviewed: true
   - label: 'arisum'
     name: 'Sum of an arithmetic series'
     display:
       tex: '\sum_{k=1}^{N} k = \frac{N^2 + N}{2}'
-      reviewed: false
+      reviewed: true
   - label: 'efipi'
     name: 'Euler''s identity: $e^{i\pi} = -1$'
     display:
       tex: 'e^{i\pi} = -1'
-      reviewed: false
+      reviewed: true
   - label: 'eirr'
     name: '$e$ is irrational'
     display:
       tex: 'e \notin \mathbb{Q}'
-      reviewed: false
+      reviewed: true
   - label: 'pigt2lt4'
     name: '$\pi$ lies between 2 and 4'
     display:
       tex: '2 < \pi < 4'
-      reviewed: false
+      reviewed: true
   - label: 'abstri'
     name: 'The triangle inequality'
     display:
       tex: '|A + B| \le |A| + |B|'
-      reviewed: false
+      reviewed: true
   - label: 'amgm'
     name: 'Inequality of arithmetic and geometric means'
     display:
       tex: '\Bigl(\prod_{a \in A} F(a)\Bigr)^{1/|A|} \le \frac{1}{|A|} \sum_{a \in A} F(a) \qquad (A \text{ finite, nonempty},\ F \ge 0)'
-      reviewed: false
+      reviewed: true
   - label: 'csbren'
     name: 'Cauchy–Schwarz inequality in $\mathbb{R}^n$'
     display:
       tex: '\Bigl(\sum_{k \in A} B_k C_k\Bigr)^2 \le \sum_{k \in A} B_k^2 \cdot \sum_{k \in A} C_k^2'
-      reviewed: false
+      reviewed: true
   - label: 'demoivre'
     name: 'De Moivre''s formula'
     display:
       tex: '(\cos A + i \sin A)^N = \cos(NA) + i \sin(NA) \qquad (N \in \mathbb{Z})'
-      reviewed: false
+      reviewed: true
   - label: 'infpn'
     name: 'There are infinitely many primes'
     display:
       tex: 'N \in \mathbb{N} \to \exists j\; (j > N \land j \text{ is prime})'
-      reviewed: false
+      reviewed: true
   - label: '1arith'
     name: 'Fundamental theorem of arithmetic'
     display:
       tex: 'n \mapsto \bigl(p \mapsto v_p(n)\bigr) \text{ is a bijection from } \mathbb{N} \text{ to the finitely supported } e : \text{Primes} \to \mathbb{N}_0'
-      reviewed: false
+      reviewed: true
   - label: 'euclemma'
     name: 'Euclid''s lemma'
     display:
       tex: 'p \text{ prime} \to \bigl(p \mid MN \leftrightarrow (p \mid M \lor p \mid N)\bigr)'
-      reviewed: false
+      reviewed: true
   - label: 'bezout'
     name: 'Bézout''s identity'
     display:
       tex: 'A, B \in \mathbb{Z} \to \exists x, y \in \mathbb{Z}\; \gcd(A, B) = Ax + By'
-      reviewed: false
+      reviewed: true
   - label: 'eucalg'
     name: 'The Euclidean algorithm'
     display:
       tex: '\text{iterating } (x, y) \mapsto (y,\ x \bmod y) \text{ from } (M, N),\ N \text{ times, ends at } \gcd(M, N)'
-      reviewed: false
+      reviewed: true
   - label: 'eulerth'
     name: 'Euler''s theorem'
     display:
       tex: '\gcd(A, N) = 1 \to A^{\varphi(N)} \equiv 1 \pmod{N}'
-      reviewed: false
+      reviewed: true
   - label: 'fermltl'
     name: 'Fermat''s little theorem'
     display:
       tex: 'p \text{ prime} \to A^p \equiv A \pmod{p}'
-      reviewed: false
+      reviewed: true
   - label: 'wilth'
     name: 'Wilson''s theorem'
     display:
       tex: 'N \text{ prime} \leftrightarrow \bigl(N \ge 2 \land N \mid (N-1)! + 1\bigr)'
-      reviewed: false
+      reviewed: true
   - label: 'crth'
     name: 'Chinese remainder theorem'
     display:
       tex: '\gcd(M, N) = 1 \to x \mapsto (x \bmod M,\ x \bmod N) \text{ is a bijection } \{0, \ldots, MN-1\} \to \{0, \ldots, M-1\} \times \{0, \ldots, N-1\}'
-      reviewed: false
+      reviewed: true
   - label: 'pythagtrip'
     name: 'Pythagorean triples'
     display:
       tex: 'A^2 + B^2 = C^2 \leftrightarrow \exists n, m, k \in \mathbb{N}\; \bigl(\{A, B\} = \{k(m^2 - n^2),\ 2kmn\} \land C = k(m^2 + n^2)\bigr)'
-      reviewed: false
+      reviewed: true
   - label: 'lgsquad'
     name: 'Law of quadratic reciprocity'
     display:
       tex: '\Bigl(\frac{P}{Q}\Bigr)\Bigl(\frac{Q}{P}\Bigr) = (-1)^{\frac{P-1}{2} \cdot \frac{Q-1}{2}} \qquad (P \neq Q \text{ odd primes})'
-      reviewed: false
+      reviewed: true
   - label: '2sq'
     name: 'Primes of the form $4k+1$ are sums of two squares'
     display:
       tex: '(p \text{ prime} \land p \equiv 1 \pmod 4) \to \exists x, y \in \mathbb{Z}\; p = x^2 + y^2'
-      reviewed: false
+      reviewed: true
   - label: '4sq'
     name: 'Lagrange''s four-square theorem'
     display:
       tex: 'A \in \mathbb{N}_0 \leftrightarrow \exists a, b, c, d \in \mathbb{Z}\; A = a^2 + b^2 + c^2 + d^2'
-      reviewed: false
+      reviewed: true
   - label: 'perfect'
     name: 'Euclid–Euler theorem on perfect numbers'
     display:
       tex: 'N \text{ even} \to \bigl(\sigma(N) = 2N \leftrightarrow \exists p\,(2^p - 1 \text{ prime} \land N = 2^{p-1}(2^p - 1))\bigr)'
-      reviewed: false
+      reviewed: true
   - label: 'bpos'
     name: 'Bertrand''s postulate'
     display:
       tex: 'N \in \mathbb{N} \to \exists p \text{ prime}\; N < p \le 2N'
-      reviewed: false
+      reviewed: true
   - label: 'dirith'
     name: 'Dirichlet''s theorem on primes in progressions'
     display:
       tex: '\gcd(A, N) = 1 \to \{p \text{ prime} : p \equiv A \pmod{N}\} \approx \mathbb{N}'
-      reviewed: false
+      reviewed: true
   - label: 'pnt'
     name: 'Prime number theorem'
     display:
       tex: '\lim_{x \to \infty} \frac{\pi(x)}{x / \ln x} = 1'
-      reviewed: false
+      reviewed: true
   - label: 'prmrec'
     name: 'The sum of prime reciprocals diverges'
     display:
       tex: '\sum_{p \text{ prime}} \frac{1}{p} \text{ diverges}'
-      reviewed: false
+      reviewed: true
   - label: 'basel'
     name: 'The Basel problem: $\sum 1/n^2 = \pi^2/6$'
     display:
       tex: '\sum_{k=1}^{\infty} \frac{1}{k^2} = \frac{\pi^2}{6}'
-      reviewed: false
+      reviewed: true
   - label: '3dvds'
     name: 'Divisibility by 3'
     display:
       tex: '3 \;\Big|\; \sum_{k=0}^{N} F(k)\, 10^k \;\leftrightarrow\; 3 \;\Big|\; \sum_{k=0}^{N} F(k)'
-      reviewed: false
+      reviewed: true
   - label: 'ramsey'
     name: 'Ramsey''s theorem'
     display:
       tex: '\exists n\; \forall s\; \Bigl(|s| \ge n \to \forall f : \tbinom{s}{M} \to R\;\; \exists c \in R\; \exists x \subseteq s\; \bigl(|x| \ge F(c) \land \tbinom{x}{M} \subseteq f^{-1}(c)\bigr)\Bigr)'
-      reviewed: false
+      reviewed: true
   - label: 'vdw'
     name: 'Van der Waerden''s theorem'
     display:
       tex: 'R \text{ finite} \to \exists n\; \forall f : \{1, \ldots, n\} \to R\;\; \exists c, a, d\;\; \{a, a + d, \ldots, a + (K-1)d\} \subseteq f^{-1}(c)'
-      reviewed: false
+      reviewed: true
   - label: 'df-mnd'
     name: 'Definition of a monoid'
   - label: 'df-grp'
@@ -738,37 +739,37 @@ landmarks:
     name: 'Lagrange''s theorem on subgroups'
     display:
       tex: '(Y \le G,\ G \text{ finite}) \to |Y| \text{ divides } |G|'
-      reviewed: false
+      reviewed: true
   - label: 'sylow1'
     name: 'First Sylow theorem'
     display:
       tex: 'p^N \mid |G| \to \exists H \le G\; |H| = p^N'
-      reviewed: false
+      reviewed: true
   - label: 'sylow2'
     name: 'Second Sylow theorem'
     display:
       tex: 'H, K \text{ Sylow } p\text{-subgroups} \to \exists g \in G\; H = gKg^{-1}'
-      reviewed: false
+      reviewed: true
   - label: 'sylow3'
     name: 'Third Sylow theorem'
     display:
       tex: 'n_p \;\Big|\; \frac{|G|}{p^{v_p(|G|)}} \;\land\; n_p \equiv 1 \pmod{p}'
-      reviewed: false
+      reviewed: true
   - label: 'cayley'
     name: 'Cayley''s theorem'
     display:
       tex: 'g \mapsto (a \mapsto g a) \text{ is an isomorphism from } G \text{ onto a subgroup of } \mathrm{Sym}(G)'
-      reviewed: false
+      reviewed: true
   - label: 'ablfac'
     name: 'Fundamental theorem of finite abelian groups'
     display:
       tex: '\text{a finite abelian group is the direct product of cyclic } p\text{-groups}'
-      reviewed: false
+      reviewed: true
   - label: 'lbsex'
     name: 'Every vector space has a basis'
     display:
       tex: 'W \text{ a vector space} \to W \text{ has a basis}'
-      reviewed: false
+      reviewed: true
   - label: 'df-mat'
     name: 'Definition of matrices'
   - label: 'df-mdet'
@@ -777,17 +778,17 @@ landmarks:
     name: 'The determinant of a product'
     display:
       tex: '\det(FG) = \det F \cdot \det G'
-      reviewed: false
+      reviewed: true
   - label: 'cramer'
     name: 'Cramer''s rule'
     display:
       tex: '\det X \text{ a unit} \to \Bigl(XZ = Y \leftrightarrow Z_i = \frac{\det X_i(Y)}{\det X} \text{ for each } i\Bigr), \quad X_i(Y) = X \text{ with column } i \text{ replaced by } Y'
-      reviewed: false
+      reviewed: true
   - label: 'cayleyhamilton'
     name: 'Cayley–Hamilton theorem'
     display:
       tex: '\chi_M(M) = 0'
-      reviewed: false
+      reviewed: true
   - label: 'df-top'
     name: 'Definition of a topology'
   - label: 'df-cld'
@@ -806,152 +807,152 @@ landmarks:
     name: 'A closed interval is compact (Heine–Borel)'
     display:
       tex: '[A, B] \text{ is compact}'
-      reviewed: false
+      reviewed: true
   - label: 'bwth'
     name: 'Bolzano–Weierstrass theorem'
     display:
       tex: '(X \text{ compact} \land A \subseteq X \text{ infinite}) \to A \text{ has a limit point in } X'
-      reviewed: false
+      reviewed: true
   - label: 'ptcmp'
     name: 'Tychonoff''s theorem'
     display:
       tex: '\text{a product of compact spaces is compact}'
-      reviewed: false
+      reviewed: true
   - label: 'bcth'
     name: 'Baire category theorem'
     display:
       tex: 'X \text{ complete},\ M_k \text{ closed},\ \textstyle\bigcup_k M_k \text{ has interior} \to \text{some } M_k \text{ has interior}'
-      reviewed: false
+      reviewed: true
   - label: 'ivth'
     name: 'Intermediate value theorem (increasing case)'
     display:
       tex: 'F \text{ continuous on } [A, B],\ F(A) < U < F(B) \to \exists c \in (A, B)\; F(c) = U'
-      reviewed: false
+      reviewed: true
   - label: 'evth'
     name: 'Extreme value theorem'
     display:
       tex: 'X \text{ compact, nonempty},\ F : X \to \mathbb{R} \text{ continuous} \to \exists x\; \forall y\; F(y) \le F(x)'
-      reviewed: false
+      reviewed: true
   - label: 'rolle'
     name: 'Rolle''s theorem'
     display:
       tex: 'F(A) = F(B) \to \exists x \in (A, B)\; F^{\prime}(x) = 0'
-      reviewed: false
+      reviewed: true
   - label: 'mvth'
     name: 'Mean value theorem'
     display:
       tex: '\exists x \in (A, B)\; F^{\prime}(x) = \frac{F(B) - F(A)}{B - A}'
-      reviewed: false
+      reviewed: true
   - label: 'dvmul'
     name: 'The product rule'
     display:
       tex: '(FG)^{\prime}(C) = F^{\prime}(C)\, G(C) + G^{\prime}(C)\, F(C)'
-      reviewed: false
+      reviewed: true
   - label: 'dvco'
     name: 'The chain rule'
     display:
       tex: '(F \circ G)^{\prime}(C) = F^{\prime}(G(C))\, G^{\prime}(C)'
-      reviewed: false
+      reviewed: true
   - label: 'lhop'
     name: 'L''Hôpital''s rule'
     display:
       tex: 'F, G \to 0 \text{ at } B,\ \ \frac{F^{\prime}(z)}{G^{\prime}(z)} \to C \;\vdash\; \frac{F(z)}{G(z)} \to C \text{ as } z \to B'
-      reviewed: false
+      reviewed: true
   - label: 'ftc1'
     name: 'Fundamental theorem of calculus, part 1'
     display:
       tex: 'G(x) = \int_A^x F(t)\, dt,\ F \text{ continuous at } C \to G^{\prime}(C) = F(C)'
-      reviewed: false
+      reviewed: true
   - label: 'ftc2'
     name: 'Fundamental theorem of calculus, part 2'
     display:
       tex: '\int_A^B F^{\prime}(t)\, dt = F(B) - F(A)'
-      reviewed: false
+      reviewed: true
   - label: 'itgsubst'
     name: 'Integration by substitution'
     display:
       tex: '\int_{A(X)}^{A(Y)} C(u)\, du = \int_X^Y C(A(x))\, A^{\prime}(x)\, dx'
-      reviewed: false
+      reviewed: true
   - label: 'taylth'
     name: 'Taylor''s theorem'
     display:
       tex: '\lim_{x \to B} \frac{F(x) - T_N(x)}{(x - B)^N} = 0 \qquad (T_N \text{ the degree-}N \text{ Taylor polynomial at } B)'
-      reviewed: false
+      reviewed: true
   - label: 'fta'
     name: 'Fundamental theorem of algebra'
     display:
       tex: '\deg F \ge 1 \to \exists z \in \mathbb{C}\; F(z) = 0'
-      reviewed: false
+      reviewed: true
   - label: 'abelth'
     name: 'Abel''s theorem on power series'
     display:
       tex: '\sum_n a_n \text{ converges} \to x \mapsto \sum_{n} a_n x^n \text{ is continuous on } \{z : |1 - z| \le M(1 - |z|)\}'
-      reviewed: false
+      reviewed: true
   - label: 'leibpi'
     name: 'Leibniz formula for $\pi$'
     display:
       tex: '\sum_{n=0}^{\infty} \frac{(-1)^n}{2n + 1} = \frac{\pi}{4}'
-      reviewed: false
+      reviewed: true
   - label: 'trirecip'
     name: 'Sum of reciprocals of triangular numbers'
     display:
       tex: '\sum_{k=1}^{\infty} \frac{2}{k(k + 1)} = 2'
-      reviewed: false
+      reviewed: true
   - label: 'mcubic'
     name: 'Solution of the monic cubic'
     display:
       tex: 'X^3 + BX^2 + CX + D = 0 \leftrightarrow \exists r\,\Bigl(r^3 = 1 \land X = -\frac{B + rT + M/(rT)}{3}\Bigr) \qquad (M, T \text{ from Cardano})'
-      reviewed: false
+      reviewed: true
   - label: 'quart'
     name: 'Solution of the quartic'
     display:
       tex: 'X^4 + AX^3 + BX^2 + CX + D = 0 \leftrightarrow X \in \{E - S \pm I,\ E + S \pm J\} \qquad (\text{Ferrari})'
-      reviewed: false
+      reviewed: true
   - label: 'facth'
     name: 'The factor theorem'
     display:
       tex: 'F(A) = 0 \to F = (x - A) \cdot \bigl(F \operatorname{quot} (x - A)\bigr)'
-      reviewed: false
+      reviewed: true
   - label: 'lawcos'
     name: 'Law of cosines'
     display:
       tex: 'c^2 = a^2 + b^2 - 2ab \cos\gamma'
-      reviewed: false
+      reviewed: true
   - label: 'heron'
     name: 'Heron''s formula'
     display:
       tex: '\tfrac{1}{2} ab\, |\sin\gamma| = \sqrt{s(s - a)(s - b)(s - c)}, \quad s = \tfrac{a + b + c}{2}'
-      reviewed: false
+      reviewed: true
   - label: 'ptolemy'
     name: 'Ptolemy''s theorem'
     display:
       tex: 'A + B + C + D = \pi \to \sin A \sin B + \sin C \sin D = \sin(B + C) \sin(A + C)'
-      reviewed: false
+      reviewed: true
   - label: 'chordthm'
     name: 'Intersecting chords theorem'
     display:
       tex: '|PA| \cdot |PB| = |PC| \cdot |PD| \qquad (\text{chords } AB,\ CD \text{ crossing at } P)'
-      reviewed: false
+      reviewed: true
   - label: 'ang180'
     name: 'Angle sum of a triangle is $\pm\pi$'
     display:
       tex: '\alpha + \beta + \gamma = \pm\pi \qquad (\text{signed angles of a triangle})'
-      reviewed: false
+      reviewed: true
   - label: 'isosctr'
     name: 'Isosceles triangle theorem'
     display:
       tex: '|AC| = |BC| \to \angle A = \angle B'
-      reviewed: false
+      reviewed: true
   - label: 'incexc'
     name: 'Inclusion–exclusion principle'
     display:
       tex: '\Bigl|\bigcup A\Bigr| = \sum_{\emptyset \neq s \subseteq A} (-1)^{|s| - 1} \Bigl|\bigcap s\Bigr|'
-      reviewed: false
+      reviewed: true
   - label: 'birthday'
     name: 'The birthday problem'
     display:
       tex: '\frac{365 \cdot 364 \cdots 343}{365^{23}} < \frac{1}{2}'
-      reviewed: false
+      reviewed: true
   - label: 'df-cat'
     name: 'Definition of a category'
   - label: 'df-func'
@@ -960,7 +961,7 @@ landmarks:
     name: 'Yoneda lemma'
     display:
       tex: '\mathrm{Nat}\bigl(\mathrm{Hom}(-, X),\ F\bigr) \cong F(X), \text{ naturally in } F \text{ and } X'
-      reviewed: false
+      reviewed: true
   - label: 'df-poset'
     name: 'Definition of a partially ordered set'
   - label: 'df-lat'
@@ -969,7 +970,7 @@ landmarks:
     name: 'Knaster–Tarski fixed-point theorem'
     display:
       tex: 'F \text{ monotone on } \mathcal{P}(A),\ F(A) \subseteq A \to F(X) = X, \quad X = \textstyle\bigcap \{z \subseteq A : F(z) \subseteq z\}'
-      reviewed: false
+      reviewed: true
   - label: 'df-no'
     name: 'Definition of the surreal numbers'
   - label: 'df-trkg'
@@ -982,84 +983,84 @@ landmarks:
     name: 'The Königsberg bridge problem'
     display:
       tex: '\text{the K\"onigsberg graph has no Eulerian path}'
-      reviewed: false
+      reviewed: true
   - label: 'friendship'
     name: 'The friendship theorem'
     display:
       tex: '\text{a finite friendship graph has a vertex adjacent to every other}'
-      reviewed: false
+      reviewed: true
   # Hubs: early results that most later ones pass through. Each one gathers tunnels that would
   # otherwise all run to the surface separately.
   - label: 'eqid'
     name: 'Law of identity: $A = A$'
     display:
       tex: 'A = A'
-      reviewed: false
+      reviewed: true
   - label: 'isset'
     name: 'A class is a set exactly when it exists'
     display:
       tex: 'A \in V \leftrightarrow \exists x\; x = A'
-      reviewed: false
+      reviewed: true
   - label: '0re'
     name: '0 is a real number'
     display:
       tex: '0 \in \mathbb{R}'
-      reviewed: false
+      reviewed: true
   - label: '1re'
     name: '1 is a real number'
     display:
       tex: '1 \in \mathbb{R}'
-      reviewed: false
+      reviewed: true
   - label: 'recn'
     name: 'Every real number is a complex number'
     display:
       tex: 'A \in \mathbb{R} \to A \in \mathbb{C}'
-      reviewed: false
+      reviewed: true
   - label: 'addcom'
     name: 'Addition is commutative (proved, not assumed)'
     display:
       tex: 'A + B = B + A \qquad (A, B \in \mathbb{C})'
-      reviewed: false
+      reviewed: true
   - label: 'mul01'
     name: 'Anything times 0 is 0'
     display:
       tex: 'A \cdot 0 = 0'
-      reviewed: false
+      reviewed: true
   - label: 'ltnr'
     name: 'No real number is less than itself'
     display:
       tex: '\neg(A < A)'
-      reviewed: false
+      reviewed: true
   - label: 'lttri'
     name: '''Less than'' is transitive'
     display:
       tex: '(A < B \land B < C) \to A < C'
-      reviewed: false
+      reviewed: true
   - label: '1p1e2'
     name: '$1 + 1 = 2$'
     display:
       tex: '1 + 1 = 2'
-      reviewed: false
+      reviewed: true
   - label: '2p2e4'
     name: '$2 + 2 = 4$'
     display:
       tex: '2 + 2 = 4'
-      reviewed: false
+      reviewed: true
   - label: 'nnssre'
     name: 'The positive integers are real numbers'
     display:
       tex: '\mathbb{N} \subseteq \mathbb{R}'
-      reviewed: false
+      reviewed: true
   - label: 'zssre'
     name: 'The integers are real numbers'
     display:
       tex: '\mathbb{Z} \subseteq \mathbb{R}'
-      reviewed: false
+      reviewed: true
   - label: 'qssre'
     name: 'The rationals are real numbers'
     display:
       tex: '\mathbb{Q} \subseteq \mathbb{R}'
-      reviewed: false
+      reviewed: true
 
 # Names for the axioms, which are added automatically. Each is set.mm's own name for the axiom,
 # or a plain reading of what its description says it states.

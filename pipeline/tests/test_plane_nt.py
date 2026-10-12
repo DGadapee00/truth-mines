@@ -195,14 +195,29 @@ def test_hues_distinct_and_small_primes_most_saturated(plane):
     assert min(strong) > max(v for p, v in sat.items() if p > 7)
 
 
-def test_texts_are_drafts_with_every_placeholder_filled(plane):
+def test_texts_copy_the_review_flag_and_fill_every_placeholder(plane):
     ids = [t["id"] for t in plane["texts"]]
     assert ids == ["arrive", "road", "plaza", "arrive_open", "road_open", "plaza_open", "sieve_note", "overlook"]
+    # The shipped captions are approved in config.yaml. The build copies that flag; it does not invent it.
     for t in plane["texts"]:
-        assert t["reviewed"] is False
+        assert t["reviewed"] is True
         assert "{" not in t["text"] and "}" not in t["text"], t["text"]
     by = {t["id"]: t["text"] for t in plane["texts"]}
     assert "64 = 2⁶ and 96 = 2⁵ · 3" in by["road"] and "6 blocks" in by["road"]
+
+
+def test_a_missing_or_false_review_flag_stays_a_draft_and_a_bad_flag_fails():
+    cfg = {**CFG, "texts": [dict(t) for t in CFG["texts"]]}
+    cfg["texts"][0] = {k: v for k, v in cfg["texts"][0].items() if k != "reviewed"}
+    cfg["texts"][1] = {**cfg["texts"][1], "reviewed": False}
+    built = build(cfg)
+    by = {t["id"]: t["reviewed"] for t in built["texts"]}
+    assert by["arrive"] is False
+    assert by["road"] is False
+    assert by["plaza"] is True
+    bad = {**cfg, "texts": [{**cfg["texts"][0], "reviewed": "yes"}, *cfg["texts"][1:]]}
+    with pytest.raises(SystemExit, match="arrive"):
+        build(bad)
 
 
 def test_build_is_deterministic(plane):
@@ -338,9 +353,9 @@ def test_every_composite_up_to_100_has_a_prime_factor_no_larger_than_10(plane):
     assert all(min(trial_division(n)) < 11 for n in range(2, 101) if not is_prime(n))
 
 
-def test_the_sieve_note_is_a_computed_draft(plane):
+def test_the_sieve_note_is_computed_from_the_plaza(plane):
     note = {t["id"]: t for t in plane["texts"]}["sieve_note"]
-    assert note["reviewed"] is False
+    assert note["reviewed"] is True
     assert "2, 3, 5 and 7" in note["text"] and "10" in note["text"] and "25" in note["text"]
 
 
