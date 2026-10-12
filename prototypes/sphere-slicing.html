@@ -55,13 +55,9 @@
       color: var(--gold);
       text-shadow: 0 0 12px rgba(255, 210, 122, 0.85), 0 0 28px rgba(255, 159, 74, 0.45);
     }
-    #true-name {
-      margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 210, 122, 0.25);
-      opacity: 0; max-height: 0; overflow: hidden;
-      transition: opacity 0.8s ease, max-height 0.8s ease;
-    }
-    #true-name.open { opacity: 1; max-height: 80px; }
-    #true-name .katex { color: var(--gold); font-size: 1.15em; }
+    #true-name { display: none; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 210, 122, 0.25); }
+    #true-name.open { display: block; }
+    #true-name .katex, #true-name .katex-display { color: var(--gold); font-size: 1.2em; margin: 0.2em 0; }
 
     #inspect {
       position: absolute; right: 18px; top: 50%; transform: translateY(-50%) translateX(16px);
@@ -79,19 +75,19 @@
     #eq-rho .katex, #eq-slab .katex { font-size: 1.05em; }
 
     #click-panel {
-      position: absolute; left: 50%; bottom: 118px; transform: translateX(-50%) translateY(8px);
-      width: min(520px, 92vw); text-align: center;
+      position: absolute; left: 50%; top: 18px; transform: translateX(-50%) translateY(-8px);
+      width: min(560px, 70vw); text-align: center;
+      background: var(--panel); border: 1px solid rgba(255, 210, 122, 0.28);
+      border-radius: 14px; padding: 8px 16px 10px;
       opacity: 0; pointer-events: none; transition: opacity 0.5s ease, transform 0.5s ease;
     }
-    #click-panel.open { opacity: 1; transform: translateX(-50%); pointer-events: auto; }
-    #morph {
-      position: relative; height: 72px; margin-bottom: 6px;
-    }
+    #click-panel.open { opacity: 1; transform: translateX(-50%); }
+    #morph { position: relative; height: 64px; }
     #eq-sum, #eq-int {
       position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
       transition: opacity 0.9s ease;
     }
-    #eq-sum .katex, #eq-int .katex { font-size: 1.25em; color: #fff6dd; }
+    #eq-sum .katex, #eq-int .katex { font-size: 1.28em; color: #fff6dd; }
     #eq-int { opacity: 0; }
     #eq-int.on { opacity: 1; }
     #eq-sum.off { opacity: 0; }
@@ -116,7 +112,8 @@
       transition: opacity 0.45s ease, transform 0.45s ease;
     }
     #slice-controls.open, #thin-controls.open { opacity: 1; transform: none; pointer-events: auto; }
-    #slice-controls.retired, #blade-track.retired { opacity: 0; pointer-events: none; }
+    #slice-controls.open.retired, #blade-track.open.retired,
+    #slice-controls.retired, #blade-track.retired { opacity: 0 !important; pointer-events: none !important; }
     .row { display: flex; align-items: center; gap: 12px; }
     .row label { font-size: 0.78rem; color: var(--star); letter-spacing: 0.08em; text-transform: uppercase; min-width: 3.2em; }
     #n-val, #dx-val { color: var(--gold); font-variant-numeric: tabular-nums; font-weight: 600; min-width: 3em; }
@@ -219,7 +216,7 @@
       <div id="thin-controls" class="hit">
         <div class="row">
           <label for="dx-slider">Δx <span id="dx-val">0.010</span></label>
-          <input id="dx-slider" type="range" min="0" max="1000" value="1000" step="1" aria-label="Push thickness toward zero" />
+          <input id="dx-slider" type="range" min="0" max="1000" value="0" step="1" aria-label="Push thickness toward zero" />
         </div>
       </div>
     </div>
@@ -237,7 +234,7 @@
     ];
     const SMOOTH_N = 560;
     const SIL_SAMPLES = 96;
-    const PULL = 1.85;
+    const PULL = 1.32;
 
     const N_TICKS = [4, 10, 50, 200];
 
@@ -393,14 +390,14 @@
     starsGeo.setAttribute("color", new THREE.BufferAttribute(starCol, 3));
     const stars = new THREE.Points(
       starsGeo,
-      new THREE.PointsMaterial({ size: 0.045, vertexColors: true, transparent: true, opacity: 0.85, depthWrite: false }),
+      new THREE.PointsMaterial({ size: 0.07, vertexColors: true, transparent: true, opacity: 0.95, depthWrite: false }),
     );
     scene.add(stars);
 
     const ballMat = new THREE.MeshPhysicalMaterial({
       color: 0xffe0b0,
       emissive: 0xff8a3d,
-      emissiveIntensity: 0.42,
+      emissiveIntensity: 0.62,
       roughness: 0.28,
       metalness: 0.08,
       clearcoat: 0.55,
@@ -412,29 +409,27 @@
     scene.add(solid);
 
     const glowMat = new THREE.ShaderMaterial({
-      uniforms: {
-        color: { value: new THREE.Color(0xffb060) },
-      },
+      uniforms: { color: { value: new THREE.Color(0xffb45a) } },
       vertexShader: `
-        varying vec3 vN; varying vec3 vV;
+        varying float vF;
         void main() {
-          vN = normalize(normalMatrix * normal);
+          vec3 ns = normalize(normalMatrix * normal);
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
-          vV = -mv.xyz;
+          vF = pow(1.0 - abs(dot(ns, normalize(-mv.xyz))), 2.1);
           gl_Position = projectionMatrix * mv;
         }`,
       fragmentShader: `
-        uniform vec3 color; varying vec3 vN; varying vec3 vV;
+        uniform vec3 color; varying float vF;
         void main() {
-          float f = pow(1.0 - abs(dot(normalize(vN), normalize(vV))), 2.4);
-          gl_FragColor = vec4(color, f * 0.55);
+          gl_FragColor = vec4(color * 1.35, vF * 0.7);
         }`,
       side: THREE.BackSide,
       blending: THREE.AdditiveBlending,
       transparent: true,
       depthWrite: false,
+      toneMapped: false,
     });
-    const glow = new THREE.Mesh(new THREE.SphereGeometry(R * 1.12, 48, 32), glowMat);
+    const glow = new THREE.Mesh(new THREE.SphereGeometry(R * 1.1, 48, 32), glowMat);
     scene.add(glow);
 
     const ghost = new THREE.Mesh(
@@ -443,9 +438,15 @@
     );
     ghost.visible = false;
     scene.add(ghost);
-    const ghostWire = new THREE.LineSegments(
-      new THREE.WireframeGeometry(new THREE.SphereGeometry(R, 24, 16)),
-      new THREE.LineBasicMaterial({ color: 0x9db8ff, transparent: true, opacity: 0.16 }),
+    const ghostWire = new THREE.Mesh(
+      new THREE.SphereGeometry(R, 32, 24),
+      new THREE.MeshBasicMaterial({
+        color: 0x9db8ff,
+        transparent: true,
+        opacity: 0.055,
+        wireframe: true,
+        depthWrite: false,
+      }),
     );
     ghostWire.visible = false;
     scene.add(ghostWire);
@@ -493,6 +494,7 @@
         depthWrite: false,
       }),
     );
+    blade.visible = false;
     scene.add(blade);
 
     const silPosArr = new Float32Array(SIL_SAMPLES * 3);
@@ -502,6 +504,7 @@
       silGeo,
       new THREE.LineBasicMaterial({ color: 0xffd27a, transparent: true, opacity: 0 }),
     );
+    silLine.frustumCulled = false;
     scene.add(silLine);
 
     function layoutSlabs(n, hideIndex, bladeLimit) {
@@ -588,7 +591,8 @@
       state.step = Math.max(state.step, 2);
       document.body.dataset.step = String(state.step);
       solid.visible = false;
-      ghost.visible = true;
+      glow.visible = false;
+      ghost.visible = false;
       ghostWire.visible = true;
       readoutEl.classList.add("open");
       playSweep();
@@ -602,6 +606,7 @@
     function playSweep() {
       state.sweeping = true;
       state.bladeY = 1.25;
+      blade.visible = true;
       blade.material.opacity = 0.55;
     }
 
@@ -649,7 +654,7 @@
       sliceControls.classList.add("retired");
       bladeTrack.classList.add("retired");
       state.fineN = Math.max(200, state.n);
-      dxSlider.value = "1000";
+      dxSlider.value = "0";
       dxVal.textContent = dxOf(state.fineN).toFixed(3);
       setCaption("Now make them thinner. Don't stop.");
     }
@@ -764,12 +769,12 @@
         return;
       }
       const n = currentN();
-      const dx = dxOf(Math.min(n, state.step >= 4 ? n : state.n));
+      const dx = dxOf(state.n);
       const x = state.inspectX;
       const rho = rhoOf(x);
-      pulled.visible = true;
-      pulled.position.set(PULL, x, 0);
-      pulled.scale.set(Math.max(rho, 1e-4) * 1.28, Math.max(dx, 0.012) * 1.15, Math.max(rho, 1e-4) * 1.28);
+      pulled.visible = state.morph < 0.2;
+      pulled.position.set(PULL, x, 0.15);
+      pulled.scale.set(Math.max(rho, 1e-4) * 1.05, Math.max(dx, 0.07), Math.max(rho, 1e-4) * 1.05);
     }
 
     function setInspectX(x, fromDrag) {
@@ -802,7 +807,7 @@
       const hookT = Math.pow(Math.max(0, 1 - t * 10), 2);
       const hookB = Math.pow(Math.max(0, t * 10 - 9), 2);
       x += 0.28 * hookT - 0.28 * hookB;
-      return { x: x * 0.85 + 0.55, y };
+      return { x: x * 0.7 + 1.05, y };
     }
     function lerpPt(a, b, t) {
       return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
@@ -824,7 +829,7 @@
         arr[i * 3 + 2] = 0;
       }
       silGeo.attributes.position.needsUpdate = true;
-      silLine.material.opacity = Math.min(1, morph * 1.6) * 0.95;
+      silLine.material.opacity = Math.min(1, morph * 1.8) * 1.0;
     }
 
     function setMorph(p) {
@@ -832,6 +837,7 @@
       const n = Math.round(200 + (SMOOTH_N - 200) * state.morph);
       state.fineN = Math.max(state.n, n);
       dxVal.textContent = dxOf(state.fineN).toFixed(3);
+      dxSlider.value = String(Math.round(state.morph * 1000));
       const sum = document.getElementById("eq-sum");
       const integ = document.getElementById("eq-int");
       if (state.morph > 0.48) {
@@ -909,8 +915,7 @@
 
     dxSlider.addEventListener("input", () => {
       if (state.step < 4) return;
-      const t = 1 - Number(dxSlider.value) / 1000;
-      setMorph(t);
+      setMorph(Number(dxSlider.value) / 1000);
     });
 
     function syncBladeHandle() {
@@ -987,10 +992,12 @@
         if (state.bladeY < -1.25) {
           state.sweeping = false;
           blade.material.opacity = 0;
+          blade.visible = false;
           refreshSlabs();
         }
       } else {
         blade.material.opacity = Math.max(0, blade.material.opacity - dt * 1.8);
+        if (blade.material.opacity <= 0.01) blade.visible = false;
       }
       renderer.render(scene, camera);
     }
