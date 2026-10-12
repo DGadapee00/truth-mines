@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://truth-mines/schemas/progress.schema.json",
+  "title": "progress",
+  "description": "Player data, kept in localStorage and in the Worker's KV. Mirrors core/schema.ts (Progress). Stores only what the visitor has done; door states are computed (core/doors.ts). Merging is core/progress.ts mergeProgress.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "earned", "pathways", "updated_at"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "earned": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "pathways": {
+      "type": "object",
+      "propertyNames": { "minLength": 1 },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["stretch", "resume", "updated_at"],
+        "properties": {
+          "stretch": { "type": "string", "minLength": 1 },
+          "resume": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["pos", "yaw"],
+            "properties": {
+              "pos": { "type": "array", "minItems": 3, "maxItems": 3, "items": { "type": "number" } },
+              "yaw": { "type": "number" }
+            }
+          },
+          "updated_at": { "$ref": "#/$defs/time" }
+        }
+      }
+    },
+    "updated_at": { "$ref": "#/$defs/time" }
+  },
+  "$defs": {
+    "time": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$" }
+  }
+}

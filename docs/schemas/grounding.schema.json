@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://truth-mines/schemas/grounding.schema.json",
+  "title": "grounding.json",
+  "description": "Built by pipeline/grounding.py and bundled into the Worker. What Trurl may assert about mathematics. display and note appear only once a person has reviewed them; rubrics are drafts, never shown to the visitor.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "planes", "landmarks", "moments"],
+  "properties": {
+    "schema_version": { "const": 2 },
+    "planes": { "type": "object", "additionalProperties": { "type": "string", "minLength": 1 } },
+    "landmarks": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "kind", "statement", "source", "comment"],
+        "properties": {
+          "name": { "type": "string" },
+          "kind": { "enum": ["axiom", "definition", "theorem"] },
+          "statement": { "type": "string", "minLength": 1 },
+          "source": { "type": "string", "minLength": 1 },
+          "comment": { "type": "string", "minLength": 1 },
+          "display": { "type": "string", "minLength": 1 },
+          "note": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "moments": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["plane", "stretch", "kind", "landmarks", "earns", "question", "rubric", "rubric_reviewed"],
+        "properties": {
+          "plane": { "type": "string" },
+          "stretch": { "type": "string" },
+          "kind": { "enum": ["road", "sieve", "overlook"] },
+          "landmarks": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+          "earns": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+          "question": { "type": "string", "minLength": 1 },
+          "rubric": { "type": "string", "minLength": 1 },
+          "rubric_reviewed": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

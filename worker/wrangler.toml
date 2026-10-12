@@ -1,0 +1,20 @@
+# The Trurl Worker. Holds every provider key; the static app never sees one.
+#
+# Nothing secret belongs in this file. The three secrets are set with `wrangler secret put` (see
+# README.md): TRURL_APP_SECRET, ANTHROPIC_API_KEY, XAI_API_KEY. Locally they go in .dev.vars,
+# which is gitignored.
+
+name = "trurl"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# The production origin of the static site, comma separated if there are several.
+# localhost and local-network dev origins are always allowed.
+ALLOWED_ORIGINS = "https://dgadapee00.github.io"
+
+[[kv_namespaces]]
+binding = "PROGRESS"
+# Create with `npx wrangler kv namespace create PROGRESS` and paste the id here (an id is not a secret).
+id = "REPLACE_WITH_KV_NAMESPACE_ID"

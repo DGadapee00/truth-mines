@@ -15,7 +15,15 @@
     "test:pipeline": "python3 -m pytest -q pipeline/tests",
     "test:map": "playwright test e2e/mine.spec.ts",
     "e2e": "playwright test",
-    "check": "npm run typecheck && npm run lint && npm test && npm run test:pipeline && npm run test:map"
+    "check": "npm run typecheck && npm run lint && npm test && npm run test:pipeline && npm run typecheck:worker && npm run test:worker && npm run test:cathedral && npm run secrets && npm run test:map",
+    "test:worker": "npm --prefix worker test",
+    "typecheck:worker": "npm --prefix worker run typecheck",
+    "grounding": "python3 -m pipeline grounding && npm --prefix worker run grounding",
+    "secrets": "node scripts/check-no-secrets.mjs",
+    "install:worker": "npm ci --prefix worker",
+    "test:cathedral": "npm --prefix cathedral run typecheck && npm --prefix cathedral test",
+    "build:cathedral": "npm --prefix cathedral run build",
+    "install:apps": "npm ci && npm ci --prefix worker && npm ci --prefix cathedral"
   },
   "dependencies": {
     "katex": "^0.16.25",
@@ -29,6 +37,7 @@
     "@types/katex": "^0.16.7",
     "@types/node": "^22.20.5",
     "@types/three": "^0.172.0",
+    "ajv": "^8.20.0",
     "eslint": "^9.39.1",
     "iwer": "^2.5.0",
     "typescript": "^5.7.3",

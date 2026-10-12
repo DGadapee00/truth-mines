@@ -3,3 +3,4 @@ numpy==2.4.6
 PyYAML==6.0.1
 pytest==9.1.1
 fonttools==4.60.1
+jsonschema==4.25.1

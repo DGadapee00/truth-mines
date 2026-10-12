@@ -243,3 +243,468 @@ export function parseScene(raw: unknown): SceneFile {
   }
   return s as SceneFile;
 }
+
+// ---------------------------------------------------------------- plane-number-theory.json
+//
+// The number theory plane, written by pipeline/plane_nt.py. It has its own version, so adding a
+// plane leaves the mine's files alone. As with scene.json, the app draws and animates this and
+// decides no geometry (CLAUDE.md rule 9). Conventions travel with the file.
+
+export const PLANE_SCHEMA_VERSION = 2;
+
+export interface PlaneText {
+  id: string;
+  text: string;
+  /** Drafts stay false until a person approves the line */
+  reviewed: boolean;
+}
+
+export interface PlaneStop {
+  id: string;
+  name: string;
+  pos: Vec3;
+  yaw: number;
+  pitch: number;
+}
+
+export interface PrimeColour {
+  p: number;
+  hue: number;
+  saturation: number;
+  lightness: number;
+  color: string;
+}
+
+export interface ColumnPart {
+  prime: number;
+  y: number;
+  h: number;
+  form: 'block' | 'monolith';
+}
+
+export interface RoadColumn {
+  n: number;
+  kind: 'unit' | 'prime' | 'composite';
+  pos: Vec3;
+  yaw: number;
+  /** Prime factors with multiplicity, smallest first */
+  factors: number[];
+  /** "12 = 2² · 3" */
+  label: string;
+  parts: ColumnPart[];
+  height: number;
+  radius: number;
+  /** One arc per block, from the block to its prime's monolith */
+  threads: Vec3[][];
+}
+
+export interface PlazaCell {
+  n: number;
+  row: number;
+  col: number;
+  pos: Vec3;
+}
+
+export interface Plaza {
+  centre: Vec3;
+  yaw: number;
+  cell: number;
+  seed_cell: { row: number; col: number; pos: Vec3 };
+  grid: PlazaCell[];
+  column: { width: number; height: number; rubble_height: number };
+  labels: { number_height: number; number_offset: number };
+  footprint: number;
+  stone: string;
+  glow: string;
+  crumble_step_s: number;
+  /** For each number, the multiples after itself that crumble when it is struck */
+  multiples: Record<string, number[]>;
+  survivors: number[];
+  bound: number;
+  sufficient_primes: number[];
+}
+
+export interface OverlookSample {
+  x: number;
+  pi: number;
+  estimate: number;
+  ratio: number;
+  /** Metres along the overlook road */
+  s: number;
+  at: Vec3;
+  pi_at: Vec3;
+  est_at: Vec3;
+  /** On the ratio curve: base + ratio_scale * (ratio - 1) */
+  ratio_at: Vec3;
+  /** Where the marker's sign stands, beside the road */
+  sign_at: Vec3;
+}
+
+export interface OverlookWindow {
+  x0: number;
+  span: number;
+  label: string;
+  count: number;
+  label_at: Vec3;
+  primes: { p: number; pos: Vec3 }[];
+}
+
+export interface Overlook {
+  scale: { x0: number; x1: number; decades: number; metres_per_decade: number; origin: Vec3; yaw: number };
+  road: { length: number; half_width: number };
+  panel: { cell: number; base: number };
+  decades: { x: number; label: string; pos: Vec3 }[];
+  windows: OverlookWindow[];
+  samples: OverlookSample[];
+  marker: { sign_size: [number, number] };
+  labels: { height: number };
+  curve: { offset: number; base: number; height: number; width: number; ratio_scale: number; baseline: [Vec3, Vec3] };
+}
+
+export interface PlaneFile {
+  schema_version: number;
+  plane: string;
+  conventions: Record<string, string>;
+  texts: PlaneText[];
+  stops: PlaneStop[];
+  ground: { spine: Vec3[]; half_width: number; square: { centre: Vec3; yaw: number; half: number } };
+  primes: PrimeColour[];
+  road: {
+    spacing: number;
+    block: { size: number; gap: number };
+    thread_radius: number;
+    /** An unrevealed composite is drawn in this one colour; its blocks take their prime colours one by one, `assemble_step_s` apart */
+    veil: { colour: string; assemble_step_s: number };
+    labels: { number_height: number; number_offset: number; sign_offset: number; sign_size: [number, number] };
+    monolith: { width: number; height: number };
+    seed: { pos: Vec3; size: [number, number] };
+    columns: RoadColumn[];
+  };
+  plaza: Plaza;
+  overlook: Overlook;
+}
+
+/** Check a parsed plane-number-theory.json before anything draws it. Throws SchemaError. */
+export function parsePlane(raw: unknown): PlaneFile {
+  const p = raw as Partial<PlaneFile> | null;
+  if (!p || p.schema_version !== PLANE_SCHEMA_VERSION) throw new SchemaError(`plane-number-theory.json has schema version ${String(p?.schema_version)}; this app reads ${PLANE_SCHEMA_VERSION}`);
+  for (const k of ['texts', 'stops', 'primes'] as const) if (!Array.isArray(p[k])) throw new SchemaError(`plane: ${k}`);
+  if (!p.ground || !Array.isArray(p.ground.spine) || p.ground.spine.length < 2 || !p.ground.spine.every(isVec3)) throw new SchemaError('plane: ground');
+  if (!p.road || !Array.isArray(p.road.columns)) throw new SchemaError('plane: road');
+  if (!p.road.veil || typeof p.road.veil.colour !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(p.road.veil.colour) || !(p.road.veil.assemble_step_s > 0)) throw new SchemaError('plane: road veil');
+  for (const c of p.road.columns) {
+    const w = `plane column ${String(c?.n)}`;
+    if (!Number.isInteger(c.n) || !isVec3(c.pos) || typeof c.label !== 'string' || !Array.isArray(c.parts) || !Array.isArray(c.threads)) throw new SchemaError(w);
+    if (!c.threads.every((t) => Array.isArray(t) && t.every(isVec3))) throw new SchemaError(`${w}: threads`);
+  }
+  const pl = p.plaza;
+  if (!pl || !Array.isArray(pl.grid) || !pl.multiples || !Array.isArray(pl.survivors)) throw new SchemaError('plane: plaza');
+  for (const c of pl.grid) if (!Number.isInteger(c.n) || !isVec3(c.pos) || !pl.multiples[String(c.n)]) throw new SchemaError(`plane plaza cell ${String(c?.n)}`);
+  const ov = p.overlook;
+  if (!ov || !Array.isArray(ov.samples) || ov.samples.length < 2 || !Array.isArray(ov.windows)) throw new SchemaError('plane: overlook');
+  for (const s of ov.samples) if (!(s.x > 0) || !isVec3(s.at) || !isVec3(s.pi_at) || !isVec3(s.est_at) || !isVec3(s.ratio_at) || !isVec3(s.sign_at) || !Number.isFinite(s.s)) throw new SchemaError(`plane overlook sample ${String(s?.x)}`);
+  return p as PlaneFile;
+}
+
+// ---------------------------------------------------------------- cathedral.json and pathways.json
+//
+// Written by pipeline/cathedral.py and pipeline/pathways.py; JSON Schema for both lives in
+// docs/schemas/. Doors carry no state: core/doors.ts computes it from what has been earned.
+
+export const CATHEDRAL_SCHEMA_VERSION = 1;
+export const PATHWAYS_SCHEMA_VERSION = 3;
+
+export const PLANE_IDS = [
+  'logic',
+  'sets',
+  'infinity',
+  'number-theory',
+  'combinatorics',
+  'graph-theory',
+  'algebra-symmetry',
+  'linear-algebra',
+  'complex-numbers',
+  'geometry',
+  'topology',
+  'calculus-analysis',
+] as const;
+export type PlaneId = (typeof PLANE_IDS)[number];
+
+export type PreviewId = 'prime-stacks' | 'limit-curve' | 'torus-cup' | 'ring-motif';
+const PREVIEW_IDS: readonly string[] = ['prime-stacks', 'limit-curve', 'torus-cup', 'ring-motif'];
+const PLACEMENTS: readonly string[] = ['far-wall', 'left', 'right', 'entrance'];
+
+export interface CathedralArc {
+  id: string;
+  name: string;
+  placement: 'far-wall' | 'left' | 'right' | 'entrance';
+  centre_deg: number;
+  /** Plane ids, leftmost first as seen from the middle of the hall */
+  planes: PlaneId[];
+}
+
+export interface CathedralDoor {
+  plane: PlaneId;
+  name: string;
+  arc: string;
+  /** 0..11, one per 30 degrees from the far wall, counted toward the left */
+  slot: number;
+  bearing_deg: number;
+  pos: Vec3;
+  /** The way the door faces: toward the hall centre */
+  yaw: number;
+  /** Where the visitor stands, facing the door, when they step back out of its plane */
+  stand: { pos: Vec3; yaw: number };
+  pedestal: { pos: Vec3; radius: number; height: number; preview_pos: Vec3 };
+  preview: { id: PreviewId; params: Record<string, unknown> };
+}
+
+export interface ThresholdRing {
+  k: number;
+  scale: number;
+  radius: number;
+  rotation: number;
+  pos: Vec3;
+  /** Elevation of the path where the ring stands: the ring faces along the path */
+  pitch: number;
+}
+
+export interface ThresholdSegment {
+  kind: 'drift' | 'descent';
+  s_from: number;
+  s_to: number;
+  /** metres per second, before easing */
+  speed: number;
+  /** 0..1: how far the comfort vignette closes in */
+  vignette: number;
+}
+
+export interface CathedralFile {
+  schema_version: number;
+  conventions: Record<string, string>;
+  arcs: CathedralArc[];
+  hall: { radius: number; wall_height: number; /** The wall stands between the radius and the radius plus this */ wall_thickness: number; door: { width: number; height: number }; slots: number };
+  arrival: { pos: Vec3; yaw: number; dais_radius: number };
+  doors: CathedralDoor[];
+  threshold: {
+    motif: { kind: 'sierpinski'; depth: number; triangles: [number, number][][] };
+    rings: ThresholdRing[];
+    /** The rails path, in order: level through the tunnel in the vault, a turn, then straight down onto the arrival dais. It is where the visitor's feet go (the origin of their rig); the rings are centred `eye_height` above it. */
+    path: Vec3[];
+    eye_height: number;
+    /** Speed and comfort vignette per stretch of the path, by arc length in metres: the drift through the tunnel, then the descent */
+    segments: ThresholdSegment[];
+    /** Seconds to ramp the speed at the start, between segments and at the dais */
+    ease_s: number;
+    duration_s: number;
+  };
+  vault: { tiers: { i: number; radius: number; y: number; sides: number; rotation: number }[]; ratio: number; limit_y: number };
+}
+
+export type MomentKind = 'road' | 'sieve' | 'overlook';
+
+export interface PathwayMoment {
+  id: string;
+  kind: MomentKind;
+  /** set.mm ids this moment can grant when the visitor explains it to Trurl */
+  earns: string[];
+  /** What Trurl asks once the visitor has done the activity: a draft until a person reviews it, and never the answer */
+  question: string;
+  question_reviewed: boolean;
+}
+
+export interface PathwayStretch {
+  id: string;
+  /** The plane file this stretch draws, next to the other data files */
+  plane_data: string;
+  landmarks: string[];
+  moments: PathwayMoment[];
+}
+
+export interface Pathway {
+  plane: PlaneId;
+  /** The idea the gate was derived from: the first landmark of a built pathway, or the idea an unbuilt one will reach. null: no gate */
+  gated_on: string | null;
+  /**
+   * Derived by the pipeline, never written by hand: the ideas on the map (landmarks of any stretch)
+   * that `gated_on` truly rests on in set.mm. They must all be earned before the door can be a
+   * frontier door. null means no true gate exists in the prototype and the door is sealed.
+   */
+  entry_requires: string[] | null;
+  stretches: PathwayStretch[];
+}
+
+export interface PathwaysFile {
+  schema_version: number;
+  pathways: Pathway[];
+}
+
+const isStringArray = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === 'string' && x.length > 0);
+const isPlaneId = (v: unknown): v is PlaneId => (PLANE_IDS as readonly string[]).includes(v as string);
+
+/** Check a parsed cathedral.json before anything draws it. Throws SchemaError. */
+export function parseCathedral(raw: unknown): CathedralFile {
+  const c = raw as Partial<CathedralFile> | null;
+  if (!c || typeof c !== 'object') throw new SchemaError('cathedral.json is not an object');
+  if (c.schema_version !== CATHEDRAL_SCHEMA_VERSION) {
+    throw new SchemaError(`cathedral.json has schema version ${String(c.schema_version)}; this app reads ${CATHEDRAL_SCHEMA_VERSION}`);
+  }
+  if (!Array.isArray(c.arcs) || c.arcs.length !== 4) throw new SchemaError('cathedral: arcs');
+  for (const a of c.arcs) {
+    if (typeof a.id !== 'string' || !PLACEMENTS.includes(a.placement) || !Number.isInteger(a.centre_deg) || !Array.isArray(a.planes) || a.planes.length !== 3 || !a.planes.every(isPlaneId)) {
+      throw new SchemaError(`cathedral arc ${String(a?.id)}`);
+    }
+  }
+  const h = c.hall;
+  if (!h || !(h.radius > 0) || !(h.wall_height > 0) || !(h.wall_thickness > 0) || h.slots !== 12 || !(h.door?.width > 0) || !(h.door?.height > 0)) throw new SchemaError('cathedral: hall');
+  if (!c.arrival || !isVec3(c.arrival.pos) || !Number.isFinite(c.arrival.yaw) || !(c.arrival.dais_radius > 0)) throw new SchemaError('cathedral: arrival');
+  if (!Array.isArray(c.doors) || c.doors.length !== 12) throw new SchemaError('cathedral: there must be twelve doors');
+  const seen = new Set<string>();
+  for (const d of c.doors) {
+    const w = `cathedral door ${String(d?.plane)}`;
+    if (!isPlaneId(d.plane) || seen.has(d.plane)) throw new SchemaError(`${w}: plane`);
+    seen.add(d.plane);
+    if (!Number.isInteger(d.slot) || d.slot < 0 || d.slot > 11 || !Number.isInteger(d.bearing_deg)) throw new SchemaError(`${w}: slot`);
+    if (!isVec3(d.pos) || !Number.isFinite(d.yaw)) throw new SchemaError(`${w}: pos`);
+    if (!d.stand || !isVec3(d.stand.pos) || !Number.isFinite(d.stand.yaw)) throw new SchemaError(`${w}: stand`);
+    if (!d.pedestal || !isVec3(d.pedestal.pos) || !isVec3(d.pedestal.preview_pos) || !(d.pedestal.radius > 0) || !(d.pedestal.height > 0)) throw new SchemaError(`${w}: pedestal`);
+    if (!d.preview || !PREVIEW_IDS.includes(d.preview.id) || typeof d.preview.params !== 'object') throw new SchemaError(`${w}: preview`);
+    if (!c.arcs.some((a) => a.id === d.arc && a.planes.includes(d.plane))) throw new SchemaError(`${w}: arc`);
+  }
+  if (new Set(c.doors.map((d) => d.slot)).size !== 12) throw new SchemaError('cathedral: two doors share a slot');
+  const t = c.threshold;
+  if (!t || !Array.isArray(t.rings) || t.rings.length < 2 || !Array.isArray(t.path) || t.path.length < 2 || !t.path.every(isVec3)) throw new SchemaError('cathedral: threshold');
+  if (!(t.duration_s > 0) || !(t.ease_s > 0) || !(t.eye_height > 0) || t.motif?.kind !== 'sierpinski' || !Array.isArray(t.motif.triangles)) throw new SchemaError('cathedral: threshold motif or timing');
+  if (!Array.isArray(t.segments) || t.segments.length !== 2 || t.segments[0]?.kind !== 'drift' || t.segments[1]?.kind !== 'descent') throw new SchemaError('cathedral: threshold segments');
+  for (const g of t.segments) if (!(g.speed > 0) || !(g.vignette > 0 && g.vignette <= 1) || !Number.isFinite(g.s_from) || !(g.s_to > g.s_from)) throw new SchemaError(`cathedral threshold ${g.kind} segment`);
+  if (t.segments[0].s_from !== 0 || t.segments[1].s_from !== t.segments[0].s_to) throw new SchemaError('cathedral: threshold segments leave a gap');
+  for (const r of t.rings) if (!Number.isInteger(r.k) || !(r.scale > 0) || !(r.radius > 0) || !Number.isFinite(r.rotation) || !isVec3(r.pos) || !Number.isFinite(r.pitch)) throw new SchemaError(`cathedral threshold ring ${String(r?.k)}`);
+  if (!c.vault || !Array.isArray(c.vault.tiers) || c.vault.tiers.length < 1 || !(c.vault.ratio > 0 && c.vault.ratio < 1)) throw new SchemaError('cathedral: vault');
+  return c as CathedralFile;
+}
+
+/** Check a parsed pathways.json before anything uses it. Throws SchemaError. */
+export function parsePathways(raw: unknown): PathwaysFile {
+  const p = raw as Partial<PathwaysFile> | null;
+  if (!p || typeof p !== 'object') throw new SchemaError('pathways.json is not an object');
+  if (p.schema_version !== PATHWAYS_SCHEMA_VERSION) {
+    throw new SchemaError(`pathways.json has schema version ${String(p.schema_version)}; this app reads ${PATHWAYS_SCHEMA_VERSION}`);
+  }
+  if (!Array.isArray(p.pathways) || p.pathways.length !== 12) throw new SchemaError('pathways: there must be twelve');
+  const planes = new Set<string>();
+  const ids = new Set<string>();
+  for (const w of p.pathways) {
+    const where = `pathway ${String(w?.plane)}`;
+    if (!isPlaneId(w.plane) || planes.has(w.plane)) throw new SchemaError(`${where}: plane`);
+    planes.add(w.plane);
+    if (!(w.entry_requires === null || isStringArray(w.entry_requires)) || !Array.isArray(w.stretches)) throw new SchemaError(`${where}: entry_requires or stretches`);
+    if (!(w.gated_on === null || (typeof w.gated_on === 'string' && w.gated_on.length > 0)) || (w.gated_on === null) !== (w.entry_requires === null)) throw new SchemaError(`${where}: gated_on and entry_requires must both be set, or both be null`);
+    for (const s of w.stretches) {
+      if (typeof s.id !== 'string' || !s.id || typeof s.plane_data !== 'string' || !isStringArray(s.landmarks) || s.landmarks.length < 1 || !Array.isArray(s.moments)) throw new SchemaError(`${where}: stretch ${String(s?.id)}`);
+      if (ids.has(s.id)) throw new SchemaError(`${where}: stretch id ${s.id} repeats`);
+      ids.add(s.id);
+      for (const m of s.moments) {
+        if (typeof m.id !== 'string' || !m.id || ids.has(m.id) || !['road', 'sieve', 'overlook'].includes(m.kind) || !isStringArray(m.earns) || m.earns.length < 1) throw new SchemaError(`${where}: moment ${String(m?.id)}`);
+        if (typeof m.question !== 'string' || !m.question.trim() || typeof m.question_reviewed !== 'boolean') throw new SchemaError(`${where}: moment ${m.id} question`);
+        ids.add(m.id);
+        if (!m.earns.every((e) => s.landmarks.includes(e))) throw new SchemaError(`${where}: moment ${m.id} earns a landmark outside its stretch`);
+      }
+    }
+  }
+  return p as PathwaysFile;
+}
+
+// ---------------------------------------------------------------- progress (player data)
+//
+// What the visitor has done, written at runtime and kept on the device and in the Worker's KV. It
+// stores nothing derivable: door states come from `earned` (core/doors.ts). JSON Schema:
+// docs/schemas/progress.schema.json. Operations: core/progress.ts.
+
+export const PROGRESS_SCHEMA_VERSION = 1;
+
+/** Where the visitor stood in a pathway, in that plane's own frame (metres, yaw about +Y) */
+export interface Resume {
+  pos: Vec3;
+  yaw: number;
+}
+
+export interface PathwayProgress {
+  /** The stretch id the visitor was in */
+  stretch: string;
+  resume: Resume;
+  /** ISO 8601 UTC, e.g. 2026-10-10T21:00:00Z */
+  updated_at: string;
+}
+
+export interface Progress {
+  schema_version: number;
+  /** set.mm ids the visitor has earned, sorted, no repeats */
+  earned: string[];
+  /** Per plane id */
+  pathways: Record<string, PathwayProgress>;
+  updated_at: string;
+}
+
+// ---------------------------------------------------------------- Trurl (Worker request and grounding)
+//
+// The client sends only facts about where the visitor is (docs/schemas/trurl-request.schema.json);
+// the Worker builds the prompt. grounding.json (docs/schemas/grounding.schema.json) is what Trurl
+// may assert, bundled into the Worker by pipeline/grounding.py.
+
+export const TRURL_SCHEMA_VERSION = 2;
+export const GROUNDING_SCHEMA_VERSION = 2;
+
+export interface TrurlTurn {
+  role: 'user' | 'trurl';
+  text: string;
+}
+
+export interface TrurlRequest {
+  schema_version: number;
+  plane: string | null;
+  stretch: string | null;
+  moment: string | null;
+  landmark: string | null;
+  /** What the visitor is looking at, e.g. door:number-theory or column:12 */
+  looking_at: string | null;
+  earned: string[];
+  /** What the visitor has done in this session (core/doing.ts). Numbers only: nothing they typed goes in */
+  doing: { predicted: number[]; struck: number[]; stopped: boolean };
+  dialogue: TrurlTurn[];
+  utterance: string;
+}
+
+export interface GroundingLandmark {
+  name: string;
+  kind: Kind;
+  /** LaTeX translated from set.mm */
+  statement: string;
+  /** The statement as set.mm writes it */
+  source: string;
+  /** set.mm's own description, without credits */
+  comment: string;
+  /** Present only once a person has reviewed the display form */
+  display?: string;
+  /** Present only once a person has reviewed the note */
+  note?: string;
+}
+
+export interface GroundingMoment {
+  plane: string;
+  stretch: string;
+  kind: MomentKind;
+  landmarks: string[];
+  earns: string[];
+  /** What Trurl asks once the visitor has done the activity; the client shows the same line from pathways.json */
+  question: string;
+  /** A draft of what a good explanation says; private to Trurl's judge */
+  rubric: string;
+  rubric_reviewed: boolean;
+}
+
+export interface GroundingFile {
+  schema_version: number;
+  planes: Record<string, string>;
+  landmarks: Record<string, GroundingLandmark>;
+  moments: Record<string, GroundingMoment>;
+}

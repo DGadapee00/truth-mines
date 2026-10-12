@@ -118,7 +118,7 @@ test('statements: readable by default, formal on request, never wider than the p
     expect(fits, `${id} statement fits`).toBe(true);
   }
   await page.evaluate(() => (window as unknown as { __mines: { store: { select(id: string): void } } }).__mines.store.select('pnt'));
-  await expect(page.locator('#panel .draft')).toBeVisible();
+  await expect(page.locator('#panel .draft')).toHaveCount(0);
   await page.waitForTimeout(1200);
   await shot(page, '4-pnt-readable');
   await page.locator('#panel [data-form=formal]').click();

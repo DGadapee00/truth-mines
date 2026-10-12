@@ -98,17 +98,29 @@ test('journey: from the axioms, chamber by chamber, guided', async ({ page }) =>
 
 test('leaving a chamber frees its meshes: entering again does not grow GPU memory', async ({ page }) => {
   const geometries = () => page.evaluate(() => (window as unknown as W).__mines.renderer.info.memory.geometries);
+  // Label geometry is built asynchronously. Under SwiftShader a count taken too soon misses a
+  // mesh that appears a moment later, so wait until the count has stopped moving.
+  const settledCount = async () => {
+    let prev = -1;
+    let same = 0;
+    await expect.poll(async () => {
+      const n = await geometries();
+      same = n === prev ? same + 1 : 0;
+      prev = n;
+      return same;
+    }, { timeout: 20_000, intervals: [400] }).toBeGreaterThanOrEqual(2);
+    return prev;
+  };
   const visit = async () => {
     await page.locator('#panel [data-act=enter]').click();
     await expect.poll(async () => (await st(page)).chamber).toBe('sqrt2irr');
-    await page.waitForTimeout(1500);
+    await settledCount();
     await page.locator('#ih-map').click();
     await expect(page.locator('#inside-hud')).toBeHidden();
-    await page.waitForTimeout(500);
   };
   await visit();
-  const after1 = await geometries();
+  const after1 = await settledCount();
   await visit();
   await visit();
-  expect(await geometries()).toBe(after1);
+  expect(await settledCount()).toBe(after1);
 });

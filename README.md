@@ -9,7 +9,7 @@ where every theorem is proved step by step from the axioms of logic and ZFC set 
 statements and 909,530 citations. The mine shows 345 landmarks (named theorems, key definitions
 and every axiom) and folds the lemmas between them into tunnels that record how much they hide.
 
-Two ways to look:
+Three ways to look:
 
 - **The map**: the whole mine from outside. Select a theorem and its critical path to the axioms
   lights up.
@@ -17,6 +17,20 @@ Two ways to look:
   for each result it rests on, tunnels up to those results and down to what rests on it, with the
   lemmas of each tunnel marked at their own depth. "Journey here" walks you down from the axioms.
   Desktop (W A S D and the mouse) or a VR headset (teleport, snap turn, guided tunnels).
+- **The number theory plane**: a second place, not a theorem. Walk a road of the integers 1 to 100
+  (a prime is one tall monolith, every other number a stack of prime blocks, threads of light to
+  what it is made of), strike numbers in the sieve plaza until only the 25 primes stand, and look
+  out over the primes to a million as the count thins along a logarithmic road. Entered from the
+  header or `#/plane/number-theory`; desktop and headset. The brief is
+  [docs/plane-number-theory.md](docs/plane-number-theory.md).
+
+- **The cathedral**, which is what [the published site](https://dgadapee00.github.io/truth-mines/)
+  serves: a WebXR app in `cathedral/`. A threshold you drift down onto the dais of a round hall with
+  twelve doors (lit, dim or sealed by what you have understood), the number theory stretch behind one
+  of them, and questions in captions. Trurl's live voice needs a Worker that is not deployed; without
+  it, finishing the road or the sieve still earns that moment's idea on the device. See
+  [cathedral/README.md](cathedral/README.md) and [HANDOFF.md](HANDOFF.md). The map and the Inside view
+  above are still in this repo (`npm run dev`); they are not the published page.
 
 ## Run it
 
@@ -41,6 +55,8 @@ runs.
 | `npm test` | core/ queries, and every landmark's ancestors against the full set.mm graph; every statement typesets |
 | `npm run typecheck`, `npm run lint` | TypeScript strict; core/ imports no rendering code |
 | `npm run check` | typecheck, lint, unit tests, pipeline tests, and the map e2e. The fast local gate |
+| `npm run test:worker`, `npm run test:cathedral` | The Worker's tests (mocked Claude and xAI) and the cathedral app's unit tests |
+| `npm run secrets` | No provider key or app secret in the repo or in a client build |
 | `npm run e2e` | Full Playwright suite, which CI runs: the map on laptop and phone; the Inside view; the headset on an emulated Quest 3 |
 
 ## Layout of the code
@@ -50,11 +66,17 @@ runs.
 | `pipeline/` | Python: fetch, extract, validate, curate, collapse, depth, layout, export ([README](pipeline/README.md)) |
 | `pipeline/landmarks.yaml` | The curated landmarks and their names: the only place curation happens |
 | `pipeline/sources.lock` | Pinned sources (set.mm commit, the label font) with hashes |
-| `core/` | TypeScript graph model and queries (ancestors, descendants, critical path, search), and the schema of every data file. No rendering |
+| `core/` | TypeScript graph model and queries (ancestors, descendants, critical path, search), the sieve's rules, door states (`doors.ts`), progress merge (`progress.ts`), and the schema of every data file. No rendering |
 | `pipeline/scene.py` | The Inside view's chambers and tunnels, as engine-neutral scene descriptors (data/scene.json) |
+| `pipeline/numtheory.py`, `pipeline/plane_nt.py` | The number theory plane: arithmetic (tested against trial division) and its descriptors (data/plane-number-theory.json) |
+| `cathedral/` | The IWSDK app for the cathedral prototype: threshold, hall, doors, number theory stretch, Trurl, push-to-talk, progress. Its own package ([README](cathedral/README.md)) |
+| `pipeline/cathedral.py`, `pathways.py`, `grounding.py` | The cathedral's layout (data/cathedral.json), the pathways and their gates (data/pathways.json) and Trurl's grounding (data/grounding.json) |
 | `app/inside/` | The Inside view: renders the descriptors for the local subgraph; desktop walking, Journey, headset |
+| `app/plane/` | The number theory plane: draws and animates its descriptors; walking, focus, the sieve, stops, headset |
 | `app/render/` | The mine in three.js: instanced nodes and tunnels, batched labels, MathJax |
 | `app/ui/` | Panel, search, desktop camera |
+| `worker/` | The Cloudflare Worker behind Trurl: auth, rate limits, progress, the streamed Claude reply and the speech-to-text proxy. Holds every provider key ([README](worker/README.md)) |
+| `scripts/check-no-secrets.mjs` | Fails if a key or the app secret is in the repo or a client build |
 | `content/` | Plain-language notes, shown only once reviewed ([README](content/README.md)) |
 | `e2e/` | Playwright tests and screenshots |
 | `data/` | Generated, gitignored. Never edited by hand |

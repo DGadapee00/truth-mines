@@ -1,4 +1,5 @@
-# Build the data, run every gate, and on main deploy the site to GitHub Pages.
+# Build the data, run every gate, and on main deploy the cathedral to GitHub Pages.
+# The artifact is cathedral/dist: the walkable loop. The surface mine is built and tested above, and is not what the published URL shows.
 #
 # Pages needs switching on once: Settings → Pages → Build and deployment → Source: GitHub Actions.
 # On a free GitHub plan the repository must be public for Pages to serve it.
@@ -39,7 +40,7 @@ jobs:
           path: pipeline/.cache
           key: sources-${{ hashFiles('pipeline/sources.lock') }}
 
-      - name: Build the data (fetch, extract, validate, curate, collapse, depth, layout, export)
+      - name: Build the data (every stage)
         run: python -m pipeline
       - name: Pipeline tests (incl. every tunnel against the full graph)
         run: python -m pytest -q pipeline/tests
@@ -57,6 +58,18 @@ jobs:
       - name: core/ and app unit tests (incl. ancestors against the full graph)
         run: npm test
 
+      - name: Worker (typecheck and tests, with mocked Claude and xAI)
+        run: |
+          npm ci --prefix worker
+          npm run typecheck:worker
+          npm run test:worker
+      - name: Cathedral app (typecheck and unit tests)
+        run: |
+          npm ci --prefix cathedral
+          npm run test:cathedral
+      - name: No secrets in the repo
+        run: npm run secrets
+
       - name: End-to-end (desktop and phone)
         run: |
           npx playwright install --with-deps chromium
@@ -69,10 +82,14 @@ jobs:
           if-no-files-found: ignore
 
       - run: npm run build
+      - name: Build the cathedral and check no key reached the client
+        run: |
+          npm run build:cathedral
+          node scripts/check-no-secrets.mjs --client cathedral/dist
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main'
         with:
-          path: dist
+          path: cathedral/dist
 
   deploy:
     if: github.ref == 'refs/heads/main'

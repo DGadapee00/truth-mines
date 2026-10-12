@@ -130,3 +130,293 @@ inside:
     geometry: "#86ad92"
     graphs: "#b38a8a"
     other: "#9aa0a6"
+
+# The number theory plane (pipeline/plane_nt.py -> data/plane-number-theory.json). Layout and
+# colour live here; every number the plane shows is computed by pipeline/numtheory.py.
+number_theory_plane:
+  limit: 100 # the road and the plaza go up to this number
+  road:
+    spacing: 2.0 # metres between column centres, along the road
+    curve_amplitude: 0.35 # radians: the heading swings by this much either way
+    curve_period: 200.0 # metres of road per swing
+    step: 0.05 # metres: integration step for the centre line
+    lead_in: 6.0 # metres of road behind column 1
+    half_width: 4.0 # walkable half-width of the road
+    arrival_offset: 2.4 # metres left of the centre line where the visitor arrives, so the stacks do not wall off the road
+    block: 0.8 # metres: a block is a cube of this size
+    block_gap: 0.03 # metres shaved off each block so the seams between blocks show
+    thread_radius: 0.035
+    labels: { number_height: 0.5, number_offset: 0.45, sign_offset: 1.3, sign_size: [3.6, 0.5] }
+    monolith_width: 0.7
+    monolith_blocks: 4 # a prime's monolith is this many block heights tall
+    footprint: 0.6 # a column blocks walking within this radius
+    seed: { width: 1.2, height: 0.15 }
+    thread_points: 13
+    thread_lift: 2.0 # metres: arc rise of a thread, plus thread_lift_per_metre for its length
+    thread_lift_per_metre: 0.1
+    thread_lift_max: 14.0
+    veil: { colour: "#5d636e", assemble_step_s: 0.3 } # an unrevealed composite is drawn in this one colour; a right answer lets its blocks take their prime colours one by one
+  hues:
+    step: 3 # prime i gets hue 360 * ((step * i) mod K) / K; coprime to K, so neighbours differ
+    strong_primes: 4 # 2, 3, 5, 7: the most saturated, as they appear most in stacks
+    strong_saturation: 0.85
+    strong_lightness: 0.5
+    muted_saturation: [0.7, 0.55] # the rest, falling from first to last
+    muted_lightness: [0.42, 0.55, 0.68] # cycled, so near hues also differ in lightness
+  plaza:
+    approach: 14.0 # straight road from column 100 to the plaza's near edge
+    cell: 2.4 # metres between neighbouring columns of the grid
+    margin: 3.0 # floor beyond the outer columns
+    column: { width: 0.9, height: 1.4, rubble_height: 0.2 }
+    crumble_step_s: 0.12 # seconds between one multiple crumbling and the next
+    glow: "#e8c25a"
+    stone: "#8d8f94"
+    footprint: 0.7
+    labels: { number_height: 0.4, number_offset: 0.3 }
+  overlook:
+    gap: 10.0 # metres from the plaza's far edge to x = 100
+    x_end: 1000000
+    metres_per_decade: 60.0
+    windows_per_decade: 4
+    window_span: 100 # consecutive integers shown at each window: a 10 by 10 panel, in reading order
+    window_cell: 0.55 # metres between lights in a panel
+    window_base: 1.0 # metres from the ground to the panel's lowest row
+    curve_offset: 10.0 # metres to the left of the road
+    curve_base: 2.0
+    curve_height: 40.0 # metres of sky for pi(x_end)
+    curve_width: 0.16 # metres: thickness of the curves
+    ratio_scale: 60.0 # metres of sky per unit of ratio above 1, for the third curve
+    samples_per_decade: 60
+    marker_sign_lateral: 3.4 # metres left of the road: the sign stands beside the road, not in your way
+    marker_sign_height: 2.6 # metres above the ground: the sign's centre
+    marker_sign_size: [3.4, 1.35]
+    label_height: 0.9
+    tail: 14.0 # road beyond x_end
+    arrival: 4.0 # metres before x = 100 where the visitor arrives
+  # Dalton Gadapee approved every caption below on Oct 11, 2026. The build copies `reviewed` and never sets it.
+  texts:
+    - id: arrive
+      reviewed: true
+      text: "Every whole number is built from primes in exactly one way. The road runs from {first} to {limit}: one stone column for each."
+    - id: road
+      reviewed: true
+      text: "A prime stands alone as a tall monolith. Every other number is a stack of prime blocks, one for each prime factor, smallest at the bottom. The tallest stacks up to {limit} have {tallest_blocks} blocks: {tallest_list}. Look at a column to see what it is made of."
+    - id: plaza
+      reviewed: true
+      text: "The numbers 2 to {limit} stand in a grid, in reading order. Strike a standing number and every multiple of it after itself crumbles. What is left standing is the primes."
+    # The variants shown while a moment is still open (nothing has been earned there yet): they say what
+    # to do, never what is true. The lines above hold the answer ("exactly one way", "are the primes") and
+    # show only once the idea is earned; the map app shows all of them, as it has no moments.
+    - id: arrive_open
+      reviewed: true
+      text: "The road runs from {first} to {limit}: one stone column for each number. A prime stands alone as a tall monolith."
+    - id: road_open
+      reviewed: true
+      text: "Every other number is a veiled stack. Look at a stack, then say or type the primes that multiply to make it. A right answer takes the veil off."
+    - id: plaza_open
+      reviewed: true
+      text: 'The numbers 2 to {limit} stand in a grid. Name the next prime to strike: say it, type it or point at it. It and every multiple of it crumbles. Say "done" when you think nothing more would fall.'
+    - id: sieve_note
+      reviewed: true
+      text: "After {small_primes}, striking anything else knocks nothing down: every composite up to {limit} has a prime factor no larger than {bound}, the square root of {limit}. The {survivors} that survive are the primes."
+    - id: overlook
+      reviewed: true
+      text: "Past {limit} the road is drawn on a logarithmic scale out to {x_max}. Each patch of lights shows which of {window_span} consecutive whole numbers are prime. The curves count the primes up to x, written π(x), and compare it with x / ln x. At x = {x_max} there are {pi_max} primes against an estimate of about {est_max}: a ratio of {ratio_max}, still slowly falling toward 1."
+
+# The cathedral prototype (pipeline/cathedral.py -> data/cathedral.json, pipeline/pathways.py ->
+# data/pathways.json). Layout lives here and in the code; the app only renders it (CLAUDE.md rule 9).
+# Yaw about +Y, heading(yaw) = (sin yaw, 0, cos yaw); a door's bearing b is the yaw of the
+# direction from the hall centre to the door, so the far wall is 0, the left side is +90 (+X),
+# the right side -90 and the entrance wall 180.
+cathedral:
+  hall:
+    radius: 24 # metres from the centre to the doors
+    wall_height: 14
+    wall_thickness: 0.3 # metres, outward from the radius
+    door: { width: 3.6, height: 6.5 }
+    pedestal: { inset: 5, radius: 0.7, height: 1.1, preview_lift: 0.5 }
+    stand: 2.2 # metres in front of the pedestal where the visitor stands when they step back out of a plane
+  # The visitor descends from the vault onto a dais at the centre of the hall, facing the far wall.
+  # Four arcs of three doors use all twelve 30-degree slots, so no slot is free for a wall entrance.
+  arrival: { dais_radius: 2.2 }
+  slot_step_deg: 30
+  # Each arc's doors sit at its centre bearing +30, 0 and -30 degrees: the first plane is leftmost
+  # as the visitor looks at that arc from the middle of the hall.
+  arcs:
+    - { id: foundations, name: Foundations, placement: far-wall, centre_deg: 0 }
+    - { id: discrete, name: Discrete, placement: left, centre_deg: 90 }
+    - { id: structure, name: Structure, placement: right, centre_deg: -90 }
+    - { id: space-change, name: Space and change, placement: entrance, centre_deg: 180 }
+  planes:
+    - { id: logic, name: Logic, arc: foundations, order: 0, preview: ring-motif }
+    - { id: sets, name: Sets, arc: foundations, order: 1, preview: ring-motif }
+    - { id: infinity, name: Infinity, arc: foundations, order: 2, preview: ring-motif }
+    - { id: number-theory, name: Number theory, arc: discrete, order: 0, preview: prime-stacks }
+    - { id: combinatorics, name: Combinatorics, arc: discrete, order: 1, preview: ring-motif }
+    - { id: graph-theory, name: Graph theory, arc: discrete, order: 2, preview: ring-motif }
+    - { id: algebra-symmetry, name: Algebra and symmetry, arc: structure, order: 0, preview: ring-motif }
+    - { id: linear-algebra, name: Linear algebra, arc: structure, order: 1, preview: ring-motif }
+    - { id: complex-numbers, name: Complex numbers, arc: structure, order: 2, preview: ring-motif }
+    - { id: geometry, name: Geometry, arc: space-change, order: 0, preview: ring-motif }
+    - { id: topology, name: Topology, arc: space-change, order: 1, preview: torus-cup }
+    - { id: calculus-analysis, name: Calculus and analysis, arc: space-change, order: 2, preview: limit-curve }
+  # Living previews on the pedestals. Only prime-stacks is drawn in the prototype.
+  previews:
+    prime-stacks:
+      numbers: [6, 8, 12, 18, 24, 30] # towers; their blocks are the prime factors, computed
+      block: 0.22 # metres per block
+      ring_radius: 0.75 # towers stand on a circle this big
+      period_s: 9 # one assembling cycle
+      stagger_s: 0.6 # between one tower starting and the next
+    limit-curve:
+      samples: 48
+      t_max: 12 # the curve y = 1 - 1/(1 + t) creeps toward the line y = 1
+      width: 0.9
+      height: 0.6
+    torus-cup:
+      torus: { major: 0.3, minor: 0.12 }
+      steps: 5
+    ring-motif:
+      rings: 5
+      min_sides: 3 # sides = min_sides + slot mod 6
+  # The fractal threshold: a level tunnel of rings, each a Sierpinski triangle drawn at a constant
+  # fraction of the one before, rotated a little more each time, closing round the visitor. It
+  # ends high in the vault, over the entrance wall; the visitor drifts out of its mouth, turns
+  # down and descends slowly onto the dais, facing the far wall. Every move is guided and
+  # vignetted; the app eases the speed at the start, between segments and at the dais.
+  threshold:
+    motif_depth: 3
+    rings: 48
+    start_radius: 3.5 # narrow enough that the first rings, which stand in the wall's thickness, hang clear above its 14 m top
+    end_radius: 1.8
+    rotation_deg: 7.5
+    straight: 22 # metres of level tunnel along +Z; the rings stand on it
+    eye_height: 1.6 # metres: the path is where the visitor's feet go; rings are centred this far above it, at eye level
+    entry_height: 16 # metres above the dais: inside the vault's first tier, 2 m over the wall
+    corner: 2.5 # radius of the turn from drifting to descending
+    path_step: 1 # metres between points of the rails path
+    drift_speed: 1.6 # metres per second through the tunnel
+    descent_speed: 1.2 # slower, for the vertical part
+    vignette: { drift: 0.35, descent: 0.7 } # 0..1, how far the comfort vignette closes in
+    ease_s: 1.5 # seconds to ramp the speed up, down, and between segments
+  # The vault: twelve-sided rings above the wall, each a fixed fraction of the one below and turned a
+  # little more, converging on a point far overhead: the geometry keeps going up and up.
+  vault:
+    tiers: 28
+    ratio: 0.82
+    sides: 12
+    rotation_deg: 15
+    rise_per_tier: 0.35 # of the hall radius, shrinking by the ratio each tier
+
+  # The pathway behind each door (pipeline/pathways.py).
+  #
+  # A door's gate is NOT written here. Each pathway names `gated_on`, the idea its door is gated on,
+  # and the build derives `entry_requires` from the dependency graph: the ideas ON THE MAP (the
+  # landmarks of any stretch, the ideas a visitor can earn somewhere in the cathedral) that
+  # `gated_on` truly rests on, found by following its proof dependencies in set.mm. The door glows
+  # when all of them are earned (core/doors.ts). Nothing is chosen by hand but `gated_on`.
+  # pipeline/tests/test_gates.py re-derives every gate from the raw set.mm text, independently of the
+  # pipeline, and checks it both ways (nothing missing, nothing extra).
+  #
+  # A built pathway is gated on the first landmark of its first stretch. An unbuilt one (no stretch yet)
+  # may be gated on an idea it will reach only if that idea truly rests on something on the map, so
+  # that the gate is real. Otherwise `gated_on: null`, `first_idea` names where the pathway would
+  # begin (the build checks that it rests on no idea on the map) and `no_gate` says why there is no
+  # gate. A door with no gate is sealed: no idea on the map leads to it. Gating it on anything would be
+  # inventing a dependency.
+  # As pathways are built their landmarks join the map and every gate is re-derived.
+  #
+  # `rubric` is what a good explanation says, used only by Trurl's judge, never shown. It stays a
+  # draft (`rubric_reviewed` absent or false) until a person approves the exact text and sets it true.
+  # Dalton Gadapee approved the two number-theory rubrics on Oct 11, 2026.
+  pathways:
+    - plane: logic
+      gated_on: null
+      first_idea: ax-mp # checked: it rests on no idea on the map
+      no_gate: Not built, and nothing on the map leads to it. A gate derived from its first idea would be empty, so the door would glow with nothing behind it.
+      stretches: []
+    - plane: sets
+      gated_on: null
+      first_idea: ax-ext # checked: it rests on no idea on the map
+      no_gate: Not built, and nothing on the map leads to it. A gate derived from its first idea would be empty, so the door would glow with nothing behind it.
+      stretches: []
+    - plane: infinity
+      gated_on: null
+      first_idea: ax-inf # checked: it rests on no idea on the map
+      no_gate: Not built, and nothing on the map leads to it. A gate derived from its first idea would be empty, so the door would glow with nothing behind it.
+      stretches: []
+    - plane: number-theory
+      gated_on: df-prm # the first landmark of nt-1; nothing on the map lies beneath it, so this door starts open
+      stretches:
+        - id: nt-1
+          plane_data: plane-number-theory.json
+          landmarks: [df-prm, 1arith]
+          moments:
+            # What the two moments earn is chosen so that each one moves the map, using only true
+            # dependencies (core/tests/doors.test.ts tries every earn from every earlier state):
+            #   sieve earns df-prm: algebra and symmetry (ablfac rests on it) goes from dim to open.
+            #   road earns 1arith: complex numbers (pnt rests on it and on df-prm) goes from sealed to dim,
+            #   and to open once df-prm is held too.
+            - id: nt-1-road
+              kind: road
+              earns: [1arith]
+              # Trurl asks this once the visitor has done the activity (core/doing.ts), never before.
+              # It must not contain the answer (see never_show). Dalton Gadapee approved both questions on Oct 11, 2026.
+              question: Could any number be taken apart into primes in two different ways, not counting order? What do you think?
+              question_reviewed: true
+              # Phrases that must never reach the visitor's eyes while this moment is open: they are the
+              # answer. A test scans the plane's texts, the question and everything the app shows.
+              never_show: ["exactly one way", "only one way", "one way only", "unique(ly)? factori", "one and only one", "no other way", "the same primes"]
+              rubric_reviewed: true # Dalton Gadapee approved this rubric on Oct 11, 2026
+              rubric: >-
+                The visitor says, in their own words, that every whole number above 1 is built from
+                primes in exactly one way, apart from order, for example by pointing at a stack such
+                as 12 = 2 · 2 · 3.
+            - id: nt-1-sieve
+              kind: sieve
+              earns: [df-prm]
+              question: Look at the numbers left standing. What do they have in common?
+              question_reviewed: true # Dalton Gadapee approved this question on Oct 11, 2026
+              never_show: ["standing (is|are) (exactly |just |only )?the primes", "are the primes", "only divisors", "divisible only", "square root", "knocks? nothing", "prime factor no larger", "no larger than"]
+              rubric_reviewed: true # Dalton Gadapee approved this rubric on Oct 11, 2026
+              rubric: >-
+                The visitor says, in their own words, that a prime is a whole number greater than 1
+                whose only divisors are 1 and itself, or recognizes that the numbers left standing
+                are exactly those. Why the sieve stops after 7 (every composite up to 100 has a
+                prime factor of at most 7) is a bonus Trurl may draw out, not a requirement.
+    - plane: combinatorics
+      gated_on: null
+      first_idea: ramsey # checked: it rests on no idea on the map
+      no_gate: Not built, and nothing on the map leads to it. A gate derived from its first idea would be empty, so the door would glow with nothing behind it.
+      stretches: []
+    - plane: graph-theory
+      gated_on: null
+      first_idea: konigsberg # checked: it rests on no idea on the map
+      no_gate: Not built, and nothing on the map leads to it. A gate derived from its first idea would be empty, so the door would glow with nothing behind it.
+      stretches: []
+    - plane: algebra-symmetry
+      gated_on: ablfac # not built. The fundamental theorem of finite abelian groups rests on df-prm (through Sylow's first theorem and Euclid's lemma) and NOT on 1arith: checked in set.mm
+      stretches: []
+    - plane: linear-algebra
+      gated_on: null
+      first_idea: df-lmod # checked: it rests on no idea on the map
+      no_gate: Not built, and nothing on the map leads to it. A gate derived from its first idea would be empty, so the door would glow with nothing behind it.
+      stretches: []
+    - plane: complex-numbers
+      gated_on: pnt # not built. The experience design has this pathway and number theory both reach the prime number theorem, which rests on df-prm and 1arith
+      stretches: []
+    - plane: geometry
+      gated_on: null
+      first_idea: df-trkg # checked: it rests on no idea on the map
+      no_gate: Not built, and nothing on the map leads to it. A gate derived from its first idea would be empty, so the door would glow with nothing behind it.
+      stretches: []
+    - plane: topology
+      gated_on: null
+      first_idea: bwth # checked: it rests on no idea on the map
+      no_gate: Not built, and nothing on the map leads to it. A gate derived from its first idea would be empty, so the door would glow with nothing behind it.
+      stretches: []
+    - plane: calculus-analysis
+      gated_on: null
+      first_idea: evth # checked: it rests on no idea on the map
+      no_gate: Not built, and nothing on the map leads to it. A gate derived from its first idea would be empty, so the door would glow with nothing behind it.
+      stretches: []

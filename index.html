@@ -20,6 +20,7 @@
         <ul id="results" role="listbox" hidden></ul>
       </div>
       <div class="tools">
+        <button type="button" class="ghost" id="btn-plane" title="Walk the number theory plane: primes, the sieve, and how they thin out">Number theory plane</button>
         <button type="button" class="ghost" id="btn-home" title="Back to the view of the whole mine (H)">Whole mine</button>
         <button type="button" class="ghost" id="btn-help" title="What is this?">?</button>
       </div>
@@ -55,6 +56,28 @@
         <button type="button" class="primary" id="ih-next" title="Walk through the next tunnel (N)">Go ↓</button>
       </div>
       <p class="ih-hint">Click to look around · W A S D to walk · Shift to run · Esc frees the mouse · M map</p>
+      <div class="ih-cross"></div>
+    </div>
+    <div class="inside-hud plane-hud" id="plane-hud" hidden>
+      <div class="ih-bar">
+        <div class="ih-where pl-where">
+          <b id="pl-name"></b>
+          <span><span id="pl-text"></span> <em class="draft" id="pl-draft" title="Drafted by Claude; a person has not reviewed this line yet">draft</em></span>
+        </div>
+        <div class="ih-actions">
+          <button type="button" class="ghost" id="pl-vr" title="Walk the plane in a VR headset" hidden>Enter VR</button>
+          <button type="button" class="ghost" id="pl-map" title="Back to the map (M)">Map</button>
+        </div>
+      </div>
+      <div class="pl-stops" id="pl-stops"></div>
+      <div class="pl-focus" id="pl-focus"></div>
+      <div class="pl-sieve" id="pl-sieve" hidden>
+        <span id="pl-count"></span>
+        <button type="button" class="ghost" id="pl-reset" title="Stand every number up again (R)">Reset</button>
+        <p id="pl-note" hidden><span id="pl-note-text"></span> <em class="draft" id="pl-note-draft" title="Drafted by Claude; a person has not reviewed this line yet">draft</em></p>
+      </div>
+      <div class="pl-readout" id="pl-readout" hidden><span id="pl-readout-text"></span></div>
+      <p class="ih-hint">Click to look around · W A S D to walk · Shift to run · 1 2 3 travel · look at a column to read it · click a plaza column to strike it · M map</p>
       <div class="ih-cross"></div>
     </div>
     <div class="tip" id="tip" hidden></div>

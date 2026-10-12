@@ -2,7 +2,7 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist/', 'data/', 'node_modules/', 'pipeline/', 'test-results/', 'playwright-report/', 'e2e/output/'] },
+  { ignores: ['**/dist/', 'cathedral/.iwsdk/', 'data/', 'node_modules/', 'pipeline/', 'test-results/', 'playwright-report/', 'e2e/output/'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -10,6 +10,11 @@ export default tseslint.config(
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
+  },
+  // Node scripts (the secret scan, the grounding copy) run outside the browser and the Worker.
+  {
+    files: ['scripts/**/*.mjs', 'worker/scripts/**/*.mjs'],
+    languageOptions: { globals: { process: 'readonly', console: 'readonly', URL: 'readonly' } },
   },
   // CLAUDE.md rule 1: core/ is pure graph logic. No three.js, nothing from app/.
   {
