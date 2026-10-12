@@ -83,7 +83,7 @@ The guide, Trurl, is a Möbius strip creature: the counterweight to the cathedra
 An idea joins your map when you show you understand it, through doing and explaining, never through a quiz or a score.
 
 - **Doing:** each plane has moments where you act on the idea, like striking the sieve and predicting what will be left standing.
-- **Explaining:** the guide asks you, in conversation, to say why something happened ("why did nothing fall after you struck 7?"). Explaining in your own words is one of the most reliable signs of understanding, and it feels like talking, not testing.
+- **Explaining:** the guide asks you, in conversation, to say why something happened ("why did nothing fall after you struck 7?"). Explaining in your own words is one of the most reliable signs of understanding, and it feels like talking, not testing. If Trurl is off, finishing the doing earns the idea on the device, and his question stays as a caption to think about.
 - **Generous, not gatekept:** the guide judges understanding kindly and can help you get there. The point is the click, not proving yourself.
 - **No visible scores.** There are no points, percentages or leaderboards. The only record of progress is the cathedral itself: what glows, what has opened, how it has grown.
 

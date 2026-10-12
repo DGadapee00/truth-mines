@@ -35,15 +35,17 @@ works without the Worker, with progress kept on the device.
 
 ## Earning by doing
 
-An idea joins the map by doing, then explaining, in the same visit (core/doing.ts holds the rules):
+An idea is earned by doing, then explaining to Trurl, in the same visit (core/doing.ts holds the rules).
+Without Trurl, the doing alone earns, and his question stays as a caption to think about.
 
 - **The road**: a composite stack is veiled (one plain colour, its sign only its number). Look at it and say
   or type the primes that multiply to it ("2, 2, 3"); a right answer assembles it. Three stacks finish it.
 - **The sieve**: name the next prime to strike (say it, type it, or point and pull the trigger), and say
   "done" when nothing more would fall.
-- Then, and only then, Trurl asks his question (a caption from `pathways.json`, nothing sent). The Worker
-  gets what was done as numbers and grants nothing unless it was done; the app checks again, and the doing
-  is never saved, so a verdict can only follow a doing from this visit.
+- Then, and only then, Trurl asks his question (a caption from `pathways.json`, nothing sent). When he is
+  awake, the Worker gets what was done as numbers and grants nothing unless it was done; the app checks
+  again, and the doing is never saved, so a verdict can only follow a doing from this visit. When he is
+  off, that same doing earns the moment's ideas on the device, and the question stays up to think about.
 - While a moment is open nothing on screen says its answer: the plane shows the `*_open` lines, and the
   phrases in `never_show` (pipeline/config.yaml) are scanned for in the data and on the screen.
 

@@ -519,7 +519,7 @@ export class CathedralApp {
     const m = this.momentOf(kind);
     if (!m || this.asked.has(kind) || !this.momentOpen(kind)) return;
     this.asked.add(kind);
-    this.trurl.announce(m.question, !m.question_reviewed);
+    this.trurl.doingComplete(m.question, !m.question_reviewed, m.earns);
   }
 
   /** A verdict can grant an idea only if the visitor did the activity behind it in this session. */

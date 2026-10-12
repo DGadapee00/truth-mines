@@ -53,8 +53,8 @@ function failureLine(status: number): string {
 
 /**
  * One conversation with Trurl: what the visitor says goes out with the facts of where they are,
- * the reply streams into a caption, and a verdict from the Worker (the only way an idea is earned)
- * is applied once the whole reply has arrived without trouble. No visible scores, ever.
+ * the reply streams into a caption, and a verdict from the Worker
+ * is applied once the whole reply has arrived without trouble. With Trurl off, the doing alone earns (doingComplete). No visible scores, ever.
  */
 export function createTrurlSession(deps: TrurlDeps) {
   let status: TrurlState['status'] = 'idle';
@@ -73,6 +73,16 @@ export function createTrurlSession(deps: TrurlDeps) {
   const emit = () => {
     const s = state();
     for (const fn of [...listeners]) fn(s);
+  };
+
+  /** Trurl says a line he already has (the question after the doing): nothing is sent, nothing is judged */
+  const announce = (text: string, isDraft = false): void => {
+    abort?.abort();
+    abort = null;
+    caption = text.slice(0, MAX_TEXT);
+    draft = isDraft;
+    status = 'idle';
+    emit();
   };
 
   return {
@@ -138,14 +148,18 @@ export function createTrurlSession(deps: TrurlDeps) {
       draft = false;
       emit();
     },
-    /** Trurl says a line he already has (the question after the doing): nothing is sent, nothing is judged */
-    announce(text: string, isDraft = false): void {
-      abort?.abort();
-      abort = null;
-      caption = text.slice(0, MAX_TEXT);
-      draft = isDraft;
-      status = 'idle';
-      emit();
+    announce,
+    /**
+     * The doing behind a moment is complete: Trurl asks his question. When Trurl is awake his verdict
+     * on the answer decides what is earned. When he is off (no secret on this device, or the Worker
+     * refused it) there is nobody to judge an answer, so the doing alone earns the moment's ideas,
+     * still only those this session's doing allows. The question stays as something to think about.
+     */
+    doingComplete(question: string, isDraft: boolean, earns: string[]): void {
+      announce(question, isDraft);
+      if (!disabled()) return;
+      const granted = deps.allowed(earns);
+      if (granted.length > 0) deps.onEarned(granted);
     },
   };
 }

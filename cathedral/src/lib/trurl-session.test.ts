@@ -196,3 +196,44 @@ describe('the Trurl session', () => {
     expect(t.requests).toEqual([]);
   });
 });
+
+describe('when the doing is complete', () => {
+  const Q = 'Why did nothing fall after seven?';
+
+  it('with Trurl awake, shows the question and earns nothing', () => {
+    const t = setup(() => arr({ type: 'done' }));
+    t.s.doingComplete(Q, false, ['df-prm']);
+    expect(t.s.state()).toMatchObject({ caption: Q, draft: false, status: 'idle' });
+    expect(t.earned).toEqual([]);
+    expect(t.requests).toEqual([]);
+  });
+
+  it('with no secret on the device, the doing alone earns the moment’s ideas', () => {
+    const t = setup(() => arr({ type: 'done' }), { secret: false });
+    t.s.doingComplete(Q, true, ['df-prm', '1arith']);
+    expect(t.earned).toEqual([['df-prm', '1arith']]);
+    expect(t.s.state()).toMatchObject({ caption: Q, draft: true });
+    expect(t.requests).toEqual([]);
+  });
+
+  it('after the Worker refuses the secret, the doing alone earns', async () => {
+    const t = setup(() => arr({ type: 'error', status: 401 }));
+    await t.s.say('hello');
+    t.s.doingComplete(Q, false, ['df-prm']);
+    expect(t.earned).toEqual([['df-prm']]);
+  });
+
+  it('earns only the ids this session’s doing allows', () => {
+    const t = setup(() => arr({ type: 'done' }), { secret: false, allow: (ids) => ids.filter((i) => i === '1arith') });
+    t.s.doingComplete(Q, false, ['df-prm', '1arith']);
+    expect(t.earned).toEqual([['1arith']]);
+  });
+
+  it('earns nothing when the doing allows nothing', () => {
+    const t = setup(() => arr({ type: 'done' }), { secret: false, allow: () => [] });
+    t.s.doingComplete(Q, true, ['df-prm']);
+    expect(t.s.state()).toMatchObject({ caption: Q, draft: true });
+    expect(t.earned).toEqual([]);
+    expect(t.requests).toEqual([]);
+  });
+});

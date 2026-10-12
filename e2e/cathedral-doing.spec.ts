@@ -252,4 +252,36 @@ test.describe('earning by doing', () => {
     expect(worker.unauthorized).toBe(0);
     expect(SECRET).toBeTruthy();
   });
+
+  test('without Trurl, the doing alone earns: the question still shows and the map moves', async ({ page }) => {
+    await open(page, { seen: true });
+    await page.click('#gate-nosecret');
+    await toCathedral(page);
+    await intoNumberTheory(page);
+    expect((await debug(page)).captions.disabled).toBe('no-secret');
+    // Before anything is earned, complex numbers rests on both ideas, so that door is sealed.
+    expect((await debug(page)).states['complex-numbers']).toBe('sealed');
+
+    await typeLine(page, 'every number is built from primes in one way, obviously');
+    expect((await debug(page)).earned).toEqual([]);
+
+    await doTheRoad(page);
+    await expect(page.locator('#captions')).toContainText(moments['nt-1-road']!.question);
+    await expect.poll(async () => (await debug(page)).earned).toEqual(['1arith']);
+    expect((await debug(page)).states['complex-numbers']).toBe('dim');
+    expect((await debug(page)).sync).toBe('local');
+
+    await page.keyboard.press('Digit2');
+    await page.waitForFunction(() => (window as unknown as { __cathedral: { debug(): { zone: string } } }).__cathedral.debug().zone === 'plaza', null, { timeout: 30_000 });
+    for (const n of [2, 3, 5, 7]) await typeLine(page, String(n));
+    await typeLine(page, 'done');
+    await expect(page.locator('#captions')).toContainText(moments['nt-1-sieve']!.question);
+    await expect.poll(async () => [...(await debug(page)).earned].sort()).toEqual(['1arith', 'df-prm']);
+    await expect(page.locator('#pl-note')).toContainText('square root');
+    await page.screenshot({ path: 'e2e/output/cathedral-doing-4-without-trurl.png' });
+
+    await page.reload();
+    await page.waitForFunction(() => !!(window as unknown as { __cathedral?: unknown }).__cathedral, null, { timeout: 60_000 });
+    expect([...(await debug(page)).earned].sort()).toEqual(['1arith', 'df-prm']);
+  });
 });
